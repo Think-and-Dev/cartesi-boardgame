@@ -2,6 +2,7 @@ import type { LobbyAPI } from '../types';
 import { Cartesify } from '@calindra/cartesify';
 /**
  * Creates a Cartesify fetch instance with the specified DAPP address and endpoints.
+ * try
  *
  * @param {string} DAPP_ADDRESS - The address of the DAPP to use with the Cartesify fetch instance.
  * @param {Object} endpoints - An object containing the URLs for the GraphQL and inspect endpoints.
