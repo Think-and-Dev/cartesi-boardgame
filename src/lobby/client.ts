@@ -1,4 +1,24 @@
 import type { LobbyAPI } from '../types';
+import { Cartesify } from '@calindra/cartesify';
+/**
+ * Creates a Cartesify fetch instance with the specified DAPP address and endpoints.
+ *
+ * @param {string} DAPP_ADDRESS - The address of the DAPP to use with the Cartesify fetch instance.
+ * @param {Object} endpoints - An object containing the URLs for the GraphQL and inspect endpoints.
+ * @param {URL} endpoints.graphQL - The URL for the GraphQL endpoint.
+ * @param {URL} endpoints.inspect - The URL for the inspect endpoint.
+ * @returns {Object} - A Cartesify fetch instance configured with the provided DAPP address and endpoints.
+ */
+
+const DAPP_ADDRESS = '0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e'; //Review
+
+const cartesifyFetch = Cartesify.createFetch({
+  dappAddress: DAPP_ADDRESS,
+  endpoints: {
+    graphQL: new URL('http://localhost:8080/graphql'),
+    inspect: new URL('http://localhost:8080/inspect'),
+  },
+});
 
 const assertString = (str: unknown, label: string) => {
   if (!str || typeof str !== 'string') {
@@ -57,26 +77,44 @@ export class LobbyClient {
     this.server = server.replace(/\/$/, '');
   }
 
+  /**
+   * Sends a request to the server using the provided route and optional request configuration.
+   *
+   * @param route - The route to send the request to.
+   * @param init - Optional request configuration, including method, body, and headers.
+   * @returns A Promise that resolves to the response JSON data.
+   * @throws {LobbyClientError} If the response is not successful or there is a network error.
+   */
   private async request(route: string, init?: RequestInit) {
-    const response = await fetch(this.server + route, init);
+    const config: RequestInit = {
+      method: init?.method,
+      body: init?.body,
+      headers: init?.headers,
+    };
 
-    if (!response.ok) {
-      let details: any;
+    try {
+      const response = await cartesifyFetch(this.server + route, config);
 
-      try {
-        details = await response.clone().json();
-      } catch {
+      if (!response.ok) {
+        let details: any;
+
         try {
-          details = await response.text();
-        } catch (error) {
-          details = error.message;
+          details = await response.json();
+        } catch {
+          try {
+            details = await response.text();
+          } catch (error) {
+            details = error.message;
+          }
         }
+
+        throw new LobbyClientError(`HTTP status ${response.status}`, details);
       }
 
-      throw new LobbyClientError(`HTTP status ${response.status}`, details);
+      return response.json();
+    } catch (error) {
+      throw new LobbyClientError(`Network error`, error.message);
     }
-
-    return response.json();
   }
 
   private async post(route: string, opts: { body?: any; init?: RequestInit }) {
