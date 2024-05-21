@@ -8,14 +8,7 @@
 
 import type { ProcessGameConfig } from '../../core/game';
 import type { TransportData } from '../../master/master';
-import type {
-  Game,
-  PlayerID,
-  CredentialedActionShape,
-  State,
-  SyncInfo,
-  ChatMessage,
-} from '../../types';
+import type { Game, PlayerID, CredentialedActionShape, State, SyncInfo, ChatMessage } from '../../types';
 
 export type MetadataCallback = (metadata: SyncInfo['filteredMetadata']) => void;
 
