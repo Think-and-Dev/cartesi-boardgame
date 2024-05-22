@@ -12,7 +12,10 @@ import type IOTypes from 'socket.io';
 import type { ServerOptions as HttpsOptions } from 'https';
 import PQueue from 'p-queue';
 import { Master } from '../../master/master';
-import type { TransportAPI as MasterTransport, TransportData,} from '../../master/master';
+import type {
+  TransportAPI as MasterTransport,
+  TransportData,
+} from '../../master/master';
 import { getFilterPlayerView } from '../../master/filter-player-view';
 import type { Game, Server } from '../../types';
 import type { GenericPubSub } from './pubsub/generic-pub-sub';
