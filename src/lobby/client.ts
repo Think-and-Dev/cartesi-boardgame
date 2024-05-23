@@ -13,13 +13,13 @@ import { Cartesify } from '@calindra/cartesify';
 
 const DAPP_ADDRESS = '0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e'; //Review
 
-const cartesifyFetch = Cartesify.createFetch({
-  dappAddress: DAPP_ADDRESS,
-  endpoints: {
-    graphQL: new URL('http://localhost:8080/graphql'),
-    inspect: new URL('http://localhost:8080/inspect'),
-  },
-});
+// const cartesifyFetch = Cartesify.createFetch({
+//   dappAddress: DAPP_ADDRESS,
+//   endpoints: {
+//     graphQL: new URL('http://localhost:8383/graphql1'),
+//     inspect: new URL('http://localhost:8383/inspect'),
+//   },
+// });
 
 const assertString = (str: unknown, label: string) => {
   if (!str || typeof str !== 'string') {
@@ -72,10 +72,21 @@ export class LobbyClientError extends Error {
  */
 export class LobbyClient {
   private server: string;
+  // private readonly cartesifyFetch: Cartesify.createFetch;
+  private readonly cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
 
   constructor({ server = '' }: { server?: string } = {}) {
     // strip trailing slash if passed
     this.server = server.replace(/\/$/, '');
+
+    // Initialize Cartesify fetch as a readonly property
+    this.cartesifyFetch = Cartesify.createFetch({
+      dappAddress: DAPP_ADDRESS,
+      endpoints: {
+        graphQL: new URL(`${this.server}/graphql`),
+        inspect: new URL(`${this.server}/inspect`),
+      },
+    });
   }
 
   /**
@@ -94,7 +105,7 @@ export class LobbyClient {
     };
 
     try {
-      const response = await cartesifyFetch(this.server + route, config);
+      const response = await this.cartesifyFetch(this.server + route, config);
 
       if (!response.ok) {
         let details: any;
