@@ -1,31 +1,32 @@
-import { Transport, TransportOpts } from './transport';
-import {
+import type { TransportOpts } from './transport';
+import { Transport } from './transport';
+import type {
   CredentialedActionShape,
   State,
   ChatMessage,
   PlayerID,
 } from '../../types';
-import Cartesify from '@calindra/cartesify';
+import { Cartesify } from '@calindra/cartesify';
 
 export class CartesifyTransport extends Transport {
-  private url: string;
-  private matchID: string;
-  private playerID: PlayerID;
-  private credentials?: string;
-  private cartesifyFetch: typeof fetch;
+  protected url: string;
+  protected declare matchID: string;
+  protected declare playerID: PlayerID | null;
+  protected declare credentials?: string;
+  protected cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
 
   constructor(opts: TransportOpts) {
     super(opts);
-    this.url = opts.server || '';
-    this.matchID = '';
-    this.playerID = '';
-    this.credentials = undefined;
+    this.url = opts.server || 'https//localhost:5004';
+    this.matchID = opts.matchID || '';
+    this.playerID = opts.playerID || null;
+    this.credentials = opts.credentials;
 
     const DAPP_ADDRESS = '';
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress: DAPP_ADDRESS,
       endpoints: {
-        graphQL: new URL('${this.url}/  graphql'),
+        graphQL: new URL('${this.url}/graphql'),
         inspect: new URL('${this.url}/inspect'),
       },
     });
@@ -206,7 +207,10 @@ export class CartesifyTransport extends Transport {
 
       if (response.ok) {
         const updatedState = await response.json();
-        this.notifyClient({ type: 'update', state: updatedState });
+        this.notifyClient({
+          type: 'update',
+          args: [this.matchID, updatedState, []],
+        });
       } else {
         throw new Error('Failed to send action');
       }
@@ -234,7 +238,7 @@ export class CartesifyTransport extends Transport {
       });
 
       if (response.ok) {
-        this.notifyClient({ type: 'chat', chatMessage });
+        this.notifyClient({ type: 'chat', args: [matchID, chatMessage] });
       } else {
         throw new Error('Failed to send chat message');
       }
