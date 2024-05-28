@@ -8,6 +8,13 @@ import type {
 } from '../../types';
 import { Cartesify } from '@calindra/cartesify';
 
+interface CartesifyOpts {
+  server?: string;
+  cartesifyOpts?: CartesifyOpts;
+}
+
+type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
+
 export class CartesifyTransport extends Transport {
   protected url: string;
   protected declare matchID: string;
@@ -287,6 +294,14 @@ export class CartesifyTransport extends Transport {
     this.credentials = credentials;
     this.requestSync();
   }
+}
+
+export function CartesiMultiplayer({ server }: CartesifyOpts = {}) {
+  return (transportOpts: CartesifyTransportOpts) =>
+    new CartesifyTransport({
+      server,
+      ...transportOpts,
+    });
 }
 
 export default CartesifyTransport;
