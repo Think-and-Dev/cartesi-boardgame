@@ -25,7 +25,7 @@ describe('CartesifyTransport', () => {
   let transportOpts: TransportOpts;
 
   beforeEach(() => {
-    fetchMock = jest.fn().mockReturnValue({
+    fetchMock = jest.fn().mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue({}),
     });
