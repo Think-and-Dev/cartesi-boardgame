@@ -33,8 +33,8 @@ export class CartesifyTransport extends Transport {
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress: DAPP_ADDRESS,
       endpoints: {
-        graphQL: new URL('${this.url}/graphql'),
-        inspect: new URL('${this.url}/inspect'),
+        graphQL: new URL(`${this.url}/graphql`),
+        inspect: new URL(`${this.url}/inspect`),
       },
     });
   }

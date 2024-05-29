@@ -5,32 +5,30 @@ import type {
   State,
   ChatMessage,
   PlayerID,
-  Game,
   Ctx,
   Move,
-  //   ProcessedGame,
 } from '../../types';
 import type { ProcessGameConfig } from '../../core/game';
 
 // Mock the Cartesify module and the fetch function it exports.
+let fetchMock: jest.Mock;
+const getFetchMock = () => fetchMock;
+jest.mock('@calindra/cartesify', () => {
+  return {
+    Cartesify: {
+      createFetch: jest.fn().mockImplementation((x) => getFetchMock()),
+    },
+  };
+});
 
-// eslint-disable-next-line jest/no-focused-tests
-describe.only('CartesifyTransport', () => {
+describe('CartesifyTransport', () => {
   let transportOpts: TransportOpts;
-  let fetchMock: jest.Mock;
 
   beforeEach(() => {
-    fetchMock = jest.fn().mockResolvedValue({
+    fetchMock = jest.fn().mockReturnValue({
       ok: true,
       json: jest.fn().mockResolvedValue({}),
     });
-
-    // Mocking Cartesify.createFetch to return our fetchMock
-    // (Cartesify.createFetch as jest.Mock).mockReturnValue(fetchMock);
-    // Cartesify.createFetch = jest.fn().mockReturnValue(fetchMock);
-    // jest.mock('@calindra/cartesify', () => ({
-    //   createFetch: jest.fn(),
-    // }));
     // Define a mock ProcessedGame object
     const mockGame: ReturnType<typeof ProcessGameConfig> = {
       flow: {
@@ -74,6 +72,7 @@ describe.only('CartesifyTransport', () => {
       credentials: 'test-credentials',
     };
   });
+
   it('should initialize correctly', () => {
     const transport = new CartesifyTransport(transportOpts);
     expect(transport).toBeTruthy();
