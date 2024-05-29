@@ -58,7 +58,7 @@ export class CartesifyTransport extends Transport {
         // master broadcasts the update as a patch to other clients (including
         // this one).
         this.cartesifyFetch(`${this.url}/patch`, {
-          method: 'POST',
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
