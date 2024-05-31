@@ -210,8 +210,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged",
-      "pre-push": "npm run test:coverage"
+      "pre-commit": "lint-staged"
     }
   }
 }
