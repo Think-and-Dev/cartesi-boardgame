@@ -30,6 +30,7 @@ export interface TransportOpts {
   matchID?: string;
   credentials?: string;
   numPlayers?: number;
+  server?: string;
 }
 
 export abstract class Transport {
