@@ -32,4 +32,4 @@ WORKDIR /opt/cartesi/dappCOPY --from=build-stage /opt/cartesi/dapp/dist .
 ENV ROLLUP_HTTP_SERVER_URL="http:127.0.0.1:5004"
 
 ENTRYPOINT ["rollup-init"]
-CMD {"node", "app.js"}
+CMD {"yarn", "start"}

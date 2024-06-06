@@ -20,7 +20,8 @@ CartesifyBackend.createDapp().then((initDapp) => {
     .start()
     .then(() => {
       console.log(`Dapp initialized`);
-      isDappRunning = true;
+      // TODO: Should we check if the dapp is running when executing the server?
+      // isDappRunning = true;
     })
     .catch((error) => {
       console.error(`Dapp initialization failed: ${error}`);
@@ -83,7 +84,7 @@ interface ServerOpts {
  * @param generateCredentials - Method for API to generate player credentials.
  * @param lobbyConfig - Configuration options for the Lobby API server.
  */
-export default function Server({
+function Server({
   games,
   db,
   transport,
@@ -94,7 +95,6 @@ export default function Server({
   authenticateCredentials,
 }: ServerOpts) {
   const app: ServerTypes.App = new Koa();
-
   games = games.map((game) => ProcessGameConfig(game));
 
   if (db === undefined) {
@@ -109,8 +109,6 @@ export default function Server({
     transport = new CartesifyTransport();
   }
 
-  transport.init(app, games);
-
   const router = new Router<any, ServerTypes.AppCtx>();
 
   return {
@@ -121,10 +119,8 @@ export default function Server({
     transport,
 
     run: async (portOrConfig: number | ServerConfig, callback?: () => void) => {
-      if (!isDappRunning) {
-        throw new Error('Cartesify Dapp failed to start...');
-      }
       const serverRunConfig = createServerRunConfig(portOrConfig, callback);
+      transport.init(router, games);
       configureRouter({ router, db, games, uuid, auth });
 
       // DB
@@ -167,3 +163,5 @@ export default function Server({
     },
   };
 }
+
+export default { Server };

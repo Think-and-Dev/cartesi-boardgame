@@ -14,8 +14,8 @@ export default class CartesifyTransport {
     this.matchQueues = new Map();
   }
 
-  init(app, games) {
-    app.get('/test', (req, res) => {
+  init(appRouter, games) {
+    appRouter.get('/test', (req, res) => {
       res
         .status(200)
         .send({ message: 'El transport esta funcionando correctamente' });
@@ -23,15 +23,15 @@ export default class CartesifyTransport {
     games.forEach((game) => {
       const gameName = game.name;
 
-      app.post(`/${gameName}/update`, async (req, res) => {
+      appRouter.post(`/${gameName}/update`, async (req, res) => {
         const { action, stateID, matchID, playerID } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
         const master = new Master(
           game,
-          app.locals.db,
+          appRouter.locals.db,
           transport,
-          app.loclals.auth
+          appRouter.loclals.auth
         );
         const matchQueue = this.getMatchQueue(matchID);
 
@@ -41,15 +41,15 @@ export default class CartesifyTransport {
         res.status(200).send({ success: true });
       });
 
-      app.post(`/${gameName}/sync`, async (req, res) => {
+      appRouter.post(`/${gameName}/sync`, async (req, res) => {
         const { matchID, playerID, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
         const master = new Master(
           game,
-          app.locals.db,
+          appRouter.locals.db,
           transport,
-          app.locals.auth
+          appRouter.locals.auth
         );
 
         const syncResponse = await master.onSync(
@@ -60,45 +60,45 @@ export default class CartesifyTransport {
         res.status(200).send(syncResponse);
       });
 
-      app.post(`/${gameName}/chat`, async (req, res) => {
+      appRouter.post(`/${gameName}/chat`, async (req, res) => {
         const { matchID, message, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
         const master = new Master(
           game,
-          app.locals.db,
+          appRouter.locals.db,
           transport,
-          app.locals.auth
+          appRouter.locals.auth
         );
 
         await master.onChatMessage(matchID, message, credentials);
         res.status(200).send({ success: true });
       });
 
-      app.post(`/${gameName}/connect`, async (req, res) => {
+      appRouter.post(`/${gameName}/connect`, async (req, res) => {
         const { matchID, playerID, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
         const master = new Master(
           game,
-          app.locals.db,
+          appRouter.locals.db,
           transport,
-          app.locals.auth
+          appRouter.locals.auth
         );
 
         await master.onConnectionChange(matchID, playerID, credentials, true);
         res.status(200).send({ success: true });
       });
 
-      app.post(`/${gameName}/disconnect`, async (req, res) => {
+      appRouter.post(`/${gameName}/disconnect`, async (req, res) => {
         const { matchID, playerID, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
         const master = new Master(
           game,
-          app.locals.db,
+          appRouter.locals.db,
           transport,
-          app.locals.auth
+          appRouter.locals.auth
         );
 
         await master.onConnectionChange(matchID, playerID, credentials, false);
