@@ -1,9 +1,8 @@
 {
-  "name": "boardgame.io",
-  "version": "0.50.2",
+  "name": "@think-and-dev/cartesify-boardgame",
+  "version": "0.0.1",
   "description": "library for turn-based games",
   "repository": "https://github.com/boardgameio/boardgame.io",
-  "type": "module",
   "scripts": {
     "prestart": "run-p examples:install build",
     "start": "run-p dev:server dev:client",

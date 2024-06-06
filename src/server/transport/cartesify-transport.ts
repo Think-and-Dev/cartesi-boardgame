@@ -5,13 +5,15 @@ import PQueue from 'p-queue';
 import { Master } from '../../master/master';
 import { getFilterPlayerView } from '../../master/filter-player-view';
 import { InMemoryPubSub } from './pubsub/in-memory-pub-sub';
-class CustomTransport {
-  pubSub;
-  matchQueues;
+
+export default class CartesifyTransport {
+  pubSub: any;
+  matchQueues: any;
   constructor() {
     this.pubSub = new InMemoryPubSub();
     this.matchQueues = new Map();
   }
+
   init(app, games) {
     app.get('/test', (req, res) => {
       res
@@ -20,6 +22,7 @@ class CustomTransport {
     });
     games.forEach((game) => {
       const gameName = game.name;
+
       app.post(`/${gameName}/update`, async (req, res) => {
         const { action, stateID, matchID, playerID } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
@@ -31,11 +34,13 @@ class CustomTransport {
           app.loclals.auth
         );
         const matchQueue = this.getMatchQueue(matchID);
+
         await matchQueue.add(() =>
           master.onUpdate(action, stateID, matchID, playerID)
         );
         res.status(200).send({ success: true });
       });
+
       app.post(`/${gameName}/sync`, async (req, res) => {
         const { matchID, playerID, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
@@ -46,6 +51,7 @@ class CustomTransport {
           transport,
           app.locals.auth
         );
+
         const syncResponse = await master.onSync(
           matchID,
           playerID,
@@ -53,6 +59,7 @@ class CustomTransport {
         );
         res.status(200).send(syncResponse);
       });
+
       app.post(`/${gameName}/chat`, async (req, res) => {
         const { matchID, message, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
@@ -63,9 +70,11 @@ class CustomTransport {
           transport,
           app.locals.auth
         );
+
         await master.onChatMessage(matchID, message, credentials);
         res.status(200).send({ success: true });
       });
+
       app.post(`/${gameName}/connect`, async (req, res) => {
         const { matchID, playerID, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
@@ -76,9 +85,11 @@ class CustomTransport {
           transport,
           app.locals.auth
         );
+
         await master.onConnectionChange(matchID, playerID, credentials, true);
         res.status(200).send({ success: true });
       });
+
       app.post(`/${gameName}/disconnect`, async (req, res) => {
         const { matchID, playerID, credentials } = req.body;
         const filterPlayerView = getFilterPlayerView(game);
@@ -89,11 +100,13 @@ class CustomTransport {
           transport,
           app.locals.auth
         );
+
         await master.onConnectionChange(matchID, playerID, credentials, false);
         res.status(200).send({ success: true });
       });
     });
   }
+
   createTransportAPI(matchID, filterPlayerView) {
     return {
       send: ({ playerID, ...data }) => {
@@ -112,4 +125,3 @@ class CustomTransport {
     return this.matchQueues.get(matchID);
   }
 }
-export { CustomTransport };

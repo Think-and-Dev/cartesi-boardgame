@@ -1,55 +1,169 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import http from 'http';
+import Koa from 'koa';
+import Router from '@koa/router';
+import type { CorsOptions } from 'cors';
 import { CartesifyBackend } from '@calindra/cartesify-backend';
+
 import { configureRouter, configureApp } from './api';
 import { DBFromEnv } from './db';
 import { ProcessGameConfig } from '../core/game';
-// import logger from '../core/logger';
+import * as logger from '../core/logger';
 import { Auth } from './auth';
-import { CustomTransport } from './transport/cartesify-transport';
+import type { Server as ServerTypes, Game, StorageAPI } from '../types';
+import CartesifyTransport from './transport/cartesify-transport';
 
-let dapp;
+export type KoaServer = ReturnType<Koa['listen']>;
+
+// let dapp;
+let isDappRunning = false;
 CartesifyBackend.createDapp().then((initDapp) => {
   initDapp
     .start()
     .then(() => {
       console.log(`Dapp initialized`);
+      isDappRunning = true;
     })
     .catch((error) => {
       console.error(`Dapp initialization failed: ${error}`);
-      // eslint-disable-next-line unicorn/no-process-exit
-      process.exit(1);
     });
-  dapp = initDapp;
+  //   dapp = initDapp;
 });
 
-const app = express();
-const port = 8383;
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(cors({ origin: '*' }));
+interface ServerConfig {
+  port?: number;
+  callback?: () => void;
+  lobbyConfig?: {
+    apiPort: number;
+    apiCallback?: () => void;
+  };
+}
 
-const games = [].map((game) => ProcessGameConfig(game));
+/**
+ * Build config object from server run arguments.
+ */
+export const createServerRunConfig = (
+  portOrConfig: number | ServerConfig,
+  callback?: () => void
+): ServerConfig =>
+  portOrConfig && typeof portOrConfig === 'object'
+    ? {
+        ...portOrConfig,
+        callback: portOrConfig.callback || callback,
+      }
+    : { port: portOrConfig as number, callback };
 
-const db = DBFromEnv();
-app.locals.db = db;
-const auth = new Auth({
-  authenticateCredentials: undefined,
-  generateCredentials: undefined,
-});
-app.locals.auth = auth;
-const transport = new CustomTransport();
-transport.init(app, games);
+export const getPortFromServer = (
+  server: KoaServer
+): string | number | null => {
+  const address = server.address();
+  if (typeof address === 'string') return address;
+  if (address === null) return null;
+  return address.port;
+};
 
-const router = express.Router();
-// configureRouter({ router, db, games, uuid: undefined, auth });
-// configureApp(app, router, '*');
+interface ServerOpts {
+  games: Game[];
+  origins?: CorsOptions['origin'];
+  apiOrigins?: CorsOptions['origin'];
+  db?: StorageAPI.Async | StorageAPI.Sync;
+  transport?: CartesifyTransport;
+  uuid?: () => string;
+  authenticateCredentials?: ServerTypes.AuthenticateCredentials;
+  generateCredentials?: ServerTypes.GenerateCredentials;
+}
 
-const server = http.createServer(app);
-server.listen(port, () => {
-  console.log(`[server]: Server is running at http://loaclhost:${port}`);
-});
+/**
+ * Instantiate a game server.
+ *
+ * @param games - The games that this server will handle.
+ * @param db - The interface with the database.
+ * @param transport - The interface with the clients.
+ * @param authenticateCredentials - Function to test player credentials.
+ * @param origins - Allowed origins to use this server, e.g. `['http://localhost:3000']`.
+ * @param apiOrigins - Allowed origins to use the Lobby API, defaults to `origins`.
+ * @param generateCredentials - Method for API to generate player credentials.
+ * @param lobbyConfig - Configuration options for the Lobby API server.
+ */
+export default function Server({
+  games,
+  db,
+  transport,
+  uuid,
+  origins,
+  apiOrigins = origins,
+  generateCredentials = uuid,
+  authenticateCredentials,
+}: ServerOpts) {
+  const app: ServerTypes.App = new Koa();
 
-export default server;
+  games = games.map((game) => ProcessGameConfig(game));
+
+  if (db === undefined) {
+    db = DBFromEnv();
+  }
+  app.context.db = db;
+
+  const auth = new Auth({ authenticateCredentials, generateCredentials });
+  app.context.auth = auth;
+
+  if (transport === undefined) {
+    transport = new CartesifyTransport();
+  }
+
+  transport.init(app, games);
+
+  const router = new Router<any, ServerTypes.AppCtx>();
+
+  return {
+    app,
+    db,
+    auth,
+    router,
+    transport,
+
+    run: async (portOrConfig: number | ServerConfig, callback?: () => void) => {
+      if (!isDappRunning) {
+        throw new Error('Cartesify Dapp failed to start...');
+      }
+      const serverRunConfig = createServerRunConfig(portOrConfig, callback);
+      configureRouter({ router, db, games, uuid, auth });
+
+      // DB
+      await db.connect();
+
+      // Lobby API
+      const lobbyConfig = serverRunConfig.lobbyConfig;
+      let apiServer: KoaServer | undefined;
+      if (!lobbyConfig || !lobbyConfig.apiPort) {
+        configureApp(app, router, apiOrigins);
+      } else {
+        // Run API in a separate Koa app.
+        const api: ServerTypes.App = new Koa();
+        api.context.db = db;
+        api.context.auth = auth;
+        configureApp(api, router, apiOrigins);
+        await new Promise((resolve) => {
+          apiServer = api.listen(lobbyConfig.apiPort, () => resolve(undefined));
+        });
+        if (lobbyConfig.apiCallback) lobbyConfig.apiCallback();
+        logger.info(`API serving on ${getPortFromServer(apiServer)}...`);
+      }
+
+      // Run Game Server (+ API, if necessary).
+      let appServer: KoaServer;
+      await new Promise((resolve) => {
+        appServer = app.listen(serverRunConfig.port, () => resolve(undefined));
+      });
+      if (serverRunConfig.callback) serverRunConfig.callback();
+      logger.info(`App serving on ${getPortFromServer(appServer)}...`);
+
+      return { apiServer, appServer };
+    },
+
+    kill: (servers: { apiServer?: KoaServer; appServer: KoaServer }) => {
+      if (servers.apiServer) {
+        servers.apiServer.close();
+      }
+      servers.appServer.close();
+    },
+  };
+}
