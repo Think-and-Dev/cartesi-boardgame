@@ -34,6 +34,20 @@
     "changelog": "node ./scripts/changelog.js",
     "clean": "node ./scripts/clean.js"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./server": {
+      "import": "./dist/esm/server.js",
+      "require": "./dist/cjs/server.js"
+    },
+    "./client": {
+      "import": "./dist/esm/client.js",
+      "require": "./dist/cjs/client.js"
+    }
+  },
   "sideEffects": false,
   "main": "dist/boardgameio.js",
   "unpkg": "dist/boardgameio.min.js",
@@ -70,15 +84,8 @@
     "node": ">=10.0",
     "npm": ">=6.0"
   },
-  "author": "nicolodavis@gmail.com",
+  "author": "hello@thinkanddev.com",
   "license": "MIT",
-  "funding": [
-    "https://github.com/boardgameio/boardgame.io?sponsor=1",
-    {
-      "type": "opencollective",
-      "url": "https://opencollective.com/boardgameio"
-    }
-  ],
   "devDependencies": {
     "@babel/cli": "^7.16.0",
     "@babel/core": "^7.16.0",

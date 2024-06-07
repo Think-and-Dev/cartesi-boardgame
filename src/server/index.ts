@@ -14,7 +14,6 @@ import CartesifyTransport from './transport/cartesify-transport';
 export type KoaServer = ReturnType<Koa['listen']>;
 
 // let dapp;
-let isDappRunning = false;
 CartesifyBackend.createDapp().then((initDapp) => {
   initDapp
     .start()
@@ -84,7 +83,7 @@ interface ServerOpts {
  * @param generateCredentials - Method for API to generate player credentials.
  * @param lobbyConfig - Configuration options for the Lobby API server.
  */
-function Server({
+export function Server({
   games,
   db,
   transport,
@@ -163,5 +162,3 @@ function Server({
     },
   };
 }
-
-export default { Server };

@@ -43,7 +43,11 @@ const plugins = [
 
 const serverPlugins = [
   resolve(),
-  typescript({ typescript: ts }),
+  typescript({
+    typescript: ts,
+    tsconfig: 'tsconfig.json',
+    useTsconfigDeclarationDir: true,
+  }),
   babel({ exclude: ['**/node_modules/**'] }),
   commonjs({ include: 'node_modules/**' }),
 ];
