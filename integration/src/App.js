@@ -16,7 +16,7 @@ const App = Client({
   board: Board,
   debug: false,
   ai: {
-    enumerate: G => {
+    enumerate: (G) => {
       let moves = [];
       for (let i = 0; i < 9; i++) {
         if (G.cells[i] === null) {

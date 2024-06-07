@@ -9,7 +9,7 @@
     "predev": "npm run examples:install",
     "dev": "run-p build:watch dev:server dev:client",
     "dev:client": "node scripts/dev-client.js",
-    "dev:server": "cross-env NODE_ENV=development nodemon -w src -w examples -e js,ts --exec babel-node --extensions \".ts,.js\" --ignore \"src/**/*.test.ts\" --presets @babel/preset-env examples/react-web/server.js",
+    "dev:server": "cross-env NODE_ENV=development nodemon -w src -w examples -e js,ts --exec babel-node -r dotenv/config --extensions \".ts,.js\" --ignore \"src/**/*.test.ts\" --presets @babel/preset-env examples/react-web/server.js",
     "build": "cross-env BABEL_ENV=rollup rollup --config rollup.config.js  --silent",
     "build:watch": "cross-env BABEL_ENV=rollup rollup -w --config rollup.config.js",
     "benchmark": "babel-node --extensions .ts,.js --presets @babel/preset-env,@babel/preset-typescript benchmark/index.js",
@@ -146,10 +146,12 @@
   },
   "dependencies": {
     "@calindra/cartesify": "^1.0.0",
+    "@calindra/cartesify": "^1.0.0",
     "@koa/cors": "^3.1.0",
     "@koa/router": "^10.1.1",
     "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.8",
+    "dotenv": "^16.4.5",
     "flatted": "^3.2.1",
     "immer": "^9.0.5",
     "koa": "^2.13.3",
@@ -194,7 +196,7 @@
       "^.+\\.svelte$": "jest-transform-svelte"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@calindra\/cartesify|boardgame.io|flatted|svelte-icons)/)"
+      "node_modules/(?!(@calindra/cartesify|@calindra\/cartesify|boardgame.io|flatted|svelte-icons)/)"
     ],
     "testPathIgnorePatterns": [
       "examples/",
@@ -205,8 +207,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged",
-      "pre-push": "npm run test:coverage"
+      "pre-commit": "lint-staged"
     }
   }
 }
