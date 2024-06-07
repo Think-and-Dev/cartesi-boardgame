@@ -14,7 +14,7 @@ import { Client, createMoveDispatchers } from './client';
 import { ProcessGameConfig } from '../core/game';
 import { DummyTransport } from './transport/dummy';
 import { CartesifyTransport } from './transport/cartesify-transport';
-import { Transport } from './transport/transport';
+import type { Transport } from './transport/transport';
 import { LocalTransport, Local } from './transport/local';
 import { SocketIO } from './transport/socketio';
 import {
