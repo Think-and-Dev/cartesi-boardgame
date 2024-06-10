@@ -146,7 +146,6 @@
   },
   "dependencies": {
     "@calindra/cartesify": "^1.0.0",
-    "@calindra/cartesify": "^1.0.0",
     "@koa/cors": "^3.1.0",
     "@koa/router": "^10.1.1",
     "@types/koa": "^2.13.4",
