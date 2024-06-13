@@ -1,8 +1,8 @@
 {
   "name": "@think-and-dev/cartesify-boardgame",
-  "version": "0.0.1",
+  "version": "0.0.2-alpha",
   "description": "library for turn-based games",
-  "repository": "https://github.com/boardgameio/boardgame.io",
+  "repository": "https://github.com/think-and-dev/cartesi-boardgame",
   "scripts": {
     "prestart": "run-p examples:install build",
     "start": "run-p dev:server dev:client",
