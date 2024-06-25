@@ -10,7 +10,7 @@
     "dev": "run-p build:watch dev:server dev:client",
     "dev:client": "node scripts/dev-client.js",
     "dev:server": "cross-env NODE_ENV=development nodemon -w src -w examples -e js,ts --exec babel-node -r dotenv/config --extensions \".ts,.js\" --ignore \"src/**/*.test.ts\" --presets @babel/preset-env examples/react-web/server.js",
-    "build": "cross-env BABEL_ENV=rollup rollup --config rollup.config.js  --silent",
+    "build": "cross-env BABEL_ENV=rollup rollup --config rollup.config.js",
     "build:watch": "cross-env BABEL_ENV=rollup rollup -w --config rollup.config.js",
     "benchmark": "babel-node --extensions .ts,.js --presets @babel/preset-env,@babel/preset-typescript benchmark/index.js",
     "docs": "docsify serve docs",
@@ -49,15 +49,15 @@
     }
   },
   "sideEffects": false,
-  "main": "dist/boardgameio.js",
-  "unpkg": "dist/boardgameio.min.js",
-  "module": "dist/boardgameio.es.js",
+  "main": "dist/think-and-dev-cartesi-boardgame.js",
+  "unpkg": "dist/think-and-dev-cartesi-boardgame.min.js",
+  "module": "dist/think-and-dev-cartesi-boardgame.es.js",
   "types": "dist/types/src/types.d.ts",
   "files": [
     "src",
-    "dist/boardgameio.js",
-    "dist/boardgameio.min.js",
-    "dist/boardgameio.es.js",
+    "dist/think-and-dev-cartesi-boardgame.js",
+    "dist/think-and-dev-cartesi-boardgame.min.js",
+    "dist/think-and-dev-cartesi-boardgame.es.js",
     "dist/esm",
     "dist/cjs",
     "dist/types",
@@ -204,7 +204,7 @@
       "^.+\\.svelte$": "jest-transform-svelte"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@calindra/cartesify|@calindra/cartesify|boardgame.io|flatted|svelte-icons)/)"
+      "node_modules\/(?!(@calindra\/cartesify|@calindra\/cartesify-backend|boardgame.io|flatted|svelte-icons)\/)"
     ],
     "testPathIgnorePatterns": [
       "examples/",
