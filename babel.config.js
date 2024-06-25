@@ -27,4 +27,5 @@ module.exports = {
     '@babel/plugin-proposal-class-properties',
     '@babel/proposal-object-rest-spread',
   ],
+  exclude: ['node_modules'],
 };

@@ -49,7 +49,10 @@ const serverPlugins = [
     useTsconfigDeclarationDir: true,
   }),
   babel({ exclude: ['**/node_modules/**'] }),
-  commonjs({ include: 'node_modules/**' }),
+  commonjs({
+    include: 'node_modules/**',
+    exclude: ['node_modules/@calindra**'],
+  }),
 ];
 
 const minifiedPlugins = [
