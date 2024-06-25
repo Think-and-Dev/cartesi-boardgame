@@ -1,6 +1,6 @@
 {
-  "name": "@think-and-dev/cartesify-boardgame",
-  "version": "0.0.2-alpha",
+  "name": "@think-and-dev/cartesi-boardgame",
+  "version": "0.0.4-alpha",
   "description": "library for turn-based games",
   "repository": "https://github.com/think-and-dev/cartesi-boardgame",
   "scripts": {
