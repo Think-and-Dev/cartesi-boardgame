@@ -22,6 +22,7 @@ import { InitializeGame } from '../core/initialize';
 import { PlayerView } from '../plugins/main';
 import type { Transport, TransportOpts } from './transport/transport';
 import { DummyTransport } from './transport/dummy';
+import { CartesifyTransport } from './transport/cartesify-transport';
 import { ClientManager } from './manager';
 import type { TransportData } from '../master/master';
 import type {
@@ -120,7 +121,7 @@ export interface ClientOpts<
   game: Game<G, PluginAPIs>;
   debug?: DebugOpt | boolean;
   numPlayers?: number;
-  multiplayer?: (opts: TransportOpts) => Transport;
+  multiplayer?: ((opts: TransportOpts) => Transport) | string;
   matchID?: string;
   playerID?: PlayerID;
   credentials?: string;
@@ -189,7 +190,6 @@ export class _ClientImpl<
     this.playerID = playerID;
     this.matchID = matchID || 'default';
     this.credentials = credentials;
-    this.multiplayer = multiplayer;
     this.debugOpt = debug;
     this.manager = GlobalClientManager;
     this.gameStateOverride = null;
@@ -324,8 +324,19 @@ export class _ClientImpl<
 
     this.store = createStore(this.reducer, this.initialState, enhancer);
 
-    if (!multiplayer) multiplayer = DummyTransport;
-    this.transport = multiplayer({
+    let multiplayerTransport: (opts: TransportOpts) => Transport;
+
+    if (!multiplayer) {
+      multiplayerTransport = DummyTransport;
+    } else if (typeof multiplayer === 'string' && multiplayer === 'cartesify') {
+      multiplayerTransport = (opts: TransportOpts) =>
+        new CartesifyTransport(opts);
+    } else if (typeof multiplayer === 'function') {
+      multiplayerTransport = multiplayer;
+    } else {
+      throw new TypeError('Invalid multiplayer option');
+    }
+    this.transport = multiplayerTransport({
       transportDataCallback: (data) => this.receiveTransportData(data),
       gameKey: game,
       game: this.game,

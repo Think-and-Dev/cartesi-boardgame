@@ -24,7 +24,7 @@ export class CartesifyTransport extends Transport {
 
   constructor(opts: TransportOpts) {
     super(opts);
-    this.url = opts.server || 'https//localhost:5004';
+    this.url = opts.server || 'https://localhost:5004';
     this.matchID = opts.matchID || '';
     this.playerID = opts.playerID || null;
     this.credentials = opts.credentials;

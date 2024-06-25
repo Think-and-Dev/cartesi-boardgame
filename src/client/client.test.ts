@@ -12,9 +12,13 @@ import { CreateGameReducer } from '../core/reducer';
 import { InitializeGame } from '../core/initialize';
 import { Client, createMoveDispatchers } from './client';
 import { ProcessGameConfig } from '../core/game';
+import { DummyTransport, DummyImpl } from './transport/dummy';
+import { CartesifyTransport } from './transport/cartesify-transport';
+import type { TransportOpts } from './transport/transport';
 import { Transport } from './transport/transport';
 import { LocalTransport, Local } from './transport/local';
 import { SocketIOTransport, SocketIO } from './transport/socketio';
+
 import {
   update,
   sync,
@@ -136,6 +140,60 @@ test('isActive', () => {
   client.moves.A(42);
   expect(client.getState().G).toEqual({ arg: 42 });
   expect(client.getState().isActive).toBe(false);
+});
+
+describe('multiplayer transports', () => {
+  test('default transport', () => {
+    const client = Client({
+      game: {
+        moves: {
+          A: (_, arg) => ({ arg }),
+        },
+      },
+    });
+    expect((client as any).transport).toBeInstanceOf(DummyImpl);
+  });
+
+  test('CartesifyTransport', () => {
+    const client = Client({
+      game: {
+        moves: {
+          A: (_, arg) => ({ arg }),
+        },
+      },
+      multiplayer: () =>
+        new CartesifyTransport({
+          url: 'http://localhost:5004',
+        } as unknown as TransportOpts),
+    });
+    expect((client as any).transport).toBeInstanceOf(CartesifyTransport);
+  });
+
+  test('custom transport function', () => {
+    const customTransport = jest.fn();
+    const client = Client({
+      game: {
+        moves: {
+          A: (_, arg) => ({ arg }),
+        },
+      },
+      multiplayer: customTransport,
+    });
+    expect(customTransport).toHaveBeenCalled();
+  });
+
+  test('invalid multiplayer value', () => {
+    expect(() => {
+      Client({
+        game: {
+          moves: {
+            A: (_, arg) => ({ arg }),
+          },
+        },
+        multiplayer: 'invalid',
+      });
+    }).toThrow('Invalid multiplayer option');
+  });
 });
 
 describe('multiplayer', () => {
@@ -448,8 +506,10 @@ describe('strip secret only on server', () => {
         setup: () => initial,
         playerView: ({ G }) => {
           const r = { ...G };
-          r.sum = r.secret.reduce((prev, curr) => prev + curr);
-          delete r.secret;
+          if (r.secret) {
+            r.sum = r.secret.reduce((prev, curr) => prev + curr, 0);
+            delete r.secret;
+          }
           return r;
         },
         moves: { A: ({ playerID }) => ({ A: playerID }) },
@@ -894,9 +954,9 @@ describe('subscribe', () => {
         game: {},
         multiplayer: Local(),
       });
-      client.subscribe(fn);
-      expect(fn).not.toBeCalled();
       client.start();
+      expect(fn).not.toBeCalled();
+      client.subscribe(fn);
       expect(fn).toBeCalled();
       client.stop();
     });

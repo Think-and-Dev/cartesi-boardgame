@@ -13,3 +13,4 @@ npm
 .vscode/*
 .rpt2_cache/
 .rush/
+.env
