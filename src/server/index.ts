@@ -1,24 +1,32 @@
-/*
- * Copyright 2017 The boardgame.io Authors
- *
- * Use of this source code is governed by a MIT-style
- * license that can be found in the LICENSE file or at
- * https://opensource.org/licenses/MIT.
- */
-
 import Koa from 'koa';
 import Router from '@koa/router';
 import type { CorsOptions } from 'cors';
+import { CartesifyBackend } from '@calindra/cartesify-backend';
 
 import { configureRouter, configureApp } from './api';
 import { DBFromEnv } from './db';
 import { ProcessGameConfig } from '../core/game';
 import * as logger from '../core/logger';
 import { Auth } from './auth';
-import { SocketIO } from './transport/socketio';
 import type { Server as ServerTypes, Game, StorageAPI } from '../types';
+import CartesifyTransport from './transport/cartesify-transport';
 
 export type KoaServer = ReturnType<Koa['listen']>;
+
+// let dapp;
+CartesifyBackend.createDapp().then((initDapp) => {
+  initDapp
+    .start()
+    .then(() => {
+      console.log(`Dapp initialized`);
+      // TODO: Should we check if the dapp is running when executing the server?
+      // isDappRunning = true;
+    })
+    .catch((error) => {
+      console.error(`Dapp initialization failed: ${error}`);
+    });
+  //   dapp = initDapp;
+});
 
 interface ServerConfig {
   port?: number;
@@ -27,11 +35,6 @@ interface ServerConfig {
     apiPort: number;
     apiCallback?: () => void;
   };
-}
-
-interface HttpsOptions {
-  cert: string;
-  key: string;
 }
 
 /**
@@ -62,11 +65,10 @@ interface ServerOpts {
   origins?: CorsOptions['origin'];
   apiOrigins?: CorsOptions['origin'];
   db?: StorageAPI.Async | StorageAPI.Sync;
-  transport?: SocketIO;
+  transport?: CartesifyTransport;
   uuid?: () => string;
   authenticateCredentials?: ServerTypes.AuthenticateCredentials;
   generateCredentials?: ServerTypes.GenerateCredentials;
-  https?: HttpsOptions;
 }
 
 /**
@@ -79,14 +81,12 @@ interface ServerOpts {
  * @param origins - Allowed origins to use this server, e.g. `['http://localhost:3000']`.
  * @param apiOrigins - Allowed origins to use the Lobby API, defaults to `origins`.
  * @param generateCredentials - Method for API to generate player credentials.
- * @param https - HTTPS configuration options passed through to the TLS module.
  * @param lobbyConfig - Configuration options for the Lobby API server.
  */
 export function Server({
   games,
   db,
   transport,
-  https,
   uuid,
   origins,
   apiOrigins = origins,
@@ -94,7 +94,6 @@ export function Server({
   authenticateCredentials,
 }: ServerOpts) {
   const app: ServerTypes.App = new Koa();
-
   games = games.map((game) => ProcessGameConfig(game));
 
   if (db === undefined) {
@@ -106,17 +105,8 @@ export function Server({
   app.context.auth = auth;
 
   if (transport === undefined) {
-    transport = new SocketIO({ https });
+    transport = new CartesifyTransport();
   }
-  if (origins === undefined) {
-    console.warn(
-      'Server `origins` option is not set.\n' +
-        'Since boardgame.io@0.45, CORS is not enabled by default and you must ' +
-        'explicitly set the origins that are allowed to connect to the server.\n' +
-        'See https://boardgame.io/documentation/#/api/Server'
-    );
-  }
-  transport.init(app, games, origins);
 
   const router = new Router<any, ServerTypes.AppCtx>();
 
@@ -129,6 +119,7 @@ export function Server({
 
     run: async (portOrConfig: number | ServerConfig, callback?: () => void) => {
       const serverRunConfig = createServerRunConfig(portOrConfig, callback);
+      transport.init(router, games);
       configureRouter({ router, db, games, uuid, auth });
 
       // DB
@@ -146,7 +137,7 @@ export function Server({
         api.context.auth = auth;
         configureApp(api, router, apiOrigins);
         await new Promise((resolve) => {
-          apiServer = api.listen(lobbyConfig.apiPort, resolve);
+          apiServer = api.listen(lobbyConfig.apiPort, () => resolve(undefined));
         });
         if (lobbyConfig.apiCallback) lobbyConfig.apiCallback();
         logger.info(`API serving on ${getPortFromServer(apiServer)}...`);
@@ -155,7 +146,7 @@ export function Server({
       // Run Game Server (+ API, if necessary).
       let appServer: KoaServer;
       await new Promise((resolve) => {
-        appServer = app.listen(serverRunConfig.port, resolve);
+        appServer = app.listen(serverRunConfig.port, () => resolve(undefined));
       });
       if (serverRunConfig.callback) serverRunConfig.callback();
       logger.info(`App serving on ${getPortFromServer(appServer)}...`);

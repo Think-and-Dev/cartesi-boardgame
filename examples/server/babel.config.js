@@ -16,14 +16,6 @@ module.exports = {
     },
   },
   plugins: [
-    [
-      'module-resolver',
-      {
-        alias: {
-          '@think-and-dev/cartesi-boardgame': './packages',
-        },
-      },
-    ],
     '@babel/plugin-proposal-class-properties',
     '@babel/proposal-object-rest-spread',
   ],
