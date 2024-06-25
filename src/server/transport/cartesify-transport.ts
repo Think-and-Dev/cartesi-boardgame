@@ -18,7 +18,7 @@ export default class CartesifyTransport {
     appRouter.get('/test', (req, res) => {
       res
         .status(200)
-        .send({ message: 'El transport esta funcionando correctamente' });
+        .send({ message: 'Transport is working correctly' });
     });
     games.forEach((game) => {
       const gameName = game.name;

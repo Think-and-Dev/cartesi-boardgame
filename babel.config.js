@@ -20,7 +20,7 @@ module.exports = {
       'module-resolver',
       {
         alias: {
-          '@think-and-dev/cartesify-boardgame': './packages',
+          '@think-and-dev/cartesi-boardgame': './packages',
         },
       },
     ],
