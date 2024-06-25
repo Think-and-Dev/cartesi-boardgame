@@ -152,6 +152,7 @@
     "typescript": "^3.8.2"
   },
   "dependencies": {
+    "@calindra/cartesify": "^1.0.0",
     "@calindra/cartesify-backend": "^1.0.1",
     "@koa/cors": "^3.1.0",
     "@koa/router": "^10.1.1",
@@ -203,7 +204,7 @@
       "^.+\\.svelte$": "jest-transform-svelte"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@calindra/cartesify|@calindra\/cartesify|boardgame.io|flatted|svelte-icons)/)"
+      "node_modules/(?!(@calindra/cartesify|@calindra/cartesify|boardgame.io|flatted|svelte-icons)/)"
     ],
     "testPathIgnorePatterns": [
       "examples/",
