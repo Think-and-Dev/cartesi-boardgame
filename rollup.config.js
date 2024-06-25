@@ -51,7 +51,7 @@ const serverPlugins = [
   babel({ exclude: ['**/node_modules/**'] }),
   commonjs({
     include: 'node_modules/**',
-    exclude: ['node_modules/@calindra**'],
+    ignore: ['node_modules/@calindra/cartesify/**'],
   }),
 ];
 
@@ -60,7 +60,7 @@ const minifiedPlugins = [
   resolve({ browser: true }),
   typescript({ typescript: ts }),
   svelte({ extensions: ['.svelte'] }),
-  commonjs(),
+  commonjs({}),
   replace({
     include: 'src/**',
     'process.env.NODE_ENV': JSON.stringify('development'),
@@ -115,16 +115,16 @@ export default [
     plugins,
   },
 
-  // Browser minified version.
-  {
-    input: 'packages/client.ts',
-    output: [
-      {
-        file: pkg.unpkg,
-        format: 'umd',
-        name: 'BoardgameIO',
-      },
-    ],
-    plugins: minifiedPlugins,
-  },
+  // // Browser minified version.
+  // {
+  //   input: 'packages/client.ts',
+  //   output: [
+  //     {
+  //       file: pkg.unpkg,
+  //       format: 'umd',
+  //       name: 'think-and-dev-cartesi-boardgame',
+  //     },
+  //   ],
+  //   plugins: minifiedPlugins,
+  // },
 ];
