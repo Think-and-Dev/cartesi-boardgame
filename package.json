@@ -157,9 +157,6 @@
     "@koa/router": "^10.1.1",
     "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.8",
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
     "flatted": "^3.2.1",
     "http": "^0.0.1-security",
     "immer": "^9.0.5",
@@ -205,7 +202,7 @@
       "^.+\\.svelte$": "jest-transform-svelte"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@calindra\/cartesify|boardgame.io|flatted|svelte-icons)/)"
+      "node_modules/(?!(@calindra/cartesify|@calindra\/cartesify|boardgame.io|flatted|svelte-icons)/)"
     ],
     "testPathIgnorePatterns": [
       "examples/",
