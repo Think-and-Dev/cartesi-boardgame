@@ -1,5 +1,7 @@
 # cartesi-boardgame
+
 Framework for developing board games in Cartesi, inspired by Boardgame.io
+
 <p align="center"><strong>The project is not being actively developed at the moment, but is pretty stable and used in several games. If you would like to become a maintainer, please open an issue to discuss.</strong></p>
 
 <p align="center">
