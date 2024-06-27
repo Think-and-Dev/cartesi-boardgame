@@ -11,6 +11,7 @@ import { Cartesify } from '@calindra/cartesify';
 interface CartesifyOpts {
   server?: string;
   dappAddress: string;
+  nodeUrl: string;
 }
 
 type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
@@ -32,8 +33,8 @@ export class CartesifyTransport extends Transport {
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress: opts.dappAddress,
       endpoints: {
-        graphQL: new URL(`${this.url}/graphql`),
-        inspect: new URL(`${this.url}/inspect`),
+        graphQL: new URL(`${opts.nodeUrl}/graphql`),
+        inspect: new URL(`${opts.nodeUrl}/inspect`),
       },
     });
   }
@@ -295,11 +296,10 @@ export class CartesifyTransport extends Transport {
   }
 }
 
-export function CartesiMultiplayer({ server, dappAddress }: CartesifyOpts) {
+export function CartesiMultiplayer(cartesifyOpts: CartesifyOpts) {
   return (transportOpts: TransportOpts) =>
     new CartesifyTransport({
-      server,
-      dappAddress,
+      ...cartesifyOpts,
       ...transportOpts,
     });
 }
