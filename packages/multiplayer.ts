@@ -7,6 +7,6 @@
  */
 
 import { Local } from '../src/client/transport/local';
-import { SocketIO } from '../src/client/transport/socketio';
+import { CartesiMultiplayer } from '../src/client/transport/cartesify-transport';
 
-export { Local, SocketIO };
+export { Local, CartesiMultiplayer };

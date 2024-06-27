@@ -10,7 +10,7 @@ import { Cartesify } from '@calindra/cartesify';
 
 interface CartesifyOpts {
   server?: string;
-  cartesifyOpts?: CartesifyOpts;
+  dappAddress: string;
 }
 
 type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
@@ -22,16 +22,15 @@ export class CartesifyTransport extends Transport {
   protected declare credentials?: string;
   protected cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
 
-  constructor(opts: TransportOpts) {
+  constructor(opts: CartesifyTransportOpts) {
     super(opts);
     this.url = opts.server || 'https://localhost:5004';
     this.matchID = opts.matchID || '';
     this.playerID = opts.playerID || null;
     this.credentials = opts.credentials;
 
-    const DAPP_ADDRESS = '';
     this.cartesifyFetch = Cartesify.createFetch({
-      dappAddress: DAPP_ADDRESS,
+      dappAddress: opts.dappAddress,
       endpoints: {
         graphQL: new URL(`${this.url}/graphql`),
         inspect: new URL(`${this.url}/inspect`),
@@ -296,10 +295,11 @@ export class CartesifyTransport extends Transport {
   }
 }
 
-export function CartesiMultiplayer({ server }: CartesifyOpts = {}) {
-  return (transportOpts: CartesifyTransportOpts) =>
+export function CartesiMultiplayer({ server, dappAddress }: CartesifyOpts) {
+  return (transportOpts: TransportOpts) =>
     new CartesifyTransport({
       server,
+      dappAddress,
       ...transportOpts,
     });
 }
