@@ -328,9 +328,6 @@ export class _ClientImpl<
 
     if (!multiplayer) {
       multiplayerTransport = DummyTransport;
-    } else if (typeof multiplayer === 'string' && multiplayer === 'cartesify') {
-      multiplayerTransport = (opts: TransportOpts) =>
-        new CartesifyTransport(opts);
     } else if (typeof multiplayer === 'function') {
       multiplayerTransport = multiplayer;
     } else {
