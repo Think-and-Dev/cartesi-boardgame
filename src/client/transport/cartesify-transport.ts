@@ -7,11 +7,13 @@ import type {
   PlayerID,
 } from '../../types';
 import { Cartesify } from '@calindra/cartesify';
+import { ethers } from 'ethers';
 
 interface CartesifyOpts {
   server?: string;
   dappAddress: string;
-  nodeUrl: string;
+  nodeUrl?: string;
+  rpcUrl?: string;
 }
 
 type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
@@ -26,6 +28,8 @@ export class CartesifyTransport extends Transport {
   constructor(opts: CartesifyTransportOpts) {
     super(opts);
     this.url = opts.server || 'https://localhost:5004';
+    opts.nodeUrl = opts.nodeUrl || 'http://localhost:8080';
+    opts.rpcUrl = opts.rpcUrl || 'http://localhost:8545';
     this.matchID = opts.matchID || '';
     this.playerID = opts.playerID || null;
     this.credentials = opts.credentials;
@@ -36,6 +40,7 @@ export class CartesifyTransport extends Transport {
         graphQL: new URL(`${opts.nodeUrl}/graphql`),
         inspect: new URL(`${opts.nodeUrl}/inspect`),
       },
+      provider: ethers.getDefaultProvider(opts.rpcUrl),
     });
   }
 
