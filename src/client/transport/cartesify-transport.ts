@@ -33,6 +33,7 @@ export class CartesifyTransport extends Transport {
     this.matchID = opts.matchID || '';
     this.playerID = opts.playerID || null;
     this.credentials = opts.credentials;
+    const provider = ethers.getDefaultProvider(opts.rpcUrl);
 
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress: opts.dappAddress,
@@ -40,7 +41,8 @@ export class CartesifyTransport extends Transport {
         graphQL: new URL(`${opts.nodeUrl}/graphql`),
         inspect: new URL(`${opts.nodeUrl}/inspect`),
       },
-      provider: ethers.getDefaultProvider(opts.rpcUrl),
+      provider: provider,
+      signer: new ethers.VoidSigner('0x', provider),
     });
   }
 
