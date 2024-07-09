@@ -119,7 +119,7 @@ export function Server({
 
     run: async (portOrConfig: number | ServerConfig, callback?: () => void) => {
       const serverRunConfig = createServerRunConfig(portOrConfig, callback);
-      transport.init(router, games);
+      transport.init({ appRouter: router, db, games, auth });
       configureRouter({ router, db, games, uuid, auth });
 
       // DB

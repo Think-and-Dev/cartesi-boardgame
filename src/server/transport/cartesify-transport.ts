@@ -5,6 +5,10 @@ import PQueue from 'p-queue';
 import { Master } from '../../master/master';
 import { getFilterPlayerView } from '../../master/filter-player-view';
 import { InMemoryPubSub } from './pubsub/in-memory-pub-sub';
+import koaBody from 'koa-body';
+import type Router from '@koa/router';
+import type { Server, StorageAPI, Game } from '../../types';
+import type { Auth } from '../auth';
 
 export default class CartesifyTransport {
   pubSub: any;
@@ -14,95 +18,84 @@ export default class CartesifyTransport {
     this.matchQueues = new Map();
   }
 
-  init(appRouter, games) {
-    appRouter.get('/test', (req, res) => {
-      res
-        .status(200)
-        .send({ message: 'Transport is working correctly' });
+  init({
+    appRouter,
+    db,
+    auth,
+    games,
+  }: {
+    appRouter: Router<any, Server.AppCtx>;
+    auth: Auth;
+    games: Game[];
+    db: StorageAPI.Sync | StorageAPI.Async;
+  }) {
+    appRouter.get('/test', (ctx) => {
+      console.log('Accessing test route');
+      ctx.body = { message: 'Transport is working correctly' };
     });
     games.forEach((game) => {
       const gameName = game.name;
 
-      appRouter.post(`/${gameName}/update`, async (req, res) => {
-        const { action, stateID, matchID, playerID } = req.body;
+      appRouter.post(`/${gameName}/update`, koaBody(), async (ctx) => {
+        console.log('Received update request');
+        const { action, stateID, matchID, playerID } = ctx.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
-        const master = new Master(
-          game,
-          appRouter.locals.db,
-          transport,
-          appRouter.loclals.auth
-        );
+        const master = new Master(game, db, transport, auth);
         const matchQueue = this.getMatchQueue(matchID);
 
         await matchQueue.add(() =>
           master.onUpdate(action, stateID, matchID, playerID)
         );
-        res.status(200).send({ success: true });
+        ctx.body = { success: true };
       });
 
-      appRouter.post(`/${gameName}/sync`, async (req, res) => {
-        const { matchID, playerID, credentials } = req.body;
+      appRouter.post(`/${gameName}/sync`, koaBody(), async (ctx) => {
+        console.log('Received sync request');
+        const { matchID, playerID, credentials } = ctx.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
-        const master = new Master(
-          game,
-          appRouter.locals.db,
-          transport,
-          appRouter.locals.auth
-        );
+        const master = new Master(game, db, transport, auth);
 
         const syncResponse = await master.onSync(
           matchID,
           playerID,
           credentials
         );
-        res.status(200).send(syncResponse);
+        ctx.body = syncResponse;
       });
 
-      appRouter.post(`/${gameName}/chat`, async (req, res) => {
-        const { matchID, message, credentials } = req.body;
+      appRouter.post(`/${gameName}/chat`, koaBody(), async (ctx) => {
+        console.log('Received chat request');
+        const { matchID, message, credentials } = ctx.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
-        const master = new Master(
-          game,
-          appRouter.locals.db,
-          transport,
-          appRouter.locals.auth
-        );
+        const master = new Master(game, db, transport, auth);
 
         await master.onChatMessage(matchID, message, credentials);
-        res.status(200).send({ success: true });
+        ctx.body = { success: true };
       });
 
-      appRouter.post(`/${gameName}/connect`, async (req, res) => {
-        const { matchID, playerID, credentials } = req.body;
+      appRouter.post(`/${gameName}/connect`, koaBody(), async (ctx) => {
+        console.log('Received connect request');
+        const { matchID, playerID, credentials } = ctx.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
-        const master = new Master(
-          game,
-          appRouter.locals.db,
-          transport,
-          appRouter.locals.auth
-        );
+        const master = new Master(game, db, transport, auth);
 
         await master.onConnectionChange(matchID, playerID, credentials, true);
-        res.status(200).send({ success: true });
+        ctx.body = { success: true };
       });
 
-      appRouter.post(`/${gameName}/disconnect`, async (req, res) => {
-        const { matchID, playerID, credentials } = req.body;
+      appRouter.post(`/${gameName}/disconnect`, koaBody(), async (ctx) => {
+        console.log('Received disconnect request');
+        const { matchID, playerID, credentials } = ctx.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
-        const master = new Master(
-          game,
-          appRouter.locals.db,
-          transport,
-          appRouter.locals.auth
-        );
+        const master = new Master(game, db, transport, auth);
 
         await master.onConnectionChange(matchID, playerID, credentials, false);
-        res.status(200).send({ success: true });
+        ctx.body = { success: true };
       });
     });
   }
