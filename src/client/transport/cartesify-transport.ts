@@ -24,6 +24,8 @@ export class CartesifyTransport extends Transport {
   protected declare playerID: PlayerID | null;
   protected declare credentials?: string;
   protected cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
+  protected pollingInterval: number = 5000; // 5 seconds
+  protected pollingHandles: { [key: string]: NodeJS.Timeout } = {};
 
   constructor(opts: CartesifyTransportOpts) {
     super(opts);
@@ -59,113 +61,8 @@ export class CartesifyTransport extends Transport {
       });
 
       if (response.ok) {
-        // Called when another player makes a move and the
-        // master broadcasts the update as a patch to other clients (including
-        // this one).
-        this.cartesifyFetch(`${this.url}/patch`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            matchID: this.matchID,
-            playerID: this.playerID,
-            credentials: this.credentials,
-          }),
-        }).then((patchResponse) => {
-          if (patchResponse.ok) {
-            patchResponse.json().then((data) => {
-              this.notifyClient({ type: 'patch', args: data });
-            });
-          }
-        });
-
-        // Called when another player makes a move and the
-        // master broadcasts the update to other clients (including
-        // this one).
-        this.cartesifyFetch(`${this.url}/update`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            matchID: this.matchID,
-            playerID: this.playerID,
-            credentials: this.credentials,
-          }),
-        }).then((updateResponse) => {
-          if (updateResponse.ok) {
-            updateResponse.json().then((data) => {
-              this.notifyClient({ type: 'update', args: data });
-            });
-          }
-        });
-
-        // Called when the client first connects to the master
-        // and requests the current game state.
-        this.cartesifyFetch(`${this.url}/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            matchID: this.matchID,
-            playerID: this.playerID,
-            credentials: this.credentials,
-          }),
-        }).then((syncResponse) => {
-          if (syncResponse.ok) {
-            syncResponse.json().then((data) => {
-              this.notifyClient({ type: 'sync', args: data });
-            });
-          }
-        });
-
-        // Called when new player joins the match or changes
-        // it's connection status
-        this.cartesifyFetch(`${this.url}/matchData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            matchID: this.matchID,
-            playerID: this.playerID,
-            credentials: this.credentials,
-          }),
-        }).then((matchDataResponse) => {
-          if (matchDataResponse.ok) {
-            matchDataResponse.json().then((data) => {
-              this.notifyClient({ type: 'matchData', args: data });
-            });
-          }
-        });
-
-        // Called when a chat message is sent and received in the game.
-        // This function handles the chat messages exchanged between players.
-        this.cartesifyFetch(`${this.url}/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            matchID: this.matchID,
-            playerID: this.playerID,
-            credentials: this.credentials,
-          }),
-        }).then((chatResponse) => {
-          if (chatResponse.ok) {
-            chatResponse.json().then((data) => {
-              this.notifyClient({ type: 'chat', args: data });
-            });
-          }
-        });
-
-        // Handle connection and disconnection with the server.
-        // Establishes the initial connection to the server and handles connect and disconnect events.
-        // On connection, the game state is synchronized and the connection state is set as active.
-        // In case of disconnection, the connection status is updated as inactive.
         this.setConnectionStatus(true);
+        this.startPolling();
       } else {
         throw new Error('Failed to connect');
       }
@@ -190,12 +87,53 @@ export class CartesifyTransport extends Transport {
 
       if (response.ok) {
         this.setConnectionStatus(false);
+        this.stopPolling();
       } else {
         throw new Error('Failed to disconnect');
       }
     } catch (error) {
       console.error('Error disconnecting from backend:', error);
     }
+  }
+
+  startPolling(): void {
+    const endpoints = ['patch', 'update', 'sync', 'matchData', 'chat'];
+    endpoints.forEach((endpoint) => {
+      this.pollingHandles[endpoint] = setInterval(async () => {
+        try {
+          const response = await this.cartesifyFetch(
+            `${this.url}/${endpoint}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            this.notifyClient({
+              type: endpoint as
+                | 'patch'
+                | 'update'
+                | 'sync'
+                | 'matchData'
+                | 'chat',
+              args: data,
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching ${endpoint}:`, error);
+        }
+      }, this.pollingInterval);
+    });
+  }
+
+  stopPolling(): void {
+    Object.values(this.pollingHandles).forEach((handle) =>
+      clearInterval(handle)
+    );
   }
 
   async sendAction(
