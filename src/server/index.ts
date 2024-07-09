@@ -15,6 +15,7 @@ export type KoaServer = ReturnType<Koa['listen']>;
 
 // let dapp;
 CartesifyBackend.createDapp().then((initDapp) => {
+  console.log(`Dapp initializing...`);
   initDapp
     .start()
     .then(() => {

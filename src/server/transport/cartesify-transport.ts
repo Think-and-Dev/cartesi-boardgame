@@ -76,9 +76,10 @@ export default class CartesifyTransport {
         ctx.body = { success: true };
       });
 
-      appRouter.post(`/${gameName}/connect`, koaBody(), async (ctx) => {
+      appRouter.post(`/connect`, koaBody(), async (ctx) => {
         console.log('Received connect request');
-        const { matchID, playerID, credentials } = ctx.body;
+        console.log('body:', ctx.request.body);
+        const { matchID, playerID, credentials } = ctx.request.body;
         const filterPlayerView = getFilterPlayerView(game);
         const transport = this.createTransportAPI(matchID, filterPlayerView);
         const master = new Master(game, db, transport, auth);
