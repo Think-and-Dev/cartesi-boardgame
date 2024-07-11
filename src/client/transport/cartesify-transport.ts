@@ -48,7 +48,7 @@ export class CartesifyTransport extends Transport {
 
   async connect(): Promise<void> {
     try {
-      const signResponse = await this.cartesifyFetch(`${this.url}/sign`, {
+      const response = await this.cartesifyFetch(`${this.url}/connect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,24 +60,9 @@ export class CartesifyTransport extends Transport {
         }),
       });
 
-      if (!signResponse.ok) {
-        throw new Error('Failed to sign');
-      }
-
-      const connectResponse = await this.cartesifyFetch(`${this.url}/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          matchID: this.matchID,
-          playerID: this.playerID,
-          credentials: this.credentials,
-        }),
-      });
-
-      if (connectResponse.ok) {
+      if (response.ok) {
         this.setConnectionStatus(true);
+        this.requestSync();
         this.startPolling();
       } else {
         throw new Error('Failed to connect');
