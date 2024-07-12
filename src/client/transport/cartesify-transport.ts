@@ -54,25 +54,9 @@ export class CartesifyTransport extends Transport {
 
   async connect(): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          matchID: this.matchID,
-          playerID: this.playerID,
-          credentials: this.credentials,
-        }),
-      });
-
-      if (response.ok) {
-        await this.requestSync();
-        this.startPolling();
-        this.setConnectionStatus(true);
-      } else {
-        throw new Error('Failed to connect');
-      }
+      await this.requestSync();
+      this.startPolling();
+      this.setConnectionStatus(true);
     } catch (error) {
       console.error('Error connecting to backend:', error);
     }
@@ -127,9 +111,9 @@ export class CartesifyTransport extends Transport {
           responseData.data &&
           responseData.index == this.nextDataIndex
         ) {
-          this.nextDataIndex = responseData.index + 1;
           const data = responseData.data;
           this.notifyClient(data);
+          this.nextDataIndex = responseData.index + 1;
         }
       }
     } catch (error) {

@@ -29,6 +29,7 @@ class TicTacToeClient {
     this.rootElement = rootElement;
     this.client = Client({
       game: TicTacToe,
+      playerID: '0',
       multiplayer: CartesiMultiplayer({
         server: 'http://localhost:8000',
         dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
@@ -73,6 +74,9 @@ class TicTacToeClient {
   }
 
   private update(state: State) {
+    if (state === null) {
+      return;
+    }
     const cells = this.rootElement.querySelectorAll('.cell');
     cells.forEach((cell) => {
       const cellId = parseInt((cell as HTMLElement).dataset.id!);

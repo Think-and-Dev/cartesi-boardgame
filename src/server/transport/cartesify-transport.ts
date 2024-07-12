@@ -216,17 +216,6 @@ export default class CartesifyTransport {
         ctx.body = { success: true };
       });
 
-      appRouter.post(`/${gameName}/connect`, koaBody(), async (ctx) => {
-        console.log('Received connect request');
-        console.log('body:', ctx.request.body);
-        const { matchID, playerID, credentials } = ctx.request.body;
-        const transport = this.getTransportAPI(matchID, filterPlayerView);
-        const master = new Master(game, db, transport, auth);
-
-        await master.onConnectionChange(matchID, playerID, credentials, true);
-        ctx.body = { success: true };
-      });
-
       appRouter.post(`/${gameName}/disconnect`, koaBody(), async (ctx) => {
         console.log('Received disconnect request');
         //TODO: Should we trust the playerID from the request body here? Maybe we should use the player address instead
