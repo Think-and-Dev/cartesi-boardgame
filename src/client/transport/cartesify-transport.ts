@@ -139,17 +139,16 @@ export class CartesifyTransport extends Transport {
     action: CredentialedActionShape.Any
   ): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/actions`, {
+      const response = await this.cartesifyFetch(`${this.url}/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          state,
           action,
           matchID: this.matchID,
           playerID: this.playerID,
-          credentials: this.credentials,
+          stateID: state._stateID,
         }),
       });
 
