@@ -121,7 +121,7 @@ export interface ClientOpts<
   game: Game<G, PluginAPIs>;
   debug?: DebugOpt | boolean;
   numPlayers?: number;
-  multiplayer?: ((opts: TransportOpts) => Transport) | string;
+  multiplayer?: (opts: TransportOpts) => Transport;
   matchID?: string;
   playerID?: PlayerID;
   credentials?: string;
@@ -181,7 +181,7 @@ export class _ClientImpl<
     debug,
     numPlayers,
     multiplayer,
-    matchID: matchID,
+    matchID,
     playerID,
     credentials,
     enhancer,
@@ -190,6 +190,7 @@ export class _ClientImpl<
     this.playerID = playerID;
     this.matchID = matchID || 'default';
     this.credentials = credentials;
+    this.multiplayer = multiplayer;
     this.debugOpt = debug;
     this.manager = GlobalClientManager;
     this.gameStateOverride = null;
