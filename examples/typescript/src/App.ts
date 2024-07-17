@@ -18,22 +18,28 @@ interface State {
     gameover?: {
       winner?: string;
     };
+    currentPlayer: string;
   };
+  matchID: string; // Agregar matchID al estado
 }
 
 class TicTacToeClient {
   private client: any;
   private rootElement: HTMLElement;
+  private matchID: string; // Mantener una referencia al matchID
 
   constructor(
     rootElement: HTMLElement,
     signer: ethers.Signer,
-    playerID: string = '0'
+    playerID: string = '0',
+    matchID: string
   ) {
     this.rootElement = rootElement;
+    this.matchID = matchID; // Asignar el matchID
     this.client = Client({
       game: TicTacToe,
       playerID,
+      setupData: { matchID }, // Pasar el matchID aquí
       multiplayer: CartesiMultiplayer({
         server: 'http://localhost:8000',
         dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
@@ -61,6 +67,7 @@ class TicTacToeClient {
     this.rootElement.innerHTML = `
       <table>${rows.join('')}</table>
       <p class="winner"></p>
+      <p class="current-player"></p>
     `;
   }
 
@@ -81,6 +88,10 @@ class TicTacToeClient {
     if (state === null) {
       return;
     }
+
+    console.log('Updating state:', state); // Verificar el estado recibido
+    console.log('MatchID:', this.matchID); // Verificar el estado recibido
+
     const cells = this.rootElement.querySelectorAll('.cell');
     cells.forEach((cell) => {
       const cellId = parseInt((cell as HTMLElement).dataset.id!);
@@ -99,6 +110,21 @@ class TicTacToeClient {
         messageEl.textContent = '';
       }
     }
+
+    // Actualizar el jugador actual en la interfaz de usuario
+    const currentPlayerEl = this.rootElement.querySelector(
+      '.current-player'
+    ) as HTMLElement;
+    if (currentPlayerEl) {
+      currentPlayerEl.textContent = `Current Player: ${state.ctx.currentPlayer}`;
+    }
+
+    const matchIDEl = this.rootElement.querySelector(
+      '.match-id'
+    ) as HTMLElement;
+    if (matchIDEl) {
+      matchIDEl.textContent = `Match ID: ${this.matchID}`;
+    }
   }
 }
 
@@ -110,17 +136,39 @@ async function main() {
   }
   const provider = new BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
-  const playerID = prompt('Enter player id (0 or 1):');
+  let matchID = prompt('Enter match ID:');
+  if (!matchID) {
+    return;
+  }
+  let playerID = prompt('Enter player id (0 or 1):');
   if (!playerID || (playerID !== '0' && playerID !== '1')) {
     return;
   }
-  if (appElement) {
-    const app = new TicTacToeClient(
-      appElement as HTMLElement,
-      signer,
-      playerID
-    );
+
+  function initializeClient() {
+    if (appElement) {
+      appElement.innerHTML = ''; // Limpiar el contenido previo
+      const app = new TicTacToeClient(
+        appElement as HTMLElement,
+        signer,
+        playerID,
+        matchID
+      );
+    }
   }
+
+  initializeClient();
+
+  // Listener para detectar cambios en el matchID
+  const changeMatchIDButton = document.createElement('button');
+  changeMatchIDButton.textContent = 'Change Match ID';
+  changeMatchIDButton.addEventListener('click', () => {
+    matchID = prompt('Enter new match ID:');
+    if (matchID) {
+      initializeClient(); // Reinicializar el cliente con el nuevo matchID
+    }
+  });
+  appElement?.appendChild(changeMatchIDButton);
 }
 
 main();
