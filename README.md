@@ -2,6 +2,8 @@
 
 Framework for developing board games in Cartesi, inspired by Boardgame.io
 
+<p align="center"><strong>This framework is in an early beta phase. Some features are still under development and will be added in future updates.</strong></p>
+
 <p align="center">
 <a href="https://www.npmjs.com/package/@think-and-dev/cartesi-boardgame"><img src="https://img.shields.io/npm/v/@think-and-dev/cartesi-boardgame" alt="npm version" /></a>
 </p>
@@ -19,19 +21,13 @@ At its core, T&D’s Boardgame Framework builds on boardgame.io, a popular libra
 The main feature of this framework is its ability to validate game moves using blockchain. This is achieved through two key Cartesi technologies: the Cartesi Virtual Machine (CVM) and Cartesify. 
 The CVM is an advanced system that allows complex computations to happen off-chain while keeping blockchain-level security. Cartesify, on the other hand, is a tool that simplifies the process of adapting existing applications to run in the Cartesi environment.
 
-
-
 ### WiP (Work in Progress)
 
 - **State Management**: Game state is managed seamlessly across clients, server and storage automatically.
 - **Multiplayer**: Game state is kept in sync in realtime and across platforms.
 - **AI**: Automatically generated bots that can play your game.
 - **Game Phases**: with different game rules and turn orders per phase.
-- **Lobby**: Player matchmaking and game creation.
-- **Prototyping**: Interface to simulate moves even before you render the game.
-- **Extendable**: Plugin system that allows creating new abstractions.
-- **View-layer Agnostic**: Use the vanilla JS client or the bindings for React / React Native.
-- **Logs**: Game logs with the ability to time travel (viewing the board at an earlier state).
+- **Lobby**: in progress.
 
 ## Usage
 
@@ -41,11 +37,13 @@ The CVM is an advanced system that allows complex computations to happen off-cha
 npm install @think-and-dev/cartesi-boardgame
 ```
 
-### Documentation's boardgame.io
+### Additional resources
 
-Read our [Full Documentation](https://boardgame.io/documentation/) to learn how to
-use boardgame.io, and join the [community on gitter](https://gitter.im/boardgame-io/General)
-to ask your questions!
+For more information about boardgame.io, please refer to its official documentation  [here](https://boardgame.io/documentation/).
+
+### Acknowledgments
+
+This project is supported by the [Cartesi](https://cartesi.io/) Grant Program. 
 
 ## License
 
