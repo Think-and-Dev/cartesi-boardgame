@@ -25,10 +25,15 @@ class TicTacToeClient {
   private client: any;
   private rootElement: HTMLElement;
 
-  constructor(rootElement: HTMLElement, signer: ethers.Signer) {
+  constructor(
+    rootElement: HTMLElement,
+    signer: ethers.Signer,
+    playerID: string = '0'
+  ) {
     this.rootElement = rootElement;
     this.client = Client({
       game: TicTacToe,
+      playerID,
       multiplayer: CartesiMultiplayer({
         server: 'http://localhost:8000',
         dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
@@ -73,6 +78,9 @@ class TicTacToeClient {
   }
 
   private update(state: State) {
+    if (state === null) {
+      return;
+    }
     const cells = this.rootElement.querySelectorAll('.cell');
     cells.forEach((cell) => {
       const cellId = parseInt((cell as HTMLElement).dataset.id!);
@@ -102,8 +110,16 @@ async function main() {
   }
   const provider = new BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
+  const playerID = prompt('Enter player id (0 or 1):');
+  if (!playerID || (playerID !== '0' && playerID !== '1')) {
+    return;
+  }
   if (appElement) {
-    const app = new TicTacToeClient(appElement as HTMLElement, signer);
+    const app = new TicTacToeClient(
+      appElement as HTMLElement,
+      signer,
+      playerID
+    );
   }
 }
 

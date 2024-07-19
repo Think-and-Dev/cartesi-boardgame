@@ -20,20 +20,26 @@ type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
 
 export class CartesifyTransport extends Transport {
   protected url: string;
-  protected declare matchID: string;
-  protected declare playerID: PlayerID | null;
-  protected declare credentials?: string;
   protected cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
-  protected pollingInterval: number = 5000; // 5 seconds
-  protected pollingHandles: { [key: string]: NodeJS.Timeout } = {};
+  protected pollingInterval = 1000; // 5 seconds
+  protected pollingEnabled: boolean;
+  nextDataIndex: number;
 
   constructor(opts: CartesifyTransportOpts) {
     super(opts);
-    this.url = opts.server || 'https://localhost:5004';
+    this.url = opts.server || 'https://127.0.0.1:8000';
+
+    if (this.url.slice(-1) != '/') {
+      // add trailing slash if not already present
+      this.url = this.url + '/';
+    }
+    this.url += this.gameName;
     opts.nodeUrl = opts.nodeUrl || 'http://localhost:8080';
-    this.matchID = opts.matchID || '';
+    this.matchID = opts.matchID || 'default';
     this.playerID = opts.playerID || null;
     this.credentials = opts.credentials;
+    this.pollingEnabled = false;
+    this.nextDataIndex = 0;
 
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress: opts.dappAddress,
@@ -48,24 +54,9 @@ export class CartesifyTransport extends Transport {
 
   async connect(): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          matchID: this.matchID,
-          playerID: this.playerID,
-          credentials: this.credentials,
-        }),
-      });
-
-      if (response.ok) {
-        this.setConnectionStatus(true);
-        this.startPolling();
-      } else {
-        throw new Error('Failed to connect');
-      }
+      await this.requestSync();
+      this.startPolling();
+      this.setConnectionStatus(true);
     } catch (error) {
       console.error('Error connecting to backend:', error);
     }
@@ -96,44 +87,51 @@ export class CartesifyTransport extends Transport {
     }
   }
 
-  startPolling(): void {
-    const endpoints = ['patch', 'update', 'sync', 'matchData', 'chat'];
-    endpoints.forEach((endpoint) => {
-      this.pollingHandles[endpoint] = setInterval(async () => {
-        try {
-          const response = await this.cartesifyFetch(
-            `${this.url}/${endpoint}`,
-            {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-
-          if (response.ok) {
-            const data = await response.json();
-            this.notifyClient({
-              type: endpoint as
-                | 'patch'
-                | 'update'
-                | 'sync'
-                | 'matchData'
-                | 'chat',
-              args: data,
-            });
-          }
-        } catch (error) {
-          console.error(`Error fetching ${endpoint}:`, error);
+  async doPoll() {
+    try {
+      const response = await this.cartesifyFetch(
+        `${this.url}/data?` +
+          new URLSearchParams({
+            matchID: this.matchID,
+            playerID: this.playerID,
+            index: this.nextDataIndex.toString(),
+          }).toString(),
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         }
-      }, this.pollingInterval);
-    });
+      );
+
+      if (response.ok) {
+        const responseData = await response.json();
+        if (
+          responseData &&
+          responseData.data &&
+          responseData.index == this.nextDataIndex
+        ) {
+          const data = responseData.data;
+          this.notifyClient(data);
+          this.nextDataIndex = responseData.index + 1;
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching data:`, error);
+    } finally {
+      if (this.pollingEnabled) {
+        setTimeout(() => this.doPoll(), this.pollingInterval);
+      }
+    }
+  }
+
+  startPolling(): void {
+    this.pollingEnabled = true;
+    this.doPoll();
   }
 
   stopPolling(): void {
-    Object.values(this.pollingHandles).forEach((handle) =>
-      clearInterval(handle)
-    );
+    this.pollingEnabled = false;
   }
 
   async sendAction(
@@ -141,17 +139,16 @@ export class CartesifyTransport extends Transport {
     action: CredentialedActionShape.Any
   ): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/actions`, {
+      const response = await this.cartesifyFetch(`${this.url}/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          state,
           action,
           matchID: this.matchID,
           playerID: this.playerID,
-          credentials: this.credentials,
+          stateID: state._stateID,
         }),
       });
 
@@ -212,10 +209,7 @@ export class CartesifyTransport extends Transport {
         }),
       });
 
-      if (response.ok) {
-        const syncData = await response.json();
-        this.notifyClient({ type: 'sync', ...syncData });
-      } else {
+      if (!response.ok) {
         throw new Error('Failed to request sync');
       }
     } catch (error) {
