@@ -3,8 +3,7 @@
 Framework for developing board games in Cartesi, inspired by Boardgame.io
 
 <p align="center">
-<a href="https://www.npmjs.com/package/@think-and-dev/cartesi-boardgame?activeTab=code"><img src="https://img.shields.io/npm/v/@think-and-dev/cartesi-boardgame
-" alt="npm version" /></a>
+<a href="https://www.npmjs.com/package/@think-and-dev/cartesi-boardgame"><img src="https://img.shields.io/npm/v/@think-and-dev/cartesi-boardgame" alt="npm version" /></a>
 </p>
 
 <p align="center">
