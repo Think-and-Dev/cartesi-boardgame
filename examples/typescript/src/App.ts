@@ -39,6 +39,7 @@ class TicTacToeClient {
     this.client = Client({
       game: TicTacToe,
       playerID,
+      matchID, // Pasar el matchID aquí
       setupData: { matchID }, // Pasar el matchID aquí
       multiplayer: CartesiMultiplayer({
         server: 'http://localhost:8000',
