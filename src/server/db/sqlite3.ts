@@ -2,6 +2,11 @@ import { bool } from 'prop-types';
 import type { State, Server, LogEntry } from '../../types';
 import * as StorageAPI from './base';
 import sqlite3 from 'sqlite3';
+interface MatchRow {
+  matchID: string;
+  initialState: string | null;
+  currentState: string | null;
+}
 /**
  * Sqlite data storage.
  */
@@ -149,18 +154,18 @@ export class Sqlite extends StorageAPI.Async {
       console.log(`An error ocurred for matchId in setState:${matchID}:`, error);
     }
   }
-private getLog(matchID : string):Promise<string|null>{
+private getLog(matchID : string):Promise<any>{
   return new Promise((resolve, reject) => {
     this.db.get('SELECT logs FROM logs WHERE matchID = ?', [matchID], (err, row) => {
       if (err) {
         reject('Error in getLog: ' + err);
       } else {
-        resolve(row ? row.logs : null);
+        resolve(row ? row : null);
       }
     });
   });
 }
-private getMetada(matchID : string):Promise<string|null>{
+private getMetada(matchID : string):Promise<any>{
   return new Promise((resolve, reject) => {
     this.db.get('SELECT * FROM metadata WHERE matchID = ?', [matchID], (err, row) => {
       if (err) {
@@ -184,12 +189,12 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
       });
   });
   }
-  private getState(matchID,isInitialState):Promise<string|null> {
+  private getState(matchID,isInitialState):Promise<any> {
     return new Promise((resolve, reject) => {
     this.db.get(
       `SELECT matchID,initialState,currentState, FROM matches WHERE matchID = ?`,
       [matchID],
-      (err, row) => {
+      (err, row :MatchRow | undefined) => {
         if (err) {
           reject('Error in getState: ' + err);
         } else {
@@ -197,10 +202,9 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
              resolve(null);
           }
         let state;
-        if(isInitialState){
-          state= row.isInitialState ? JSON.parse(row.isInitialState) : null;
-        }
-        else{
+        if (isInitialState) {
+          state = row.initialState ? JSON.parse(row.initialState) : null;
+        } else {
           state = row.currentState ? JSON.parse(row.currentState) : null;
         }
         resolve(state);
