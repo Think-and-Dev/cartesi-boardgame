@@ -2,6 +2,7 @@ import { bool } from 'prop-types';
 import type { State, Server, LogEntry } from '../../types';
 import * as StorageAPI from './base';
 import sqlite3 from 'sqlite3';
+import { UndecodedEventLog } from 'ethers';
 interface MatchRow {
   matchID: string;
   initialState: string | null;
@@ -17,8 +18,14 @@ export class Sqlite extends StorageAPI.Async {
    */
   constructor() {
     super();
-    this.db = new sqlite3.Database('path');
-    this.initializeTables();
+    this.db = new sqlite3.Database('sqlite.db', (err) => {
+      if (err) {
+        console.error('Error creating DB: ', err.message);
+      } else {
+        console.log('DB Sqlite created successfully');
+        this.initializeTables();
+      }
+    }); 
   }
   private async initializeTables() {
     this.db.run(`
@@ -51,8 +58,8 @@ export class Sqlite extends StorageAPI.Async {
       )
     `);
   }
-  async connect() {
-    //???????
+  async connect() {//???????
+    console.log('HIZO COONECT LA DB');
   }
   /**
    * Create a new match.
@@ -64,10 +71,12 @@ export class Sqlite extends StorageAPI.Async {
     opts: StorageAPI.CreateMatchOpts
   ): Promise<void> {
     try {
+      console.log('CREATE MATCH DE SQLITE3');
       // I think it is not necessary to wait for every method call. i have add await before each method?
-      this.createMatchinDb(matchID, opts.initialState);
-      this.setState(matchID, opts.initialState);
-      this.setMetadata(matchID, opts.metadata);
+       this.createMatchinDb(matchID,opts.initialState);
+       this.setState(matchID, opts.initialState);
+       this.setMetadata(matchID,opts.metadata);
+       console.log(' TERMINA CREATE MATCH DE SQLITE3');
     } catch (error) {
       console.log(`An error ocurred in create match for ID: ${matchID}`);
     }
@@ -84,9 +93,10 @@ export class Sqlite extends StorageAPI.Async {
         (err, row) => {
           if (err) {
             reject('Error in updateMatchinDb: ' + err);
+            return;
           } else {
             console.log(`A new match has been created with ID: ${matchID}`);
-            resolve();
+            return resolve();
           }
         }
       );
@@ -104,8 +114,9 @@ export class Sqlite extends StorageAPI.Async {
         (err, row) => {
           if (err) {
             reject('Error in updateMatchinDb: ' + err);
+            return;
           } else {
-            resolve();
+            return resolve();
           }
         }
       );
@@ -116,33 +127,32 @@ export class Sqlite extends StorageAPI.Async {
    */
   async setMetadata(matchID: string, opts: Server.MatchData): Promise<void> {
     return new Promise((resolve, reject) => {
-      const jsonMetadata = {
-        ...opts,
-        players: JSON.stringify(opts.players),
-        setupData: JSON.stringify(opts.setupData),
-        gameover: JSON.stringify(opts.gameover),
-      };
-      this.db.run(
-        `INSERT OR REPLACE INTO metadata (matchID, gameName, players, setupData, gameover, nextMatchID, unlisted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          matchID,
-          jsonMetadata.gameName,
-          jsonMetadata.players,
-          jsonMetadata.setupData,
-          jsonMetadata.gameover,
-          jsonMetadata.nextMatchID,
-          jsonMetadata.unlisted,
-          jsonMetadata.createdAt,
-          jsonMetadata.updatedAt,
-        ],
-        (err, row) => {
-          if (err) {
-            reject('Error in setMetadata: ' + err);
-          } else {
-            resolve();
-          }
+    const jsonMetadata = {
+      ...opts,
+      players: JSON.stringify(opts.players),
+      setupData: JSON.stringify(opts.setupData),
+      gameover: JSON.stringify(opts.gameover)
+    };
+    this.db.run(
+      `INSERT OR REPLACE INTO metadata (matchID, gameName, players, setupData, gameover, nextMatchID, unlisted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        matchID,
+        jsonMetadata.gameName,
+        jsonMetadata.players,
+        jsonMetadata.setupData,
+        jsonMetadata.gameover,
+        jsonMetadata.nextMatchID,
+        jsonMetadata.unlisted,
+        jsonMetadata.createdAt,
+        jsonMetadata.updatedAt
+      ], (err, row) => {
+        if (err) {
+          reject('Error in setMetadata: ' + err);
+          return;
+        } else {
+          return resolve();
         }
-      );
+    });
     });
   }
   /**
@@ -168,78 +178,69 @@ export class Sqlite extends StorageAPI.Async {
       );
     }
   }
-  private getLog(matchID: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT logs FROM logs WHERE matchID = ?',
-        [matchID],
-        (err, row) => {
-          if (err) {
-            reject('Error in getLog: ' + err);
-          } else {
-            resolve(row ? row : null);
-          }
-        }
-      );
+private getLog(matchID : string):Promise<any>{
+  return new Promise((resolve, reject) => {
+    this.db.get('SELECT logs FROM logs WHERE matchID = ?;', [matchID], (err, row) => {
+      if (err) {
+        reject('Error in getLog: ' + err);
+        return;
+      } else {
+        return resolve(row ? row : undefined);
+      }
     });
+  });
+}
+private getMetada(matchID : string):Promise<any>{
+  return new Promise((resolve, reject) => {
+    this.db.get('SELECT * FROM metadata WHERE matchID = ?;', [matchID], (err, row) => {
+      if (err) {
+        reject('Error in getMetada: ' + err);
+        return;
+      } else {
+        return resolve(row ? row : undefined);
+      }
+    });
+  });
+}
+private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
+  return new Promise((resolve, reject) => {
+    this.db.run(
+      `INSERT OR REPLACE INTO logs (matchID,logs,deltaLogs) VALUES (?, ?, ?);`,
+      [matchID, logs, deltaLogs],(err)=> {
+        if (err) {
+          reject('Error in setLog: ' + err);
+          return;
+        } else {
+          return resolve();
+        }
+      });
+  });
   }
-  private getMetada(matchID: string): Promise<any> {
+  private getState(matchID,isInitialState):Promise<MatchRow|undefined> {
     return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT * FROM metadata WHERE matchID = ?',
-        [matchID],
-        (err, row) => {
-          if (err) {
-            reject('Error in getMetada: ' + err);
-          } else {
-            resolve(row ? row : null);
-          }
+    this.db.get<MatchRow>(
+      `SELECT matchID,initialState,currentState FROM matches WHERE matchID = ?;`,
+      [matchID],
+      (err,row) => {
+        if (err) {
+          reject('Error in getState: ' + err);
+          return;
         }
-      );
-    });
-  }
-  private setLog(
-    matchID: string,
-    logs: string,
-    deltaLogs: string
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        `INSERT OR REPLACE INTO logs (matchID,logs,deltaLogs) VALUES (?, ?, ?);`,
-        [matchID, logs, deltaLogs],
-        (err) => {
-          if (err) {
-            reject('Error in setLog: ' + err);
-          } else {
-            resolve();
-          }
+        if (!row) {
+          console.log('not result of DB');
+          resolve(undefined);
+          return;
         }
-      );
-    });
-  }
-  private getState(matchID, isInitialState): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        `SELECT matchID,initialState,currentState, FROM matches WHERE matchID = ?`,
-        [matchID],
-        (err, row: MatchRow | undefined) => {
-          if (err) {
-            reject('Error in getState: ' + err);
-          } else {
-            if (!row) {
-              resolve(null);
-            }
-            let state;
-            if (isInitialState) {
-              state = row.initialState ? JSON.parse(row.initialState) : null;
-            } else {
-              state = row.currentState ? JSON.parse(row.currentState) : null;
-            }
-            resolve(state);
-          }
+        let state;
+        if (isInitialState) {
+          state = row ? row : undefined;
+        } else {
+          state = row ? row : undefined;
         }
-      );
-    });
+        return resolve(state);
+      }
+    );
+  });
   }
   /**
    * Fetches state for a particular matchID.
@@ -250,22 +251,31 @@ export class Sqlite extends StorageAPI.Async {
   ): Promise<StorageAPI.FetchResult<O>> {
     const result = {} as StorageAPI.FetchFields;
     let isInitialState: boolean = true;
+ 
     if (opts.state) {
-      let state = await this.getState(matchID, !isInitialState);
-      result.state = JSON.parse(state) as State; // ???????
+      console.log('hola state uno');
+      let state= await this.getState(matchID,!isInitialState);
+      console.log(state.currentState);
+      result.state = state ? JSON.parse(state.currentState) as State : undefined as State;// ???????
     }
     if (opts.metadata) {
-      let metadata = await this.getMetada(matchID);
-      result.metadata = JSON.parse(metadata) as Server.MatchData; // ???????
+      console.log('hola metadata');
+      let metadata= await this.getMetada(matchID);
+      console.log(metadata);
+      result.metadata = metadata as Server.MatchData;// ???????
     }
     if (opts.log) {
-      let logs = await this.getLog(matchID);
-      result.log = JSON.parse(logs) as LogEntry[]; // ????????
+      console.log('hola logs');
+      let logs= await this.getLog(matchID);
+      result.log = logs ? JSON.parse(logs) as LogEntry[] : undefined as LogEntry[];// ????????
     }
     if (opts.initialState) {
-      let state = await this.getState(matchID, isInitialState);
-      result.state = JSON.parse(state) as State; // ????????
+      console.log('hola state dos');
+      let state= await this.getState(matchID,isInitialState);
+      console.log(state.initialState);
+      result.state = state ? JSON.parse(state.initialState) as State : undefined as State;// ???????
     }
+    
     return result as StorageAPI.FetchResult<O>;
   }
   /**
