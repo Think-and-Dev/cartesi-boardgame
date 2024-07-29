@@ -37,13 +37,24 @@ export class Sqlite extends StorageAPI.Async {
       CREATE TABLE IF NOT EXISTS metadata (
         matchID TEXT PRIMARY KEY,
         gameName TEXT,
-        players TEXT,
         setupData TEXT,
         gameover TEXT,
         nextMatchID TEXT,
         unlisted BOOLEAN,
         createdAt INTEGER,
         updatedAt INTEGER,
+        FOREIGN KEY(matchID) REFERENCES matches(matchID)
+      )
+    `);
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS players (
+        matchID TEXT,
+        id INTEGER,
+        name TEXT,
+        credentials TEXT,
+        data TEXT,
+        isConnected BOOLEAN,
+        PRIMARY KEY (matchID, id),
         FOREIGN KEY(matchID) REFERENCES matches(matchID)
       )
     `);
@@ -125,34 +136,66 @@ export class Sqlite extends StorageAPI.Async {
    */
   async setMetadata(matchID: string, opts: Server.MatchData): Promise<void> {
     return new Promise((resolve, reject) => {
-    const jsonMetadata = {
-      ...opts,
-      players: JSON.stringify(opts.players),
-      setupData: JSON.stringify(opts.setupData),
-      gameover: JSON.stringify(opts.gameover)
-    };
-    this.db.run(
-      `INSERT OR REPLACE INTO metadata (matchID, gameName, players, setupData, gameover, nextMatchID, unlisted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-      [
-        matchID,
-        jsonMetadata.gameName,
-        jsonMetadata.players,
-        jsonMetadata.setupData,
-        jsonMetadata.gameover,
-        jsonMetadata.nextMatchID,
-        jsonMetadata.unlisted,
-        jsonMetadata.createdAt,
-        jsonMetadata.updatedAt
-      ], (err, row) => {
-        if (err) {
-          reject('Error in setMetadata: ' + err);
-          return;
-        } else {
-          return resolve();
+      const jsonMetadata = {
+        ...opts,
+        setupData: JSON.stringify(opts.setupData),
+        gameover: JSON.stringify(opts.gameover)
+      };
+  
+      this.db.run(
+        `INSERT OR REPLACE INTO metadata (matchID, gameName, setupData, gameover, nextMatchID, unlisted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+        [
+          matchID,
+          jsonMetadata.gameName,
+          jsonMetadata.setupData,
+          jsonMetadata.gameover,
+          jsonMetadata.nextMatchID,
+          jsonMetadata.unlisted,
+          jsonMetadata.createdAt,
+          jsonMetadata.updatedAt
+        ], 
+        async (err) => {
+          if (err) {
+            reject('Error in setMetadata: ' + err);
+            return;
+          }
+          try {
+            await this.setPlayers(matchID, opts.players);
+            resolve();
+          } catch (error) {
+            reject('Error in setMetadata (players): ' + error);
+          }
         }
-    });
+      );
     });
   }
+private async setPlayers(matchId,playersList){
+  const players = playersList;
+  const playerInsertPromises = Object.keys(players).map((playerID) => {
+  const player = players[playerID];
+    return new Promise<void>((resolve, reject) => {
+      this.db.run(
+        `INSERT OR REPLACE INTO players (matchID, id, name, credentials, data, isConnected) VALUES (?, ?, ?, ?, ?, ?);`,
+        [
+          matchId,
+          playerID,
+          player.name || '',
+          player.credentials || '',
+          JSON.stringify(player.data),
+          player.isConnected ? 1 : 0
+        ],
+        (err) => {
+          if (err) {
+            reject('Error in setMetadata: ' + err);
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
+  });
+  await Promise.all(playerInsertPromises);
+}
   /**
    * Write the match state in DB.
    */
@@ -188,18 +231,59 @@ private getLog(matchID : string):Promise<any>{
     });
   });
 }
-private getMetada(matchID : string):Promise<any>{
+async getMetadata(matchID: string): Promise<Server.MatchData | undefined> {
+  try {
+      const metadataRow = await new Promise<Server.MatchData>((resolve, reject) => {
+      this.db.get<Server.MatchData>('SELECT * FROM metadata WHERE matchID = ?;', [matchID], (err, row) => {
+        if (err) {
+          reject('Error in getMetadata (metadata): ' + err);
+        } else {
+          resolve(row);
+        }
+      });
+    });
+
+    if (!metadataRow) {
+      return undefined;
+    }
+    const players = await this.getPlayers(matchID);
+
+    return {
+      gameName: metadataRow.gameName,
+      players: players,
+      setupData: metadataRow.setupData ? JSON.parse(metadataRow.setupData) : undefined,
+      gameover: metadataRow.gameover ? JSON.parse(metadataRow.gameover) : undefined,
+      nextMatchID: metadataRow.nextMatchID,
+      unlisted: metadataRow.unlisted,
+      createdAt: metadataRow.createdAt,
+      updatedAt: metadataRow.updatedAt
+    };
+  } catch (err) {
+    throw new Error('Error in getMetadata: ' + err);
+  }
+}
+private async getPlayers(matchID: string): Promise<{ [id: number]: Server.PlayerMetadata }> {
   return new Promise((resolve, reject) => {
-    this.db.get('SELECT * FROM metadata WHERE matchID = ?;', [matchID], (err, row) => {
+    this.db.all<Server.PlayerMetadata>('SELECT * FROM players WHERE matchID = ?;', [matchID], (err, rows) => {
       if (err) {
-        reject('Error in getMetada: ' + err);
-        return;
+        reject('Error in getPlayers: ' + err);
       } else {
-        return resolve(row ? row : undefined);
+        const playersObject: { [id: number]: Server.PlayerMetadata } = {};
+        rows.forEach(row => {
+          playersObject[row.id] = {
+            id: row.id,
+            name: row.name,
+            credentials: row.credentials,
+            data: row.data ? JSON.parse(row.data) : null,
+            isConnected: row.isConnected
+          };
+        });
+        resolve(playersObject);
       }
     });
   });
 }
+
 private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
   return new Promise((resolve, reject) => {
     this.db.run(
@@ -253,23 +337,23 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
     if (opts.state) {
       console.log('hola state uno');
       let state= await this.getState(matchID,!isInitialState);
-      result.state = state ? JSON.parse(state) as State : undefined;// ???????
+      result.state = state ? JSON.parse(state) as State : undefined;
     }
     if (opts.metadata) {
       console.log('hola metadata');
-      let metadata= await this.getMetada(matchID);
+      let metadata= await this.getMetadata(matchID);
       console.log(metadata);
-      result.metadata = metadata as Server.MatchData;// ???????
+      result.metadata = metadata as Server.MatchData;
     }
     if (opts.log) {
       console.log('hola logs');
       let logs= await this.getLog(matchID);
-      result.log = logs as LogEntry[];// ????????
+      result.log = logs as LogEntry[];
     }
     if (opts.initialState) {
       console.log('hola state dos');
       let state= await this.getState(matchID,isInitialState);
-      result.state = state ? JSON.parse(state) as State : undefined ;// ???????
+      result.state = state ? JSON.parse(state) as State : undefined ;
     }
     
     return result as StorageAPI.FetchResult<O>;
