@@ -1,4 +1,3 @@
-import { Log } from 'ethers';
 import type { State, Server, LogEntry } from '../../types';
 import * as StorageAPI from './base';
 import sqlite3 from 'sqlite3';
@@ -259,6 +258,7 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
     if (opts.metadata) {
       console.log('hola metadata');
       let metadata= await this.getMetada(matchID);
+      console.log(metadata);
       result.metadata = metadata as Server.MatchData;// ???????
     }
     if (opts.log) {
