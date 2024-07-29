@@ -1,3 +1,4 @@
+import { Log } from 'ethers';
 import type { State, Server, LogEntry } from '../../types';
 import * as StorageAPI from './base';
 import sqlite3 from 'sqlite3';
@@ -160,7 +161,7 @@ export class Sqlite extends StorageAPI.Async {
     try {
       if (deltalog && deltalog.length > 0) {
         const logString = await this.getLog(matchID);
-        const log = logString ? JSON.parse(logString) : [];
+        const log = logString ? logString : [];
         await this.setLog(
           matchID,
           JSON.stringify(log),
@@ -253,24 +254,21 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
     if (opts.state) {
       console.log('hola state uno');
       let state= await this.getState(matchID,!isInitialState);
-      console.log(state.currentState);
       result.state = state ? JSON.parse(state.currentState) as State : undefined;// ???????
     }
     if (opts.metadata) {
       console.log('hola metadata');
       let metadata= await this.getMetada(matchID);
-      console.log(metadata);
       result.metadata = metadata as Server.MatchData;// ???????
     }
     if (opts.log) {
       console.log('hola logs');
       let logs= await this.getLog(matchID);
-      result.log = logs ? JSON.parse(logs) as LogEntry[] : undefined;// ????????
+      result.log = logs ? logs as LogEntry[] : undefined;// ????????
     }
     if (opts.initialState) {
       console.log('hola state dos');
       let state= await this.getState(matchID,isInitialState);
-      console.log(state.initialState);
       result.state = state ? JSON.parse(state.initialState) as State : undefined ;// ???????
     }
     
