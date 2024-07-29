@@ -264,7 +264,7 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
     if (opts.log) {
       console.log('hola logs');
       let logs= await this.getLog(matchID);
-      result.log = logs ? logs as LogEntry[] : undefined;// ????????
+      result.log = logs as LogEntry[];// ????????
     }
     if (opts.initialState) {
       console.log('hola state dos');
