@@ -214,7 +214,7 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
       });
   });
   }
-  private getState(matchID,isInitialState):Promise<MatchRow|undefined> {
+  private getState(matchID,isInitialState):Promise<string|undefined> {
     return new Promise((resolve, reject) => {
     this.db.get<MatchRow>(
       `SELECT matchID,initialState,currentState FROM matches WHERE matchID = ?;`,
@@ -231,9 +231,9 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
         }
         let state;
         if (isInitialState) {
-          state = row ? row : undefined;
+          state = row ? row.initialState : undefined;
         } else {
-          state = row ? row : undefined;
+          state = row ? row.currentState: undefined;
         }
         return resolve(state);
       }
@@ -253,7 +253,7 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
     if (opts.state) {
       console.log('hola state uno');
       let state= await this.getState(matchID,!isInitialState);
-      result.state = state ? JSON.parse(state.currentState) as State : undefined;// ???????
+      result.state = state ? JSON.parse(state) as State : undefined;// ???????
     }
     if (opts.metadata) {
       console.log('hola metadata');
@@ -269,7 +269,7 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
     if (opts.initialState) {
       console.log('hola state dos');
       let state= await this.getState(matchID,isInitialState);
-      result.state = state ? JSON.parse(state.initialState) as State : undefined ;// ???????
+      result.state = state ? JSON.parse(state) as State : undefined ;// ???????
     }
     
     return result as StorageAPI.FetchResult<O>;
