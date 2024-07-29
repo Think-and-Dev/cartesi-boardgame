@@ -1,18 +1,5 @@
-import dotenv from 'dotenv';
 import type { LobbyAPI } from '../types';
 import { Cartesify } from '@calindra/cartesify';
-
-dotenv.config();
-
-const DAPP_ADDRESS = process.env.DAPP_ADDRESS;
-const SERVER = process.env.SERVER;
-if (!DAPP_ADDRESS || !SERVER) {
-  throw new Error(
-    `Missing required environment variables ${
-      DAPP_ADDRESS ? 'SERVER' : 'DAPP_ADDRESS'
-    }`
-  );
-}
 
 const assertString = (str: unknown, label: string) => {
   if (!str || typeof str !== 'string') {
@@ -20,6 +7,7 @@ const assertString = (str: unknown, label: string) => {
   }
 };
 
+// Validaciones específicas para nombre de juego e ID de partida
 const assertGameName = (name?: string) => assertString(name, 'game name');
 const assertMatchID = (id?: string) => assertString(id, 'match ID');
 
@@ -33,6 +21,7 @@ type JSType =
   | 'function'
   | 'undefined';
 
+// Función para validar el cuerpo de las solicitudes
 const validateBody = (
   body: { [key: string]: any } | undefined,
   schema: { [key: string]: JSType | JSType[] }
@@ -64,10 +53,14 @@ export class LobbyClient {
   private server: string;
   private readonly cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
 
-  constructor({ server = SERVER }: { server?: string } = {}) {
-    this.server = server.replace(/\/$/, '');
+  constructor({
+    server,
+    dappAddress,
+  }: { server?: string; dappAddress?: string } = {}) {
+    if (!server) throw new Error('Server URL is required');
+    this.server = server.replace(/\/$/, ''); // Eliminar la barra final si existe
     this.cartesifyFetch = Cartesify.createFetch({
-      dappAddress: DAPP_ADDRESS,
+      dappAddress,
       endpoints: {
         graphQL: new URL(`${this.server}/graphql`),
         inspect: new URL(`${this.server}/inspect`),
@@ -75,6 +68,7 @@ export class LobbyClient {
     });
   }
 
+  // Método genérico para hacer solicitudes
   private async request(route: string, init?: RequestInit) {
     const config: RequestInit = {
       method: init?.method,
@@ -83,30 +77,33 @@ export class LobbyClient {
     };
 
     try {
-      const response = await this.cartesifyFetch(this.server + route, config);
+      const fullUrl = this.server + route; // Construcción de la URL completa
+      console.log('Request URL:', fullUrl); // Log the full URL
+      const response = await this.cartesifyFetch(fullUrl, config);
+      console.log('Response status:', response.status); // Log the status
+      const responseText = await response.text();
+      console.log('Response text:', responseText); // Log the text of the response
 
       if (!response.ok) {
         let details: any;
 
         try {
-          details = await response.json();
+          details = JSON.parse(responseText); // Intentar parsear el texto como JSON
         } catch {
-          try {
-            details = await response.text();
-          } catch (error) {
-            details = error.message;
-          }
+          details = responseText;
         }
 
         throw new LobbyClientError(`HTTP status ${response.status}`, details);
       }
 
-      return response.json();
+      return JSON.parse(responseText); // Parse the text as JSON for the return value
     } catch (error) {
+      console.error('Request error:', error); // Log the error
       throw new LobbyClientError(`Network error`, error.message);
     }
   }
 
+  // Método para hacer solicitudes POST
   private async post(route: string, opts: { body?: any; init?: RequestInit }) {
     let init: RequestInit = {
       method: 'post',
@@ -126,6 +123,28 @@ export class LobbyClient {
     return this.request('/games', init);
   }
 
+  // async listMatches(
+  //   gameName: string,
+  //   where?: {
+  //     isGameover?: boolean;
+  //     updatedBefore?: number;
+  //     updatedAfter?: number;
+  //   },
+  //   init?: RequestInit
+  // ): Promise<LobbyAPI.MatchList> {
+  //   assertGameName(gameName);
+  //   let query = '';
+  //   if (where) {
+  //     const queries = [];
+  //     const { isGameover, updatedBefore, updatedAfter } = where;
+  //     if (isGameover !== undefined) queries.push(`isGameover=${isGameover}`);
+  //     if (updatedBefore) queries.push(`updatedBefore=${updatedBefore}`);
+  //     if (updatedAfter) queries.push(`updatedAfter=${updatedAfter}`);
+  //     if (queries.length > 0) query = '?' + queries.join('&');
+  //   }
+  //   return this.request(`/games/${gameName}${query}`, init);
+  // }
+
   async listMatches(
     gameName: string,
     where?: {
@@ -135,17 +154,48 @@ export class LobbyClient {
     },
     init?: RequestInit
   ): Promise<LobbyAPI.MatchList> {
+    console.log('Llegue hasta aca en client.ts linea 157');
+    // Log the gameName and where parameters
+    console.log('listMatches called with:', { gameName, where, init });
+    // Assert game name is valid
     assertGameName(gameName);
     let query = '';
     if (where) {
       const queries = [];
       const { isGameover, updatedBefore, updatedAfter } = where;
+      // Log the values of the where object
+      console.log('where object values:', {
+        isGameover,
+        updatedBefore,
+        updatedAfter,
+      });
+
       if (isGameover !== undefined) queries.push(`isGameover=${isGameover}`);
       if (updatedBefore) queries.push(`updatedBefore=${updatedBefore}`);
       if (updatedAfter) queries.push(`updatedAfter=${updatedAfter}`);
+
+      // Log the constructed queries array
+      console.log('Constructed queries:', queries);
+
       if (queries.length > 0) query = '?' + queries.join('&');
     }
-    return this.request(`/games/${gameName}${query}`, init);
+
+    // Log the final query string
+    console.log('Final query string:', query);
+
+    // Log the full URL being requested
+    const fullUrl = `/games/${gameName}${query}`;
+    console.log('Requesting URL:', fullUrl);
+
+    // Make the request and log the response
+    try {
+      const response = await this.request(fullUrl, init);
+      console.log('listMatches response:', response);
+      return response;
+    } catch (error) {
+      console.error('listMatches error:', error);
+      throw error;
+    }
   }
 
   async getMatch(

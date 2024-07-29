@@ -152,16 +152,11 @@ class TicTacToeClient {
   }
 }
 
-//! Inicio de la función listar games
+//* Listar Matches (partidas del mismo tipo de juego)
 
 async function listCurrentGames() {
   const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
   const SERVER = 'http://localhost:8080';
-
-  console.log('DAPP_ADDRESS App.ts:', DAPP_ADDRESS);
-  console.log('SERVER App.ts:', SERVER);
-
-  //*Llego hasta aca, luego error
 
   const lobbyClient = new LobbyClient({
     // server: SERVER || 'http://localhost:8000',
@@ -174,7 +169,6 @@ async function listCurrentGames() {
   console.log('lobbyClient:', lobbyClient);
 
   try {
-    //! ACA ERRAMOS
     console.log('entre al try'); //e consologuea
     const matches = await lobbyClient.listMatches('TicTacToe');
     console.log('Current matches:', matches); //ya no se consologuea
@@ -183,8 +177,6 @@ async function listCurrentGames() {
     // console.error('Error listing matches App.ts:', error);
   }
 }
-
-//! Fin de la función
 
 async function main() {
   const appElement = document.getElementById('app');
