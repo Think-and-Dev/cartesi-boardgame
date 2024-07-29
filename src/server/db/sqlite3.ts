@@ -1,8 +1,6 @@
-import { bool } from 'prop-types';
 import type { State, Server, LogEntry } from '../../types';
 import * as StorageAPI from './base';
 import sqlite3 from 'sqlite3';
-import { UndecodedEventLog } from 'ethers';
 interface MatchRow {
   matchID: string;
   initialState: string | null;
