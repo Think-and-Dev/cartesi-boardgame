@@ -221,7 +221,7 @@ private async setPlayers(matchId,playersList){
   }
 private getLog(matchID : string):Promise<any>{
   return new Promise((resolve, reject) => {
-    this.db.get('SELECT logs FROM logs WHERE matchID = ?;', [matchID], (err, row) => {
+    this.db.all('SELECT * FROM logs WHERE matchID = ?;', [matchID], (err, row) => {
       if (err) {
         reject('Error in getLog: ' + err);
         return;
@@ -349,6 +349,7 @@ private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
       console.log('hola logs');
       let logs= await this.getLog(matchID);
       result.log = logs as LogEntry[];
+      console.log(result.log);
     }
     if (opts.initialState) {
       console.log('hola state dos');
