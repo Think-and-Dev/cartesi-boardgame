@@ -6,6 +6,7 @@ interface MatchRow {
   initialState: string | null;
   currentState: string | null;
 }
+
 /**
  * Sqlite data storage.
  */
@@ -60,9 +61,16 @@ export class Sqlite extends StorageAPI.Async {
     `);
     this.db.run(`
       CREATE TABLE IF NOT EXISTS logs (
-        matchID TEXT PRIMARY KEY,
-        logs TEXT,
-        deltaLogs TEXT,
+        logID INTEGER PRIMARY KEY AUTOINCREMENT,
+        matchID TEXT,
+        action TEXT,
+        _stateID INTEGER,
+        turn INTEGER,
+        phase TEXT,
+        redact BOOLEAN,
+        automatic BOOLEAN,
+        metadata TEXT,
+        patch TEXT,
         FOREIGN KEY(matchID) REFERENCES matches(matchID)
       )
     `);
@@ -99,7 +107,7 @@ export class Sqlite extends StorageAPI.Async {
       this.db.run(
         `INSERT INTO matches (matchID, initialState, currentState) VALUES (?, ?, ?)`,
         [matchID, jsonInitialState, jsonInitialState],
-        (err, row) => {
+        (err) => {
           if (err) {
             reject('Error in updateMatchinDb: ' + err);
             return;
@@ -120,7 +128,7 @@ export class Sqlite extends StorageAPI.Async {
       this.db.run(
         `UPDATE matches SET currentState = ? WHERE matchID = ?`,
         [jsonState, matchID],
-        (err, row) => {
+        (err) => {
           if (err) {
             reject('Error in updateMatchinDb: ' + err);
             return;
@@ -202,13 +210,9 @@ private async setPlayers(matchId,playersList){
   async setState(matchID: string, state: State, deltalog?: LogEntry[]) {
     try {
       if (deltalog && deltalog.length > 0) {
-        const logString = await this.getLog(matchID);
-        const log = logString ? logString : [];
-        await this.setLog(
-          matchID,
-          JSON.stringify(log),
-          JSON.stringify(deltalog)
-        );
+        const existingLogs = await this.getLog(matchID) as LogEntry[];
+        const combinedLogs = [...existingLogs, ...deltalog];
+        await this.setLog(matchID, combinedLogs);
         console.log(`Create a log succesfully for matchId:${matchID}`);
       }
       await this.updateMatchinDb(matchID, state);
@@ -219,14 +223,24 @@ private async setPlayers(matchId,playersList){
       );
     }
   }
-private getLog(matchID : string):Promise<any>{
+private getLog(matchID : string):Promise<LogEntry[]>{
   return new Promise((resolve, reject) => {
-    this.db.all('SELECT * FROM logs WHERE matchID = ?;', [matchID], (err, row) => {
+    this.db.all<any>('SELECT * FROM logs WHERE matchID = ?;', [matchID], (err, rows) => {
       if (err) {
         reject('Error in getLog: ' + err);
         return;
       } else {
-        return resolve(row ? row : undefined);
+        const logs = rows.map(row => ({
+          action:  row.action ? JSON.parse(row.action) : null,
+          _stateID: row._stateID,
+          turn: row.turn,
+          phase: row.phase,
+          redact: row.redact,
+          automatic: row.automatic,
+          metadata: row.metadata ? JSON.parse(row.metadata) : null,
+          patch: row.patch ? JSON.parse(row.patch) : null
+        }));
+        resolve(logs);
       }
     });
   });
@@ -284,18 +298,38 @@ private async getPlayers(matchID: string): Promise<{ [id: number]: Server.Player
   });
 }
 
-private setLog(matchID: string,logs: string ,deltaLogs: string):Promise<void>{
+private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
   return new Promise((resolve, reject) => {
-    this.db.run(
-      `INSERT OR REPLACE INTO logs (matchID,logs,deltaLogs) VALUES (?, ?, ?);`,
-      [matchID, logs, deltaLogs],(err)=> {
-        if (err) {
-          reject('Error in setLog: ' + err);
-          return;
-        } else {
-          return resolve();
-        }
-      });
+    this.db.run(`
+      DELETE FROM logs WHERE matchID = ?;
+    `, [matchID]);
+    
+    const db = this.db.prepare(`
+      INSERT INTO logs (matchID, action, _stateID, turn, phase, redact, automatic, metadata, patch)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    logs.forEach(log => {
+      db.run([
+        matchID,
+        JSON.stringify(log.action),
+        log._stateID,
+        log.turn,
+        log.phase,
+        log.redact ?? null,
+        log.automatic ?? null,
+        JSON.stringify(log.metadata),
+        JSON.stringify(log.patch)
+      ]);
+    });
+
+    db.finalize(err => {
+      if (err) {
+        reject('Error in setLog: ' + err);
+        return;
+      }
+      resolve();
+    });
   });
   }
   private getState(matchID,isInitialState):Promise<string|undefined> {
