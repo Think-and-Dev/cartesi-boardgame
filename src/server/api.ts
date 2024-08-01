@@ -109,6 +109,8 @@ export const configureRouter = ({
    * @return - The ID of the created match.
    */
   router.post('/games/:name/create', koaBody(), async (ctx) => {
+    console.log('Received request to create game:', ctx.params.name);
+    console.log('Request body:', ctx.request.body);
     // The name of the game (for example: tic-tac-toe).
     const gameName = ctx.params.name;
     // User-data to pass to the game setup function.
@@ -119,7 +121,10 @@ export const configureRouter = ({
     const numPlayers = Number.parseInt(ctx.request.body.numPlayers);
 
     const game = games.find((g) => g.name === gameName);
-    if (!game) ctx.throw(404, 'Game ' + gameName + ' not found');
+    if (!game) {
+      console.error(`Game ${gameName} not found`);
+      ctx.throw(404, 'Game ' + gameName + ' not found');
+    }
 
     if (
       ctx.request.body.numPlayers !== undefined &&
@@ -475,10 +480,12 @@ export const configureApp = (
 ): void => {
   app.use(
     cors({
-      // Set Access-Control-Allow-Origin header for allowed origins.
       origin: (ctx) => {
         const origin = ctx.get('Origin');
-        return isOriginAllowed(origin, origins) ? origin : '';
+        console.log('Request Origin:', origin); // Log para verificar el origen de la solicitud
+        const allowed = isOriginAllowed(origin, origins);
+        console.log('Is Origin Allowed:', allowed); // Log para verificar si el origen está permitido
+        return allowed ? origin : '';
       },
     })
   );

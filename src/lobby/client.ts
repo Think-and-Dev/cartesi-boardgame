@@ -1,5 +1,6 @@
 import type { LobbyAPI } from '../types';
 import { Cartesify } from '@calindra/cartesify';
+import type { ethers } from 'ethers';
 
 const assertString = (str: unknown, label: string) => {
   if (!str || typeof str !== 'string') {
@@ -56,20 +57,29 @@ export class LobbyClient {
   constructor({
     server,
     dappAddress,
-  }: { server?: string; dappAddress?: string } = {}) {
+    signer, // Añadido
+  }: {
+    server?: string;
+    dappAddress?: string;
+    signer?: ethers.Signer;
+  } = {}) {
     if (!server) throw new Error('Server URL is required');
     this.server = server.replace(/\/$/, ''); // Eliminar la barra final si existe
+
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress,
       endpoints: {
-        graphQL: new URL(`${this.server}/graphql`),
-        inspect: new URL(`${this.server}/inspect`),
+        graphQL: new URL(`${server}/graphql`),
+        inspect: new URL(`${server}/inspect`),
       },
+      provider: signer?.provider, // Añadido
+      signer: signer, // Añadido
     });
   }
 
   // Método genérico para hacer solicitudes
   private async request(route: string, init?: RequestInit) {
+    // Construcción de la configuración de la solicitud
     const config: RequestInit = {
       method: init?.method,
       body: init?.body,
@@ -77,13 +87,20 @@ export class LobbyClient {
     };
 
     try {
-      const fullUrl = this.server + route; // Construcción de la URL completa
-      console.log('Request URL:', fullUrl); // Log the full URL
-      const response = await this.cartesifyFetch(fullUrl, config);
-      console.log('Response status:', response.status); // Log the status
-      const responseText = await response.text();
-      console.log('Response text:', responseText); // Log the text of the response
+      // Construcción de la URL completa utilizando this.server
+      const fullUrl = this.server + route;
+      console.log('Request URL en client.ts 92:', fullUrl); // Log the full URL
+      console.log('Request configurationen  client.ts 93:', config); // Log the request configuration
 
+      // Realizar la solicitud usando cartesifyFetch
+      const response = await this.cartesifyFetch(fullUrl, config);
+      //!Nunca llega a tener una Repsonse
+      console.log('Response statusen request client.ts 98:', response.status); // Log the status
+
+      const responseText = await response.text();
+      console.log('Response texten request client.ts 101:', responseText); // Log t
+
+      // Manejo de la respuesta
       if (!response.ok) {
         let details: any;
 
@@ -99,28 +116,34 @@ export class LobbyClient {
       return JSON.parse(responseText); // Parse the text as JSON for the return value
     } catch (error) {
       console.error('Request error:', error); // Log the error
+      console.log('Error full URL:', this.server + route); // Log the full URL
+      console.log('Error request configuration:', config); // Log the request configuration
       throw new LobbyClientError(`Network error`, error.message);
     }
   }
 
   // Método para hacer solicitudes POST
   private async post(route: string, opts: { body?: any; init?: RequestInit }) {
+    // Construcción de la configuración de la solicitud POST
     let init: RequestInit = {
-      method: 'post',
+      method: 'POST',
       body: JSON.stringify(opts.body),
       headers: { 'Content-Type': 'application/json' },
     };
+    // Si se proporciona una configuración adicional en opts.init, combinarla
     if (opts.init)
       init = {
         ...init,
         ...opts.init,
         headers: { ...init.headers, ...opts.init.headers },
       };
+    console.log('Request URL en post client.ts:', route); // Log the URL
     return this.request(route, init);
   }
 
   async listGames(init?: RequestInit): Promise<string[]> {
     return this.request('/games', init);
+    // return this.request('/sync', init);
   }
 
   // async listMatches(
@@ -220,7 +243,10 @@ export class LobbyClient {
   ): Promise<LobbyAPI.CreatedMatch> {
     assertGameName(gameName);
     validateBody(body, { numPlayers: 'number' });
+    console.log('createMatch called with:', { gameName, body, init });
+
     return this.post(`/games/${gameName}/create`, { body, init });
+    // return this.post(`/${gameName}/sync`, { body, init });
   }
 
   async joinMatch(
