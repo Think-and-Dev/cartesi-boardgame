@@ -1,11 +1,7 @@
 import { TicTacToe } from './Game';
 import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
 import { ethers, BrowserProvider } from 'ethers';
-import {
-  Client,
-  LobbyClient,
-  LobbyConnection,
-} from '@think-and-dev/cartesi-boardgame/client';
+import { Client, LobbyClient } from '@think-and-dev/cartesi-boardgame/client';
 
 declare global {
   interface Window {
@@ -26,10 +22,9 @@ interface State {
   matchID: string;
 }
 
-// Declarar las variables comunes fuera de las funciones
 const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
-const SERVER = 'http://localhost:8000'; // o es 5004 de rollup?
-const NODE_URL = 'http://localhost:8080'; // URL del nodo
+const SERVER = 'http://localhost:8000';
+const NODE_URL = 'http://localhost:8080';
 
 class TicTacToeClient {
   private client: any;
@@ -62,8 +57,6 @@ class TicTacToeClient {
     this.createBoard();
     this.attachListeners();
 
-    //* "Back to Lobby"
-
     const backButton = document.createElement('button');
     backButton.textContent = 'Back to Lobby';
     backButton.addEventListener('click', () => {
@@ -85,7 +78,7 @@ class TicTacToeClient {
     }
 
     this.rootElement.innerHTML = `
-      <table>${rows.join('')}</table>
+      <table>${rows.join('')}</table>  
       <p class="winner"></p>
       <p class="current-player"></p>
       <p class="match-id"></p>
@@ -109,8 +102,6 @@ class TicTacToeClient {
     if (state === null) {
       return;
     }
-    console.log('Updating state:', state);
-    console.log('MatchID:', this.matchID);
 
     const cells = this.rootElement.querySelectorAll('.cell');
     cells.forEach((cell) => {
@@ -147,63 +138,16 @@ class TicTacToeClient {
   }
 }
 
-// //* PRUEBA node connection
-// async function testNodeConnection() {
-//   console.log('Starting testNodeConnection');
-//   try {
-//     const response = await fetch(`${NODE_URL}`);
-//     console.log(`Response status: ${response.status}`);
-//     if (response.ok) {
-//       const data = await response.text();
-//       console.log('Node root response:', data);
-//       alert('Node connection successful: ' + data);
-//     } else {
-//       console.error('Failed to connect to node, status:', response.status);
-//       alert('Failed to connect to node, status: ' + response.status);
-//     }
-//   } catch (error) {
-//     console.error('Error testing node connection:', error);
-//     alert('Failed to connect to node: ' + error.message);
-//   }
-// }
-
-//*
-
-//*PRUEBA LLEGO AL SERVER Cartesify-transport.ts
 async function testServerConnection() {
   try {
     const response = await fetch(`${SERVER}/test`);
     const data = await response.json();
-    console.log('Test route response:', data);
     alert('Server connection successful: ' + JSON.stringify(data));
   } catch (error) {
     console.error('Error testing server connection:', error);
     alert('Failed to connect to server: ' + error.message);
   }
 }
-//*
-
-//* llamar a /sync
-// async function syncMatch(
-//   matchID: string,
-//   playerID: string,
-//   credentials: string
-// ): Promise<void> {
-//   try {
-//     const response = await fetch(`${SERVER}/TicTacToe/sync`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ matchID, playerID, credentials }),
-//     });
-//     const data = await response.json();
-//     console.log('Sync route response:', data);
-//     alert('Sync successful: ' + JSON.stringify(data));
-//   } catch (error) {
-//     console.error('Error syncing match:', error);
-//     alert('Failed to sync match: ' + error.message);
-//   }
-// }
-//*
 
 async function createMatch(
   gameName: string,
@@ -212,12 +156,6 @@ async function createMatch(
   unlisted: boolean = false
 ): Promise<string | null> {
   const url = `${SERVER}/games/${gameName}/create`;
-  console.log('Sending createMatch request:', {
-    url,
-    numPlayers,
-    setupData,
-    unlisted,
-  });
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -236,35 +174,85 @@ async function createMatch(
     }
 
     const data = await response.json();
-    console.log('Create match response:', data);
     return data.matchID;
   } catch (error) {
-    console.error('Error creating match:', error);
     return null;
   }
 }
 
-// async function listCurrentGames() {
+async function listGames() {
+  try {
+    const response = await fetch(`${SERVER}/games`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-//   const lobbyClient = new LobbyClient({
-//        server: SERVER,
-// dappAddress: DAPP_ADDRESS,
-// nodeUrl: NODE_URL, //
-//   });
-//   console.log('Comence a instanciar el LobbyClient');
-//   console.log('lobbyClient:', lobbyClient);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-//   try {
-//     console.log('entre al try');
-//     const matches = await lobbyClient.listMatches('TicTacToe');
-//     console.log('Current matches:', matches);
-//   } catch (error) {
-//     console.log('Me fui al catch', error);
-//     // console.error('Error listing matches App.ts:', error);
-//   }
-// }
+    const games = await response.json();
+  } catch (error) {
+    console.error('Error fetching games:', error);
+  }
+}
+
+async function listAvailableMatches(gameName) {
+  try {
+    const response = await fetch(`${SERVER}/games/${gameName}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    let matchList = document.getElementById('match-list');
+    if (!matchList) {
+      const lobbyElement = document.getElementById('lobby');
+      const matchListContainer = document.createElement('div');
+      matchListContainer.id = 'match-list-container';
+      const matchListTitle = document.createElement('h3');
+      matchListTitle.textContent = `Available Matches for ${gameName}`;
+      matchList = document.createElement('ul');
+      matchList.id = 'match-list';
+
+      matchListContainer.appendChild(matchListTitle);
+      matchListContainer.appendChild(matchList);
+      lobbyElement.appendChild(matchListContainer);
+    } else {
+      matchList.innerHTML = '';
+    }
+
+    data.matches.forEach((match) => {
+      const listItem = document.createElement('li');
+      listItem.textContent = `Match ID: ${
+        match.matchID
+      }, Created At: ${new Date(match.createdAt).toLocaleString()}, Players: ${
+        Object.keys(match.players).length
+      }`;
+      matchList.appendChild(listItem);
+    });
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+  }
+}
 
 async function main() {
+  const { name } = TicTacToe;
+  const gameName = name;
+
+  listGames();
+
+  listAvailableMatches(`${gameName}`);
+
   const appElement = document.getElementById('app');
   const lobbyElement = document.createElement('div');
   lobbyElement.id = 'lobby';
@@ -272,7 +260,7 @@ async function main() {
 
   if (!window.ethereum) {
     alert('Please install MetaMask to play this game');
-    return; // Fin de la función si MetaMask no está instalado
+    return;
   }
   const provider = new BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
@@ -281,7 +269,7 @@ async function main() {
   const createMatchButton = document.createElement('button');
   createMatchButton.textContent = 'Create Game';
   createMatchButton.addEventListener('click', async () => {
-    matchID = await createMatch('default', 2);
+    matchID = await createMatch(`${gameName}`, 2);
     if (!matchID) {
       alert('Failed to create match. Please try again.');
       return;
@@ -336,18 +324,6 @@ async function main() {
     lobbyElement.appendChild(player1Button);
   });
   lobbyElement.appendChild(joinMatchButton);
-
-  // Añadir botón para probar la conexión al servidor
-  const testConnectionButton = document.createElement('button');
-  testConnectionButton.textContent = 'Test Server Connection';
-  testConnectionButton.addEventListener('click', testServerConnection);
-  lobbyElement.appendChild(testConnectionButton);
-
-  // // Añadir botón para probar la conexión al nodo
-  // const testNodeConnectionButton = document.createElement('button');
-  // testNodeConnectionButton.textContent = 'Test Node Connection';
-  // testNodeConnectionButton.addEventListener('click', testNodeConnection);
-  // lobbyElement.appendChild(testNodeConnectionButton);
 
   function initializeClient(playerID: string, matchID: string) {
     if (appElement) {

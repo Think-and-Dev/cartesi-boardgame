@@ -1,4 +1,4 @@
-import { Ctx, Game } from "@think-and-dev/cartesi-boardgame/client";
+import { Ctx, Game } from '@think-and-dev/cartesi-boardgame/client';
 
 interface G {
   cells: Array<string | null>;
@@ -6,7 +6,7 @@ interface G {
 
 const clickCell = ({ G, playerID }: { G: G; playerID: string }, id: number) => {
   if (G.cells[id] !== null) {
-    return "INVALID_MOVE";
+    return 'INVALID_MOVE';
   }
   G.cells[id] = playerID;
 };
@@ -38,6 +38,7 @@ function IsDraw(cells: Array<string | null>): boolean {
 }
 
 export const TicTacToe: Game<G> = {
+  name: 'tic-tac-toe',
   setup: (): G => ({ cells: Array(9).fill(null) }),
   turn: {
     minMoves: 1,
