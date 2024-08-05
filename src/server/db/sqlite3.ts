@@ -444,7 +444,6 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
    */
   async listMatches(opts?: StorageAPI.ListMatchesOpts): Promise<string[]> {
     console.log('LIST MATCHES');
-  
     let query = 'SELECT matchID FROM metadata WHERE 1=1';
     const params: any[] = [];
   
