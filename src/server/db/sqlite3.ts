@@ -75,8 +75,8 @@ export class Sqlite extends StorageAPI.Async {
       )
     `);
   }
-  async connect() {//???????
-    console.log('HIZO COONECT LA DB');
+  async connect() {
+    console.log('Connected to the DB');
   }
   /**
    * Create a new match.
@@ -88,12 +88,10 @@ export class Sqlite extends StorageAPI.Async {
     opts: StorageAPI.CreateMatchOpts
   ): Promise<void> {
     try {
-      console.log('CREATE MATCH DE SQLITE3');
       // I think it is not necessary to wait for every method call. i have add await before each method?
        this.createMatchinDb(matchID,opts.initialState);
        this.setState(matchID, opts.initialState);
        this.setMetadata(matchID,opts.metadata);
-       console.log(' TERMINA CREATE MATCH DE SQLITE3');
     } catch (error) {
       console.log(`An error ocurred in create match for ID: ${matchID}`);
     }
@@ -143,6 +141,7 @@ export class Sqlite extends StorageAPI.Async {
    * Create metadata in DB for an especific matchId
    */
   async setMetadata(matchID: string, opts: Server.MatchData): Promise<void> {
+     console.log('SET METADATA');
     return new Promise((resolve, reject) => {
       const jsonMetadata = {
         ...opts,
@@ -303,7 +302,7 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
     this.db.run(`
       DELETE FROM logs WHERE matchID = ?;
     `, [matchID]);
-    
+
     const db = this.db.prepare(`
       INSERT INTO logs (matchID, action, _stateID, turn, phase, redact, automatic, metadata, patch)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -393,12 +392,50 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
     
     return result as StorageAPI.FetchResult<O>;
   }
+   /**
+   * Remove the match state from DB for matchId
+   */
+   private deleteState(matchID: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(//I do not delete the match, only the status of this match.
+        `UPDATE matches SET currentState = '' WHERE matchID = ?`,
+        [matchID],
+        (err) => {
+          if (err) {
+            reject('Error in delete state: ' + err);
+            return;
+          } else {
+            return resolve();
+          }
+        }
+      );
+    });
+  }
+    /**
+   * Remove the match metadata from DB for matchId
+   */
+    private deleteMetadata(matchID: string): Promise<void> {
+      return new Promise((resolve, reject) => {
+        this.db.run(
+          `DELETE from metadata WHERE matchID = ?`,
+          [matchID],
+          (err) => {
+            if (err) {
+              reject('Error in delete metadata: ' + err);
+              return;
+            } else {
+              return resolve();
+            }
+          }
+        );
+      });
+    }
   /**
    * Remove the match state from DB.
    */
   async wipe(matchID: string) {
-    // this.state.delete(matchID);
-    // this.metadata.delete(matchID);
+    this.deleteState(matchID);
+    this.deleteMetadata(matchID);
   }
   /**
    * Return all keys.
@@ -406,6 +443,7 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
    * @override
    */
   async listMatches(opts?: StorageAPI.ListMatchesOpts): Promise<string[]> {
+    console.log('LIST MATCHES');
     // return [...this.metadata.entries()]
     //   .filter(([, metadata]) => {
     //     if (!opts) {
