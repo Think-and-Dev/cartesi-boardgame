@@ -444,40 +444,43 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
    */
   async listMatches(opts?: StorageAPI.ListMatchesOpts): Promise<string[]> {
     console.log('LIST MATCHES');
-    // return [...this.metadata.entries()]
-    //   .filter(([, metadata]) => {
-    //     if (!opts) {
-    //       return true;
-    //     }
-    //     if (
-    //       opts.gameName !== undefined &&
-    //       metadata.gameName !== opts.gameName
-    //     ) {
-    //       return false;
-    //     }
-    //     if (opts.where !== undefined) {
-    //       if (opts.where.isGameover !== undefined) {
-    //         const isGameover = metadata.gameover !== undefined;
-    //         if (isGameover !== opts.where.isGameover) {
-    //           return false;
-    //         }
-    //       }
-    //       if (
-    //         opts.where.updatedBefore !== undefined &&
-    //         metadata.updatedAt >= opts.where.updatedBefore
-    //       ) {
-    //         return false;
-    //       }
-    //       if (
-    //         opts.where.updatedAfter !== undefined &&
-    //         metadata.updatedAt <= opts.where.updatedAfter
-    //       ) {
-    //         return false;
-    //       }
-    //     }
-    //     return true;
-    //   })
-    //   .map(([key]) => key);
-    return null;
+  
+    let query = 'SELECT matchID FROM metadata WHERE 1=1';
+    const params: any[] = [];
+  
+    if (opts) {
+      if (opts.gameName !== undefined) {
+        query += ' AND gameName = ?';
+        params.push(opts.gameName);
+      }
+  
+      if (opts.where !== undefined) {
+        if (opts.where.isGameover !== undefined) {
+          query += ' AND gameover IS ' + (opts.where.isGameover ? 'NOT NULL' : 'NULL');
+        }
+  
+        if (opts.where.updatedBefore !== undefined) {
+          query += ' AND updatedAt < ?';
+          params.push(opts.where.updatedBefore);
+        }
+  
+        if (opts.where.updatedAfter !== undefined) {
+          query += ' AND updatedAt > ?';
+          params.push(opts.where.updatedAfter);
+        }
+      }
+    }
+  
+    return new Promise<string[]>((resolve, reject) => {
+      this.db.all<string>(query, params, (err, rows) => {
+        if (err) {
+          reject('Error in listMatches: ' + err);
+        } else {
+          const matchIDs = rows.map(row => row);
+          resolve(matchIDs);
+        }
+      });
+    });
   }
+  
 }
