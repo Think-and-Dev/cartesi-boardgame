@@ -1,7 +1,7 @@
 {
   "name": "react-web",
   "scripts": {
-    "start": "parcel src/index.html --port 3000 --open",
+    "start": "rm -rf .parcel-cache && parcel src/index.html --port 3000 --open",
     "build": "parcel build src/index.html"
   },
   "devDependencies": {
@@ -19,6 +19,7 @@
     "@babel/core": "^7.13.14",
     "@babel/preset-env": "^7.13.12",
     "@babel/preset-react": "^7.13.13",
+    "@think-and-dev/cartesi-boardgame": "^0.0.12-beta",
     "chess.js": "^0.11.0",
     "parcel-plugin-svelte": "^4.0.6",
     "react": "^18.2.0",

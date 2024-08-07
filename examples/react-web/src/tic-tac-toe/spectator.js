@@ -8,16 +8,19 @@
 
 import React from 'react';
 import { Client } from 'boardgame.io/react';
-import { SocketIO } from 'boardgame.io/multiplayer';
+import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
 import TicTacToe from './game';
 import Board from './board';
 
-const hostname = window.location.hostname;
 const App = Client({
   game: TicTacToe,
   board: Board,
   debug: false,
-  multiplayer: SocketIO({ server: `${hostname}:8000` }),
+  multiplayer: CartesiMultiplayer({
+    server: 'http://localhost:8000',
+    dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
+    nodeUrl: 'http://localhost:8080',
+  }),
 });
 
 const Spectator = () => (
