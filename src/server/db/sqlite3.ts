@@ -24,7 +24,7 @@ export class Sqlite extends StorageAPI.Async {
           console.error('Error creating DB:', err.message);
           reject(err);
         } else {
-          this.initializeTables().then(resolve).catch(reject); // Resuelve o rechaza la promesa `initPromise` dependiendo del resultado
+          this.initializeTables().then(resolve).catch(reject); 
           console.log('DB Sqlite created successfully');
         }
       });
@@ -103,7 +103,6 @@ export class Sqlite extends StorageAPI.Async {
       // I think it is not necessary to wait for every method call. i have add await before each method?
       this.createMatchinDb(matchID, opts.initialState);
       this.setState(matchID, opts.initialState);
-      console.log('metada is here');
       this.setMetadata(matchID, opts.metadata);
     } catch {
       console.log(`An error ocurred in create match for ID: ${matchID}`);
@@ -546,7 +545,6 @@ export class Sqlite extends StorageAPI.Async {
     }
   }
 
-  // Método para envolver db.run en una promesa
   private runQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db.run(query, (err) => {
