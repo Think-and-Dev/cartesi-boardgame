@@ -100,8 +100,7 @@ export class Sqlite extends StorageAPI.Async {
     opts: StorageAPI.CreateMatchOpts
   ): Promise<void> {
     try {
-      // I think it is not necessary to wait for every method call. i have add await before each method?
-      this.createMatchinDb(matchID, opts.initialState);
+      await this.createMatchinDb(matchID, opts.initialState);
       this.setState(matchID, opts.initialState);
       this.setMetadata(matchID, opts.metadata);
     } catch {
@@ -115,7 +114,7 @@ export class Sqlite extends StorageAPI.Async {
     const jsonInitialState = JSON.stringify(InitialState);
     return new Promise((resolve, reject) => {
       this.db.run(
-        'INSERT INTO matches (matchID, initialState, currentState) VALUES (?, ?, ?)',
+        'INSERT OR IGNORE INTO matches (matchID, initialState, currentState) VALUES (?, ?, ?)',
         [matchID, jsonInitialState, jsonInitialState],
         (err) => {
           if (err) {
@@ -428,13 +427,33 @@ export class Sqlite extends StorageAPI.Async {
     return result as StorageAPI.FetchResult<O>;
   }
   /**
-   * Remove the match state from DB for matchId
+   * Remove the match  from DB for matchId
    */
-  private deleteState(matchID: string): Promise<void> {
+  private deleteMatch(matchID: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db.run(
         //I do not delete the match, only the status of this match.
-        "UPDATE matches SET currentState = '' WHERE matchID = ?",
+        'DELETE from matches WHERE matchID = ?',
+        [matchID],
+        (err) => {
+          if (err) {
+            reject('Error in delete match: ' + err);
+            return;
+          } else {
+            return resolve();
+          }
+        }
+      );
+    });
+  }
+  /**
+   * Remove the logs from DB for matchId
+   */
+  private deleteLogs(matchID: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        //I do not delete the match, only the status of this match.
+        'DELETE from logs WHERE matchID = ?',
         [matchID],
         (err) => {
           if (err) {
@@ -467,11 +486,38 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   /**
+   * Remove the players from DB for matchId
+   */
+  private deletePlayers(matchID: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run('DELETE from players WHERE matchID = ?', [matchID], (err) => {
+        if (err) {
+          reject('Error in delete metadata: ' + err);
+          return;
+        } else {
+          return resolve();
+        }
+      });
+    });
+  }
+  /**
    * Remove the match state from DB.
    */
   async wipe(matchID: string) {
-    this.deleteState(matchID);
-    this.deleteMetadata(matchID);
+    try {
+      await Promise.all([
+        this.deleteMatch(matchID),
+        this.deleteMetadata(matchID),
+        this.deleteLogs(matchID),
+        this.deletePlayers(matchID),
+      ]);
+      console.log(`Successfully wiped all data for matchID: ${matchID}`);
+    } catch (error) {
+      console.error(
+        `Failed to wipe data for matchID: ${matchID}. Error: ${error}`
+      );
+      throw error;
+    }
   }
   /**
    * Return all keys.
@@ -480,10 +526,11 @@ export class Sqlite extends StorageAPI.Async {
    */
   async listMatches(opts?: StorageAPI.ListMatchesOpts): Promise<string[]> {
     console.log('LIST MATCHES');
-    let query = 'SELECT matchID FROM metadata WHERE 1=1';
+    let query = 'SELECT matchID FROM metadata  WHERE 1=1';
     const params: any[] = [];
 
     if (opts) {
+      console.log('entro toda');
       if (opts.gameName !== undefined) {
         query += ' AND gameName = ?';
         params.push(opts.gameName);
@@ -508,11 +555,14 @@ export class Sqlite extends StorageAPI.Async {
     }
 
     return new Promise<string[]>((resolve, reject) => {
-      this.db.all<string>(query, params, (err, rows) => {
+      this.db.all<{ matchID: string }>(query, params, (err, rows) => {
         if (err) {
           reject('Error in listMatches: ' + err);
         } else {
-          const matchIDs = rows.map((row) => row);
+          console.log(rows);
+          const matchIDs = rows.map((row) => row.matchID);
+          console.log('ANASHEE');
+          console.log(matchIDs);
           resolve(matchIDs);
         }
       });
