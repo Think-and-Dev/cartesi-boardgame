@@ -24,7 +24,7 @@ export class Sqlite extends StorageAPI.Async {
           console.error('Error creating DB:', err.message);
           reject(err);
         } else {
-          this.initializeTables().then(resolve).catch(reject); 
+          this.initializeTables().then(resolve).catch(reject);
           console.log('DB Sqlite created successfully');
         }
       });

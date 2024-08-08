@@ -97,12 +97,35 @@ describe('Sqlite', () => {
       automatic: null,
       patch: null,
     };
+    const logEntry3: LogEntry = {
+      _stateID: 1,
+      action: {
+        type: 'MAKE_MOVE',
+        payload: { type: '', playerID: '0', args: [] },
+      },
+      turn: 1,
+      phase: '',
+    };
+    const logEntry3Expect: LogEntry = {
+      _stateID: 1,
+      action: {
+        type: 'MAKE_MOVE',
+        payload: { type: '', playerID: '0', args: [] },
+      },
+      turn: 1,
+      phase: '',
+      redact: null,
+      metadata: null,
+      automatic: null,
+      patch: null,
+    };
 
     await db.setState('matchID', null, [logEntry1]);
     await db.setState('matchID', null, [logEntry2]);
+    await db.setState('matchID', null, [logEntry3]);
 
     const result = await db.fetch('matchID', { log: true });
-    expect(result.log).toEqual([logEntry1, logEntry2]);
+    expect(result.log).toEqual([logEntry1, logEntry2, logEntry3Expect]);
   });
 });
 
