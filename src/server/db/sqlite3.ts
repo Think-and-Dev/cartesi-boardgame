@@ -12,71 +12,83 @@ interface MatchRow {
  */
 export class Sqlite extends StorageAPI.Async {
   private db: sqlite3.Database;
+  private initPromise: Promise<void>;
   /**
    * Creates a new Sqlite storage.
    */
   constructor() {
     super();
-    this.db = new sqlite3.Database('sqlite.db', (err) => {
-      if (err) {
-        console.error('Error creating DB: ', err.message);
-      } else {
-        console.log('DB Sqlite created successfully');
-        this.initializeTables();
-      }
-    }); 
+    this.initPromise = new Promise<void>((resolve, reject) => {
+      this.db = new sqlite3.Database('sqlite.db', (err) => {
+        if (err) {
+          console.error('Error creating DB:', err.message);
+          reject(err);
+        } else {
+          this.initializeTables().then(resolve).catch(reject); // Resuelve o rechaza la promesa `initPromise` dependiendo del resultado
+          console.log('DB Sqlite created successfully');
+        }
+      });
+    });
   }
-  private async initializeTables() {
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS matches (
-        matchID TEXT PRIMARY KEY,
-        initialState TEXT,
-        currentState TEXT
-      )
-    `);
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS metadata (
-        matchID TEXT PRIMARY KEY,
-        gameName TEXT,
-        setupData TEXT,
-        gameover TEXT,
-        nextMatchID TEXT,
-        unlisted BOOLEAN,
-        createdAt INTEGER,
-        updatedAt INTEGER,
-        FOREIGN KEY(matchID) REFERENCES matches(matchID)
-      )
-    `);
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS players (
-        matchID TEXT,
-        id INTEGER,
-        name TEXT,
-        credentials TEXT,
-        data TEXT,
-        isConnected BOOLEAN,
-        PRIMARY KEY (matchID, id),
-        FOREIGN KEY(matchID) REFERENCES matches(matchID)
-      )
-    `);
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS logs (
-        logID INTEGER PRIMARY KEY AUTOINCREMENT,
-        matchID TEXT,
-        action TEXT,
-        _stateID INTEGER,
-        turn INTEGER,
-        phase TEXT,
-        redact BOOLEAN,
-        automatic BOOLEAN,
-        metadata TEXT,
-        patch TEXT,
-        FOREIGN KEY(matchID) REFERENCES matches(matchID)
-      )
-    `);
+
+  private async initializeTables(): Promise<void> {
+    try {
+      await Promise.all([
+        this.runQuery(`
+          CREATE TABLE IF NOT EXISTS matches (
+            matchID TEXT PRIMARY KEY,
+            initialState TEXT,
+            currentState TEXT
+          )
+        `),
+        this.runQuery(`
+          CREATE TABLE IF NOT EXISTS metadata (
+            matchID TEXT PRIMARY KEY,
+            gameName TEXT,
+            setupData TEXT,
+            gameover TEXT,
+            nextMatchID TEXT,
+            unlisted BOOLEAN,
+            createdAt INTEGER,
+            updatedAt INTEGER,
+            FOREIGN KEY(matchID) REFERENCES matches(matchID)
+          )
+        `),
+        this.runQuery(`
+          CREATE TABLE IF NOT EXISTS players (
+            matchID TEXT,
+            id INTEGER,
+            name TEXT,
+            credentials TEXT,
+            data TEXT,
+            isConnected BOOLEAN,
+            PRIMARY KEY (matchID, id),
+            FOREIGN KEY(matchID) REFERENCES matches(matchID)
+          )
+        `),
+        this.runQuery(`
+          CREATE TABLE IF NOT EXISTS logs (
+            logID INTEGER PRIMARY KEY AUTOINCREMENT,
+            matchID TEXT,
+            action TEXT,
+            _stateID INTEGER,
+            turn INTEGER,
+            phase TEXT,
+            redact BOOLEAN,
+            automatic BOOLEAN,
+            metadata TEXT,
+            patch TEXT,
+            FOREIGN KEY(matchID) REFERENCES matches(matchID)
+          )
+        `),
+      ]);
+    } catch (error) {
+      console.error('Error initializing tables:', error.message);
+      throw error;
+    }
   }
   async connect() {
-    console.log('Connected to the DB');
+    await this.initPromise;
   }
   /**
    * Create a new match.
@@ -89,10 +101,11 @@ export class Sqlite extends StorageAPI.Async {
   ): Promise<void> {
     try {
       // I think it is not necessary to wait for every method call. i have add await before each method?
-       this.createMatchinDb(matchID,opts.initialState);
-       this.setState(matchID, opts.initialState);
-       this.setMetadata(matchID,opts.metadata);
-    } catch (error) {
+      this.createMatchinDb(matchID, opts.initialState);
+      this.setState(matchID, opts.initialState);
+      console.log('metada is here');
+      this.setMetadata(matchID, opts.metadata);
+    } catch {
       console.log(`An error ocurred in create match for ID: ${matchID}`);
     }
   }
@@ -103,7 +116,7 @@ export class Sqlite extends StorageAPI.Async {
     const jsonInitialState = JSON.stringify(InitialState);
     return new Promise((resolve, reject) => {
       this.db.run(
-        `INSERT INTO matches (matchID, initialState, currentState) VALUES (?, ?, ?)`,
+        'INSERT INTO matches (matchID, initialState, currentState) VALUES (?, ?, ?)',
         [matchID, jsonInitialState, jsonInitialState],
         (err) => {
           if (err) {
@@ -122,9 +135,9 @@ export class Sqlite extends StorageAPI.Async {
    */
   private updateMatchinDb(matchID: string, state: State): Promise<void> {
     return new Promise((resolve, reject) => {
-      let jsonState = JSON.stringify(state);
+      const jsonState = JSON.stringify(state);
       this.db.run(
-        `UPDATE matches SET currentState = ? WHERE matchID = ?`,
+        'UPDATE matches SET currentState = ? WHERE matchID = ?',
         [jsonState, matchID],
         (err) => {
           if (err) {
@@ -141,16 +154,14 @@ export class Sqlite extends StorageAPI.Async {
    * Create metadata in DB for an especific matchId
    */
   async setMetadata(matchID: string, opts: Server.MatchData): Promise<void> {
-     console.log('SET METADATA');
     return new Promise((resolve, reject) => {
       const jsonMetadata = {
         ...opts,
         setupData: JSON.stringify(opts.setupData),
-        gameover: JSON.stringify(opts.gameover)
+        gameover: JSON.stringify(opts.gameover),
       };
-  
       this.db.run(
-        `INSERT OR REPLACE INTO metadata (matchID, gameName, setupData, gameover, nextMatchID, unlisted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+        'INSERT OR REPLACE INTO metadata (matchID, gameName, setupData, gameover, nextMatchID, unlisted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
         [
           matchID,
           jsonMetadata.gameName,
@@ -159,16 +170,18 @@ export class Sqlite extends StorageAPI.Async {
           jsonMetadata.nextMatchID,
           jsonMetadata.unlisted,
           jsonMetadata.createdAt,
-          jsonMetadata.updatedAt
-        ], 
+          jsonMetadata.updatedAt,
+        ],
         async (err) => {
           if (err) {
             reject('Error in setMetadata: ' + err);
             return;
           }
           try {
-            await this.setPlayers(matchID, opts.players);
-            resolve();
+            if (opts.players) {
+              await this.setPlayers(matchID, opts.players);
+              resolve();
+            }
           } catch (error) {
             reject('Error in setMetadata (players): ' + error);
           }
@@ -176,40 +189,40 @@ export class Sqlite extends StorageAPI.Async {
       );
     });
   }
-private async setPlayers(matchId,playersList){
-  const players = playersList;
-  const playerInsertPromises = Object.keys(players).map((playerID) => {
-  const player = players[playerID];
-    return new Promise<void>((resolve, reject) => {
-      this.db.run(
-        `INSERT OR REPLACE INTO players (matchID, id, name, credentials, data, isConnected) VALUES (?, ?, ?, ?, ?, ?);`,
-        [
-          matchId,
-          playerID,
-          player.name || '',
-          player.credentials || '',
-          JSON.stringify(player.data),
-          player.isConnected ? 1 : 0
-        ],
-        (err) => {
-          if (err) {
-            reject('Error in setMetadata: ' + err);
-          } else {
-            resolve();
+  private async setPlayers(matchId, playersList) {
+    const players = playersList;
+    const playerInsertPromises = Object.keys(players).map((playerID) => {
+      const player = players[playerID];
+      return new Promise<void>((resolve, reject) => {
+        this.db.run(
+          'INSERT OR REPLACE INTO players (matchID, id, name, credentials, data, isConnected) VALUES (?, ?, ?, ?, ?, ?);',
+          [
+            matchId,
+            playerID,
+            player.name || '',
+            player.credentials || '',
+            JSON.stringify(player.data),
+            player.isConnected ? 1 : 0,
+          ],
+          (err) => {
+            if (err) {
+              reject('Error in setMetadata: ' + err);
+            } else {
+              resolve();
+            }
           }
-        }
-      );
+        );
+      });
     });
-  });
-  await Promise.all(playerInsertPromises);
-}
+    await Promise.all(playerInsertPromises);
+  }
   /**
    * Write the match state in DB.
    */
   async setState(matchID: string, state: State, deltalog?: LogEntry[]) {
     try {
       if (deltalog && deltalog.length > 0) {
-        const existingLogs = await this.getLog(matchID) as LogEntry[];
+        const existingLogs = (await this.getLog(matchID)) as LogEntry[];
         const combinedLogs = [...existingLogs, ...deltalog];
         await this.setLog(matchID, combinedLogs);
         console.log(`Create a log succesfully for matchId:${matchID}`);
@@ -222,140 +235,167 @@ private async setPlayers(matchId,playersList){
       );
     }
   }
-private getLog(matchID : string):Promise<LogEntry[]>{
-  return new Promise((resolve, reject) => {
-    this.db.all<any>('SELECT * FROM logs WHERE matchID = ?;', [matchID], (err, rows) => {
-      if (err) {
-        reject('Error in getLog: ' + err);
-        return;
-      } else {
-        const logs = rows.map(row => ({
-          action:  row.action ? JSON.parse(row.action) : null,
-          _stateID: row._stateID,
-          turn: row.turn,
-          phase: row.phase,
-          redact: row.redact,
-          automatic: row.automatic,
-          metadata: row.metadata ? JSON.parse(row.metadata) : null,
-          patch: row.patch ? JSON.parse(row.patch) : null
-        }));
-        resolve(logs);
-      }
-    });
-  });
-}
-async getMetadata(matchID: string): Promise<Server.MatchData | undefined> {
-  try {
-      const metadataRow = await new Promise<Server.MatchData>((resolve, reject) => {
-      this.db.get<Server.MatchData>('SELECT * FROM metadata WHERE matchID = ?;', [matchID], (err, row) => {
-        if (err) {
-          reject('Error in getMetadata (metadata): ' + err);
-        } else {
-          resolve(row);
+  private getLog(matchID: string): Promise<LogEntry[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all<any>(
+        'SELECT * FROM logs WHERE matchID = ?;',
+        [matchID],
+        (err, rows) => {
+          if (err) {
+            reject('Error in getLog: ' + err);
+            return;
+          } else {
+            const logs = rows.map((row) => ({
+              action: row.action ? JSON.parse(row.action) : null,
+              _stateID: row._stateID,
+              turn: row.turn,
+              phase: row.phase,
+              redact: row.redact,
+              automatic: row.automatic,
+              metadata: row.metadata ? JSON.parse(row.metadata) : null,
+              patch: row.patch ? JSON.parse(row.patch) : null,
+            }));
+            resolve(logs);
+          }
         }
-      });
+      );
     });
-
-    if (!metadataRow) {
-      return undefined;
-    }
-    const players = await this.getPlayers(matchID);
-
-    return {
-      gameName: metadataRow.gameName,
-      players: players,
-      setupData: metadataRow.setupData ? JSON.parse(metadataRow.setupData) : undefined,
-      gameover: metadataRow.gameover ? JSON.parse(metadataRow.gameover) : undefined,
-      nextMatchID: metadataRow.nextMatchID,
-      unlisted: metadataRow.unlisted,
-      createdAt: metadataRow.createdAt,
-      updatedAt: metadataRow.updatedAt
-    };
-  } catch (err) {
-    throw new Error('Error in getMetadata: ' + err);
   }
-}
-private async getPlayers(matchID: string): Promise<{ [id: number]: Server.PlayerMetadata }> {
-  return new Promise((resolve, reject) => {
-    this.db.all<Server.PlayerMetadata>('SELECT * FROM players WHERE matchID = ?;', [matchID], (err, rows) => {
-      if (err) {
-        reject('Error in getPlayers: ' + err);
-      } else {
-        const playersObject: { [id: number]: Server.PlayerMetadata } = {};
-        rows.forEach(row => {
-          playersObject[row.id] = {
-            id: row.id,
-            name: row.name,
-            credentials: row.credentials,
-            data: row.data ? JSON.parse(row.data) : null,
-            isConnected: row.isConnected
-          };
-        });
-        resolve(playersObject);
+  async getMetadata(matchID: string): Promise<Server.MatchData | undefined> {
+    try {
+      const metadataRow = await new Promise<Server.MatchData>(
+        (resolve, reject) => {
+          this.db.get<Server.MatchData>(
+            'SELECT * FROM metadata WHERE matchID = ?;',
+            [matchID],
+            (err, row) => {
+              if (err) {
+                reject('Error in getMetadata (metadata): ' + err);
+              } else {
+                resolve(row);
+              }
+            }
+          );
+        }
+      );
+
+      if (!metadataRow) {
+        return undefined;
       }
+      const players = await this.getPlayers(matchID);
+
+      return {
+        gameName: metadataRow.gameName,
+        players: players,
+        setupData: metadataRow.setupData
+          ? JSON.parse(metadataRow.setupData)
+          : undefined,
+        gameover: metadataRow.gameover
+          ? JSON.parse(metadataRow.gameover)
+          : undefined,
+        nextMatchID: metadataRow.nextMatchID,
+        unlisted: metadataRow.unlisted,
+        createdAt: metadataRow.createdAt,
+        updatedAt: metadataRow.updatedAt,
+      };
+    } catch (error) {
+      throw new Error('Error in getMetadata: ' + error);
+    }
+  }
+  private async getPlayers(
+    matchID: string
+  ): Promise<{ [id: number]: Server.PlayerMetadata }> {
+    return new Promise((resolve, reject) => {
+      this.db.all<Server.PlayerMetadata>(
+        'SELECT * FROM players WHERE matchID = ?;',
+        [matchID],
+        (err, rows) => {
+          if (err) {
+            reject('Error in getPlayers: ' + err);
+          } else {
+            const playersObject: { [id: number]: Server.PlayerMetadata } = {};
+            rows.forEach((row) => {
+              playersObject[row.id] = {
+                id: row.id,
+                name: row.name,
+                credentials: row.credentials,
+                data: row.data ? JSON.parse(row.data) : null,
+                isConnected: row.isConnected,
+              };
+            });
+            resolve(playersObject);
+          }
+        }
+      );
     });
-  });
-}
+  }
 
-private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
-  return new Promise((resolve, reject) => {
-    this.db.run(`
+  private setLog(matchID: string, logs: LogEntry[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `
       DELETE FROM logs WHERE matchID = ?;
-    `, [matchID]);
+    `,
+        [matchID]
+      );
 
-    const db = this.db.prepare(`
+      const db = this.db.prepare(`
       INSERT INTO logs (matchID, action, _stateID, turn, phase, redact, automatic, metadata, patch)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    logs.forEach(log => {
-      db.run([
-        matchID,
-        JSON.stringify(log.action),
-        log._stateID,
-        log.turn,
-        log.phase,
-        log.redact ?? null,
-        log.automatic ?? null,
-        JSON.stringify(log.metadata),
-        JSON.stringify(log.patch)
-      ]);
-    });
+      logs.forEach((log) => {
+        db.run([
+          matchID,
+          JSON.stringify(log.action),
+          log._stateID,
+          log.turn,
+          log.phase,
+          log.redact ?? null,
+          log.automatic ?? null,
+          JSON.stringify(log.metadata),
+          JSON.stringify(log.patch),
+        ]);
+      });
 
-    db.finalize(err => {
-      if (err) {
-        reject('Error in setLog: ' + err);
-        return;
-      }
-      resolve();
-    });
-  });
-  }
-  private getState(matchID,isInitialState):Promise<string|undefined> {
-    return new Promise((resolve, reject) => {
-    this.db.get<MatchRow>(
-      `SELECT matchID,initialState,currentState FROM matches WHERE matchID = ?;`,
-      [matchID],
-      (err,row) => {
+      db.finalize((err) => {
         if (err) {
-          reject('Error in getState: ' + err);
+          reject('Error in setLog: ' + err);
           return;
         }
-        if (!row) {
-          console.log('not result of DB');
-          resolve(undefined);
-          return;
-        }
-        let state;
-        if (isInitialState) {
-          state = row ? row.initialState : undefined;
-        } else {
-          state = row ? row.currentState: undefined;
-        }
-        return resolve(state);
+        resolve();
+      });
+    });
+  }
+  private getState(matchID, isInitialState): Promise<string | undefined> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.db.get<MatchRow>(
+          'SELECT matchID,initialState,currentState FROM matches WHERE matchID = ?;',
+          [matchID],
+          (err, row) => {
+            if (err) {
+              reject('Error in getState: ' + err);
+              return;
+            }
+            if (!row) {
+              console.log('not result of DB');
+              resolve(undefined);
+              return;
+            }
+            let state;
+            if (isInitialState) {
+              state = row ? row.initialState : undefined;
+            } else {
+              state = row ? row.currentState : undefined;
+            }
+            return resolve(state);
+          }
+        );
+      } catch {
+        return undefined;
       }
-    );
-  });
+    });
   }
   /**
    * Fetches state for a particular matchID.
@@ -365,40 +405,37 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
     opts: O
   ): Promise<StorageAPI.FetchResult<O>> {
     const result = {} as StorageAPI.FetchFields;
-    let isInitialState: boolean = true;
- 
+    const isInitialState = true;
+
     if (opts.state) {
-      console.log('hola state uno');
-      let state= await this.getState(matchID,!isInitialState);
-      result.state = state ? JSON.parse(state) as State : undefined;
+      const state = await this.getState(matchID, !isInitialState);
+      result.state = state ? (JSON.parse(state) as State) : undefined;
     }
     if (opts.metadata) {
-      console.log('hola metadata');
-      let metadata= await this.getMetadata(matchID);
+      const metadata = await this.getMetadata(matchID);
       console.log(metadata);
       result.metadata = metadata as Server.MatchData;
     }
     if (opts.log) {
-      console.log('hola logs');
-      let logs= await this.getLog(matchID);
+      const logs = await this.getLog(matchID);
       result.log = logs as LogEntry[];
       console.log(result.log);
     }
     if (opts.initialState) {
-      console.log('hola state dos');
-      let state= await this.getState(matchID,isInitialState);
-      result.state = state ? JSON.parse(state) as State : undefined ;
+      const state = await this.getState(matchID, isInitialState);
+      result.initialState = state ? (JSON.parse(state) as State) : undefined;
     }
-    
+
     return result as StorageAPI.FetchResult<O>;
   }
-   /**
+  /**
    * Remove the match state from DB for matchId
    */
-   private deleteState(matchID: string): Promise<void> {
+  private deleteState(matchID: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.db.run(//I do not delete the match, only the status of this match.
-        `UPDATE matches SET currentState = '' WHERE matchID = ?`,
+      this.db.run(
+        //I do not delete the match, only the status of this match.
+        "UPDATE matches SET currentState = '' WHERE matchID = ?",
         [matchID],
         (err) => {
           if (err) {
@@ -411,25 +448,25 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
       );
     });
   }
-    /**
+  /**
    * Remove the match metadata from DB for matchId
    */
-    private deleteMetadata(matchID: string): Promise<void> {
-      return new Promise((resolve, reject) => {
-        this.db.run(
-          `DELETE from metadata WHERE matchID = ?`,
-          [matchID],
-          (err) => {
-            if (err) {
-              reject('Error in delete metadata: ' + err);
-              return;
-            } else {
-              return resolve();
-            }
+  private deleteMetadata(matchID: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'DELETE from metadata WHERE matchID = ?',
+        [matchID],
+        (err) => {
+          if (err) {
+            reject('Error in delete metadata: ' + err);
+            return;
+          } else {
+            return resolve();
           }
-        );
-      });
-    }
+        }
+      );
+    });
+  }
   /**
    * Remove the match state from DB.
    */
@@ -446,40 +483,79 @@ private setLog(matchID: string,logs: LogEntry[]):Promise<void>{
     console.log('LIST MATCHES');
     let query = 'SELECT matchID FROM metadata WHERE 1=1';
     const params: any[] = [];
-  
+
     if (opts) {
       if (opts.gameName !== undefined) {
         query += ' AND gameName = ?';
         params.push(opts.gameName);
       }
-  
+
       if (opts.where !== undefined) {
         if (opts.where.isGameover !== undefined) {
-          query += ' AND gameover IS ' + (opts.where.isGameover ? 'NOT NULL' : 'NULL');
+          query +=
+            ' AND gameover IS ' + (opts.where.isGameover ? 'NOT NULL' : 'NULL');
         }
-  
+
         if (opts.where.updatedBefore !== undefined) {
           query += ' AND updatedAt < ?';
           params.push(opts.where.updatedBefore);
         }
-  
+
         if (opts.where.updatedAfter !== undefined) {
           query += ' AND updatedAt > ?';
           params.push(opts.where.updatedAfter);
         }
       }
     }
-  
+
     return new Promise<string[]>((resolve, reject) => {
       this.db.all<string>(query, params, (err, rows) => {
         if (err) {
           reject('Error in listMatches: ' + err);
         } else {
-          const matchIDs = rows.map(row => row);
+          const matchIDs = rows.map((row) => row);
           resolve(matchIDs);
         }
       });
     });
   }
-  
+
+  /**
+   * Clear all tables of DB
+   */
+  public async clearAll(): Promise<void> {
+    const tables = ['matches', 'metadata', 'logs', 'players'];
+    const promises = tables.map(
+      (table) =>
+        new Promise<void>((resolve, reject) => {
+          this.db.run('DELETE FROM ${table}', (err) => {
+            if (err) {
+              reject('Error deleting from ${table}: ${err}');
+            } else {
+              resolve();
+            }
+          });
+        })
+    );
+    try {
+      await Promise.all(promises);
+      console.log('All tables cleared successfully.');
+    } catch (error) {
+      console.error('Error clearing all tables:', error);
+      throw error;
+    }
+  }
+
+  // Método para envolver db.run en una promesa
+  private runQuery(query: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(query, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
 }
