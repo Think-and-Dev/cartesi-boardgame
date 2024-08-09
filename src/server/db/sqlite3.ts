@@ -411,13 +411,11 @@ export class Sqlite extends StorageAPI.Async {
     }
     if (opts.metadata) {
       const metadata = await this.getMetadata(matchID);
-      console.log(metadata);
       result.metadata = metadata as Server.MatchData;
     }
     if (opts.log) {
       const logs = await this.getLog(matchID);
       result.log = logs as LogEntry[];
-      console.log(result.log);
     }
     if (opts.initialState) {
       const state = await this.getState(matchID, isInitialState);
@@ -525,12 +523,10 @@ export class Sqlite extends StorageAPI.Async {
    * @override
    */
   async listMatches(opts?: StorageAPI.ListMatchesOpts): Promise<string[]> {
-    console.log('LIST MATCHES');
     let query = 'SELECT matchID FROM metadata  WHERE 1=1';
     const params: any[] = [];
 
     if (opts) {
-      console.log('entro toda');
       if (opts.gameName !== undefined) {
         query += ' AND gameName = ?';
         params.push(opts.gameName);
@@ -559,10 +555,7 @@ export class Sqlite extends StorageAPI.Async {
         if (err) {
           reject('Error in listMatches: ' + err);
         } else {
-          console.log(rows);
           const matchIDs = rows.map((row) => row.matchID);
-          console.log('ANASHEE');
-          console.log(matchIDs);
           resolve(matchIDs);
         }
       });

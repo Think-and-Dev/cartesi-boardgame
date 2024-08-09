@@ -159,7 +159,6 @@ describe('Sqlite', () => {
 
     test('filter by gameName', async () => {
       let keys = await db.listMatches();
-      console.log(keys);
       expect(keys).toEqual(
         expect.arrayContaining(['matchID', 'matchID2', 'matchID3'])
       );
