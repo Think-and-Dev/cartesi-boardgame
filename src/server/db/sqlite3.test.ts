@@ -17,7 +17,7 @@ describe('Sqlite', () => {
     await db.connect();
   });
   afterEach(async () => {
-    await db.clearAll();
+    await db.clear();
   });
 
   test('basic', async () => {

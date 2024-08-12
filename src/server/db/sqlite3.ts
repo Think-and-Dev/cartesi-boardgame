@@ -565,7 +565,7 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Deletes all data from the db tables
    */
-  public async clearAll(): Promise<void> {
+  public async clear(): Promise<void> {
     const tables = ['matches', 'metadata', 'logs', 'players'];
     const promises = tables.map(
       (table) =>
