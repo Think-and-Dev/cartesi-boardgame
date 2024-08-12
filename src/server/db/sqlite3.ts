@@ -114,7 +114,7 @@ export class Sqlite extends StorageAPI.Async {
     const jsonInitialState = JSON.stringify(InitialState);
     return new Promise((resolve, reject) => {
       this.db.run(
-        'INSERT OR IGNORE INTO matches (matchID, initialState, currentState) VALUES (?, ?, ?)',
+        'INSERT INTO matches (matchID, initialState, currentState) VALUES (?, ?, ?)',
         [matchID, jsonInitialState, jsonInitialState],
         (err) => {
           if (err) {
@@ -563,16 +563,16 @@ export class Sqlite extends StorageAPI.Async {
   }
 
   /**
-   * Clear all tables of DB
+   * Deletes all data from the db tables
    */
   public async clearAll(): Promise<void> {
     const tables = ['matches', 'metadata', 'logs', 'players'];
     const promises = tables.map(
       (table) =>
         new Promise<void>((resolve, reject) => {
-          this.db.run('DELETE FROM ${table}', (err) => {
+          this.db.run(`DELETE FROM ${table}`, (err) => {
             if (err) {
-              reject('Error deleting from ${table}: ${err}');
+              reject(`Error deleting from ${table}: ${err}`);
             } else {
               resolve();
             }
@@ -587,7 +587,10 @@ export class Sqlite extends StorageAPI.Async {
       throw error;
     }
   }
-
+  /**
+   * Execute query.
+   *
+   */
   private runQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db.run(query, (err) => {

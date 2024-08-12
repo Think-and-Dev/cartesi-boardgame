@@ -7,21 +7,17 @@
  */
 
 import { Sqlite } from './sqlite3';
-import path from 'path';
-import fs from 'fs';
 import type { State, Server, LogEntry } from '../../types';
 
 describe('Sqlite', () => {
   let db: Sqlite;
 
   beforeAll(async () => {
-    const dbPath = path.resolve(__dirname, '../../../sqlite.db');
-    if (fs.existsSync(dbPath)) {
-      fs.unlinkSync(dbPath);
-      console.log('DB eliminated');
-    }
     db = new Sqlite();
     await db.connect();
+  });
+  afterEach(async () => {
+    await db.clearAll();
   });
 
   test('basic', async () => {
@@ -31,11 +27,20 @@ describe('Sqlite', () => {
 
     // Create game.
     const state: unknown = { a: 1 };
-    const metadata: unknown = { gameName: 'tic-tac-toe' };
+    const metadata: Server.MatchData = {
+      gameName: 'tic-tac-toe',
+      setupData: undefined,
+      gameover: undefined,
+      players: {},
+      unlisted: null,
+      nextMatchID: null,
+      createdAt: null,
+      updatedAt: null,
+    };
 
     await db.createMatch('matchID', {
       initialState: state as State,
-      metadata: metadata as Server.MatchData,
+      metadata: metadata,
     });
 
     //Must return created game.
@@ -47,7 +52,7 @@ describe('Sqlite', () => {
       });
       expect(result.state).toEqual({ a: 1 });
       expect(result.initialState).toEqual(result.state);
-      expect(result.metadata.gameName).toEqual('tic-tac-toe');
+      expect(result.metadata).toEqual(metadata);
     }
 
     // // Must return all keys
@@ -106,26 +111,29 @@ describe('Sqlite', () => {
       turn: 1,
       phase: '',
     };
-    const logEntry3Expect: LogEntry = {
-      _stateID: 1,
-      action: {
-        type: 'MAKE_MOVE',
-        payload: { type: '', playerID: '0', args: [] },
-      },
-      turn: 1,
-      phase: '',
-      redact: null,
-      metadata: null,
-      automatic: null,
-      patch: null,
-    };
 
     await db.setState('matchID', null, [logEntry1]);
     await db.setState('matchID', null, [logEntry2]);
     await db.setState('matchID', null, [logEntry3]);
 
     const result = await db.fetch('matchID', { log: true });
-    expect(result.log).toEqual([logEntry1, logEntry2, logEntry3Expect]);
+    expect(result.log).toEqual([
+      logEntry1,
+      logEntry2,
+      {
+        _stateID: 1,
+        action: {
+          type: 'MAKE_MOVE',
+          payload: { type: '', playerID: '0', args: [] },
+        },
+        turn: 1,
+        phase: '',
+        redact: null,
+        metadata: null,
+        automatic: null,
+        patch: null,
+      },
+    ]);
   });
 
   describe('listMatches', () => {
