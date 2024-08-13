@@ -18,6 +18,7 @@ describe('Sqlite', () => {
   });
   afterEach(async () => {
     await db.clear();
+    console.log('after each');
   });
 
   test('basic', async () => {
