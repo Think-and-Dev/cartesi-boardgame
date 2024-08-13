@@ -100,7 +100,7 @@ export class Sqlite extends StorageAPI.Async {
     opts: StorageAPI.CreateMatchOpts
   ): Promise<void> {
     try {
-      await this.createMatchinDb(matchID, opts.initialState);
+      await this.createMatchInDb(matchID, opts.initialState);
       this.setState(matchID, opts.initialState);
       this.setMetadata(matchID, opts.metadata);
     } catch {
@@ -110,7 +110,7 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Create the match in DB for an especific matchId.
    */
-  private createMatchinDb(matchID, InitialState): Promise<void> {
+  private createMatchInDb(matchID, InitialState): Promise<void> {
     const jsonInitialState = JSON.stringify(InitialState);
     return new Promise((resolve, reject) => {
       this.db.run(
@@ -131,7 +131,7 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Update the match in DB for an especific matchId.
    */
-  private updateMatchinDb(matchID: string, state: State): Promise<void> {
+  private updateMatchInDb(matchID: string, state: State): Promise<void> {
     return new Promise((resolve, reject) => {
       const jsonState = JSON.stringify(state);
       this.db.run(
@@ -225,7 +225,7 @@ export class Sqlite extends StorageAPI.Async {
         await this.setLog(matchID, combinedLogs);
         console.log(`Create a log succesfully for matchId:${matchID}`);
       }
-      await this.updateMatchinDb(matchID, state);
+      await this.updateMatchInDb(matchID, state);
     } catch (error) {
       console.log(
         `An error ocurred for matchId in setState:${matchID}:`,
