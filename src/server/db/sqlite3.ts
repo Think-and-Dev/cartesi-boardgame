@@ -100,9 +100,11 @@ export class Sqlite extends StorageAPI.Async {
     opts: StorageAPI.CreateMatchOpts
   ): Promise<void> {
     try {
-      await this.createMatchInDb(matchID, opts.initialState);
-      this.setState(matchID, opts.initialState);
-      this.setMetadata(matchID, opts.metadata);
+      await Promise.all([
+        this.createMatchInDb(matchID, opts.initialState),
+        this.setState(matchID, opts.initialState),
+        this.setMetadata(matchID, opts.metadata),
+      ]);
     } catch {
       console.log(`An error ocurred in create match for ID: ${matchID}`);
     }
@@ -178,8 +180,8 @@ export class Sqlite extends StorageAPI.Async {
           try {
             if (opts.players) {
               await this.setPlayers(matchID, opts.players);
-              resolve();
             }
+            resolve();
           } catch (error) {
             reject('Error in setMetadata (players): ' + error);
           }

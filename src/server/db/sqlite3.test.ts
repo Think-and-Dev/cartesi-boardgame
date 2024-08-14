@@ -18,7 +18,6 @@ describe('Sqlite', () => {
   });
   afterEach(async () => {
     await db.clear();
-    console.log('after each');
   });
 
   test('basic', async () => {
@@ -30,11 +29,7 @@ describe('Sqlite', () => {
     const state: unknown = { a: 1 };
     const metadata: Server.MatchData = {
       gameName: 'tic-tac-toe',
-      setupData: undefined,
-      gameover: undefined,
       players: {},
-      unlisted: null,
-      nextMatchID: null,
       createdAt: null,
       updatedAt: null,
     };
@@ -53,7 +48,16 @@ describe('Sqlite', () => {
       });
       expect(result.state).toEqual({ a: 1 });
       expect(result.initialState).toEqual(result.state);
-      expect(result.metadata).toEqual(metadata);
+      expect(result.metadata).toEqual({
+        gameName: 'tic-tac-toe',
+        setupData: undefined,
+        gameover: undefined,
+        players: {},
+        unlisted: null,
+        nextMatchID: null,
+        createdAt: null,
+        updatedAt: null,
+      });
     }
 
     // // Must return all keys
@@ -164,11 +168,9 @@ describe('Sqlite', () => {
           updatedAt: new Date(2020, 4).getTime(),
         } as Server.MatchData,
       });
-      console.log('before each');
     });
 
     test('filter by gameName', async () => {
-      console.log('test gameName');
       let keys = await db.listMatches();
       expect(keys).toEqual(
         expect.arrayContaining(['matchID', 'matchID2', 'matchID3'])
@@ -181,7 +183,6 @@ describe('Sqlite', () => {
       expect(keys).toEqual(['matchID3']);
     });
     test('filter by isGameover', async () => {
-      console.log('test isGameOver');
       let keys = await db.listMatches({});
 
       expect(keys).toEqual(
@@ -195,7 +196,6 @@ describe('Sqlite', () => {
       expect(keys).toEqual(expect.arrayContaining(['matchID', 'matchID3']));
     });
     test('filter by updatedBefore', async () => {
-      console.log('test updatedBefore');
       const timestamp = new Date(2020, 4);
 
       let keys = await db.listMatches({});
@@ -209,7 +209,6 @@ describe('Sqlite', () => {
       expect(keys).toEqual(expect.arrayContaining(['matchID']));
     });
     test('filter by updatedAfter', async () => {
-      console.log('test updatedAfter');
       const timestamp = new Date(2020, 4);
 
       let keys = await db.listMatches({});
@@ -223,7 +222,6 @@ describe('Sqlite', () => {
       expect(keys).toEqual(['matchID2']);
     });
     test('filter combined', async () => {
-      console.log('test combined');
       const timestamp = new Date(2020, 4);
       const timestamp2 = new Date(2020, 2, 15);
       let keys = await db.listMatches({
