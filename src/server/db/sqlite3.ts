@@ -153,8 +153,8 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Create metadata in DB for an especific matchId
    */
-  async setMetadata(matchID: string, opts: Server.MatchData): Promise<void> {
-    return new Promise((resolve, reject) => {
+  async setMetadata(matchID: string, opts: Server.MatchData) {
+    await new Promise<void>((resolve, reject) => {
       const jsonMetadata = {
         ...opts,
         setupData: JSON.stringify(opts.setupData),
@@ -191,9 +191,9 @@ export class Sqlite extends StorageAPI.Async {
   }
   private async setPlayers(matchId, playersList) {
     const players = playersList;
-    const playerInsertPromises = Object.keys(players).map((playerID) => {
+    const playerInsertPromises = Object.keys(players).map(async (playerID) => {
       const player = players[playerID];
-      return new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         this.db.run(
           'INSERT OR REPLACE INTO players (matchID, id, name, credentials, data, isConnected) VALUES (?, ?, ?, ?, ?, ?);',
           [
