@@ -1,7 +1,17 @@
-import { TicTacToe } from './Game';
 import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
 import { ethers } from 'ethers';
+import { TicTacToe } from './Game';
 import { Client } from '@think-and-dev/cartesi-boardgame/client';
+
+const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
+const SERVER = 'http://localhost:8000';
+const NODE_URL = 'http://localhost:8080';
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 interface State {
   G: {
@@ -36,9 +46,9 @@ export class TicTacToeClient {
       matchID,
       setupData: { matchID },
       multiplayer: CartesiMultiplayer({
-        server: 'http://localhost:8000',
-        dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
-        nodeUrl: 'http://localhost:8080',
+        server: SERVER,
+        dappAddress: DAPP_ADDRESS,
+        nodeUrl: NODE_URL,
         signer: signer,
       }),
     });
@@ -47,7 +57,6 @@ export class TicTacToeClient {
     this.createBoard();
     this.attachListeners();
 
-    //* "Back to Lobby"
     const backButton = document.createElement('button');
     backButton.textContent = 'Back to Lobby';
     backButton.addEventListener('click', () => {
@@ -69,11 +78,11 @@ export class TicTacToeClient {
     }
 
     this.rootElement.innerHTML = `
-      <table>${rows.join('')}</table>
-      <p class="winner"></p>
-      <p class="current-player"></p>
-      <p class="match-id"></p>
-    `;
+        <table>${rows.join('')}</table>  
+        <p class="winner"></p>
+        <p class="current-player"></p>
+        <p class="match-id"></p>
+      `;
   }
 
   private attachListeners() {
@@ -93,8 +102,6 @@ export class TicTacToeClient {
     if (state === null) {
       return;
     }
-    console.log('Updating state:', state);
-    console.log('MatchID:', this.matchID);
 
     const cells = this.rootElement.querySelectorAll('.cell');
     cells.forEach((cell) => {

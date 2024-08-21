@@ -1,11 +1,3 @@
-/*
- * Copyright 2018 The boardgame.io Authors
- *
- * Use of this source code is governed by a MIT-style
- * license that can be found in the LICENSE file or at
- * https://opensource.org/licenses/MIT.
- */
-
 import type { CorsOptions } from 'cors';
 import type Koa from 'koa';
 import type Router from '@koa/router';
@@ -37,8 +29,11 @@ const CreateMatch = async ({
   ctx: Koa.BaseContext;
   uuid: () => string;
 } & Parameters<typeof createMatch>[0]): Promise<string> => {
+  console.log('CreateMatch - Options:  in api.ts', opts); // Log de las opciones al crear un match
   const matchID = uuid();
   const match = createMatch(opts);
+
+  console.log('CreateMatch - Match ID: in api.ts', matchID); // Log del ID del match creado
 
   if ('setupDataError' in match) {
     ctx.throw(400, match.setupDataError);
@@ -59,6 +54,7 @@ const createClientMatchData = (
   matchID: string,
   metadata: Server.MatchData
 ): LobbyAPI.Match => {
+  console.log('createClientMatchData - Match ID: in api.ts', matchID); // Log del ID del match en el cliente
   return {
     ...metadata,
     matchID,
@@ -88,12 +84,18 @@ export const configureRouter = ({
   uuid?: () => string;
   db: StorageAPI.Sync | StorageAPI.Async;
 }) => {
+  console.log('Configuring Router: in api.ts', configureApp); // Log de la configuración del router
+
   /**
    * List available games.
    *
    * @return - Array of game names as string.
    */
   router.get('/games', async (ctx) => {
+    console.log(
+      'List Games - Games: in api.ts',
+      games.map((game) => game.name)
+    ); // Log de los juegos disponibles
     const body: LobbyAPI.GameList = games.map((game) => game.name);
     ctx.body = body;
   });
@@ -109,8 +111,8 @@ export const configureRouter = ({
    * @return - The ID of the created match.
    */
   router.post('/games/:name/create', koaBody(), async (ctx) => {
-    console.log('Received request to create game:', ctx.params.name);
-    console.log('Request body:', ctx.request.body);
+    console.log('Received request to create game: in api.ts', ctx.params.name); // Log del nombre del juego que se está creando
+    console.log('Request body: in api.ts', ctx.request.body); // Log del cuerpo de la solicitud
     // The name of the game (for example: tic-tac-toe).
     const gameName = ctx.params.name;
     // User-data to pass to the game setup function.
@@ -122,8 +124,8 @@ export const configureRouter = ({
 
     const game = games.find((g) => g.name === gameName);
     if (!game) {
-      console.error(`Game ${gameName} not found`);
-      ctx.throw(404, 'Game ' + gameName + ' not found');
+      console.error(`Game ${gameName} not found in api.ts`); // Log si no se encuentra el juego
+      ctx.throw(404, 'Game ' + gameName + ' not found in api.ts');
     }
 
     if (
@@ -145,6 +147,8 @@ export const configureRouter = ({
       unlisted,
     });
 
+    console.log('Created match with ID: in api.ts', matchID); // Log del ID del match creado
+
     const body: LobbyAPI.CreatedMatch = { matchID };
     ctx.body = body;
   });
@@ -159,6 +163,8 @@ export const configureRouter = ({
    */
   router.get('/games/:name', async (ctx) => {
     const gameName = ctx.params.name;
+    console.log('Listing matches for game: in api.ts', gameName); // Log del nombre del juego para listar matches
+
     const isGameoverString = unwrapQuery(ctx.query.isGameover);
     const updatedBeforeString = unwrapQuery(ctx.query.updatedBefore);
     const updatedAfterString = unwrapQuery(ctx.query.updatedAfter);
@@ -185,6 +191,13 @@ export const configureRouter = ({
         updatedAfter = parsedNumber;
       }
     }
+
+    console.log('Match Query Parameters: in api.ts', {
+      isGameover,
+      updatedBefore,
+      updatedAfter,
+    }); // Log de los parámetros de la consulta
+
     const matchList = await db.listMatches({
       gameName,
       where: {
@@ -193,6 +206,9 @@ export const configureRouter = ({
         updatedBefore,
       },
     });
+
+    console.log('Match List: in api.ts', matchList); // Log de la lista de matches obtenidos
+
     const matches = [];
     for (const matchID of matchList) {
       const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
@@ -215,6 +231,7 @@ export const configureRouter = ({
    */
   router.get('/games/:name/:id', async (ctx) => {
     const matchID = ctx.params.id;
+    console.log('Fetching match with ID: in api.ts', matchID); // Log del ID del match que se está obteniendo
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -236,10 +253,14 @@ export const configureRouter = ({
    * @return - Player ID and credentials to use when interacting in the joined match.
    */
   router.post('/games/:name/:id/join', koaBody(), async (ctx) => {
+    console.log('Joining match with ID: in api.ts', ctx.params.id); // Log del ID del match al que se está uniendo
     let playerID = ctx.request.body.playerID;
     const playerName = ctx.request.body.playerName;
     const data = ctx.request.body.data;
     const matchID = ctx.params.id;
+
+    console.log('Join Request Body: in api.ts', ctx.request.body); // Log del cuerpo de la solicitud de unión
+
     if (!playerName) {
       ctx.throw(403, 'playerName is required');
     }
@@ -276,6 +297,8 @@ export const configureRouter = ({
     const playerCredentials = await auth.generateCredentials(ctx);
     metadata.players[playerID].credentials = playerCredentials;
 
+    console.log('Player Credentials: in api.ts', playerCredentials); // Log de las credenciales del jugador
+
     await db.setMetadata(matchID, metadata);
 
     const body: LobbyAPI.JoinedMatch = { playerID, playerCredentials };
@@ -295,6 +318,10 @@ export const configureRouter = ({
     const matchID = ctx.params.id;
     const playerID = ctx.request.body.playerID;
     const credentials = ctx.request.body.credentials;
+
+    console.log('Leaving match with ID: in api.ts', matchID); // Log del ID del match que se está dejando
+    console.log('Leave Request Body: in api.ts', ctx.request.body); // Log del cuerpo de la solicitud de salida
+
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -342,6 +369,10 @@ export const configureRouter = ({
     const playerID = ctx.request.body.playerID;
     const credentials = ctx.request.body.credentials;
     const unlisted = ctx.request.body.unlisted;
+
+    console.log('Play Again Request - Game Name: in api.ts', gameName); // Log del nombre del juego
+    console.log('Play Again Request - Match ID: in api.ts', matchID); // Log del ID del match
+
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -367,6 +398,7 @@ export const configureRouter = ({
 
     // Check if nextMatch is already set, if so, return that id.
     if (metadata.nextMatchID) {
+      console.log('Next Match ID already set: in api.ts', metadata.nextMatchID); // Log si ya existe un nextMatchID
       ctx.body = { nextMatchID: metadata.nextMatchID };
       return;
     }
@@ -376,7 +408,6 @@ export const configureRouter = ({
     // The number of players for this game instance.
     const numPlayers =
       Number.parseInt(ctx.request.body.numPlayers) ||
-      // eslint-disable-next-line unicorn/explicit-length-check
       Object.keys(metadata.players).length;
 
     const game = games.find((g) => g.name === gameName);
@@ -391,6 +422,8 @@ export const configureRouter = ({
     });
     metadata.nextMatchID = nextMatchID;
 
+    console.log('New match created with ID: in api.ts', nextMatchID); // Log del ID del nuevo match creado
+
     await db.setMetadata(matchID, metadata);
 
     const body: LobbyAPI.NextMatch = { nextMatchID };
@@ -403,6 +436,10 @@ export const configureRouter = ({
     const credentials = ctx.request.body.credentials;
     const newName = ctx.request.body.newName;
     const data = ctx.request.body.data;
+
+    console.log('Updating Player Metadata - Match ID: in api.ts', matchID); // Log del ID del match que se está actualizando
+    console.log('Updating Player Metadata - Player ID: in api.ts', playerID); // Log del ID del jugador que se está actualizando
+
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -482,9 +519,9 @@ export const configureApp = (
     cors({
       origin: (ctx) => {
         const origin = ctx.get('Origin');
-        console.log('Request Origin:', origin); // Log para verificar el origen de la solicitud
+        console.log('Request Origin: in api.ts', origin); // Log para verificar el origen de la solicitud
         const allowed = isOriginAllowed(origin, origins);
-        console.log('Is Origin Allowed:', allowed); // Log para verificar si el origen está permitido
+        console.log('Is Origin Allowed: in api.ts', allowed); // Log para verificar si el origen está permitido
         return allowed ? origin : '';
       },
     })

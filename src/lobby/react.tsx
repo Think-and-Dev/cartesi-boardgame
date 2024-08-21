@@ -178,7 +178,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   _createConnection = (props: LobbyProps) => {
     const name = this.state.playerName;
     this.connection = LobbyConnection({
-      server: props.lobbyServer,
+      nodeUrl: props.lobbyServer,
       gameComponents: props.gameComponents,
       playerName: name,
       playerCredentials: this.state.credentialStore[name],

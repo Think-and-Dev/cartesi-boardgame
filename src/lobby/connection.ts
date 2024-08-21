@@ -16,7 +16,7 @@ export interface GameComponent {
 }
 
 interface LobbyConnectionOpts {
-  server: string;
+  nodeUrl: string;
   playerName?: string;
   playerCredentials?: string;
   gameComponents: GameComponent[];
@@ -30,12 +30,12 @@ class _LobbyConnectionImpl {
   matches: LobbyAPI.MatchList['matches'];
 
   constructor({
-    server,
+    nodeUrl,
     gameComponents,
     playerName,
     playerCredentials,
   }: LobbyConnectionOpts) {
-    this.client = new LobbyClient({ server });
+    this.client = new LobbyClient({ nodeUrl });
     this.gameComponents = gameComponents;
     this.playerName = playerName || 'Visitor';
     this.playerCredentials = playerCredentials;

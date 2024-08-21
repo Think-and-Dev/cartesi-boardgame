@@ -49,26 +49,37 @@ export class LobbyClientError extends Error {
 }
 
 export class LobbyClient {
+  private nodeUrl: string;
   private server: string;
   private readonly cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
 
   constructor({
     server,
+    nodeUrl,
     dappAddress,
     signer,
   }: {
     server?: string;
+    nodeUrl?: string;
     dappAddress?: string;
     signer?: ethers.Signer;
   } = {}) {
-    if (!server) throw new Error('Server URL is required');
-    this.server = server.replace(/\/$/, '');
+    if (!nodeUrl) throw new Error('Server URL is required');
+    // Configuración de la URL del servidor
+    this.nodeUrl = nodeUrl || 'http://localhost:8080';
+
+    // Asegúrate de que la URL termina con una barra '/'
+    if (this.nodeUrl.slice(-1) !== '/') {
+      this.nodeUrl += '/';
+    }
+
+    console.log('nodeUrl URL: in client.ts', this.nodeUrl); // Log del URL del servidor
 
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress,
       endpoints: {
-        graphQL: new URL(`${server}/graphql`),
-        inspect: new URL(`${server}/inspect`),
+        graphQL: new URL(`${this.nodeUrl}graphql`),
+        inspect: new URL(`${this.nodeUrl}inspect`),
       },
       provider: signer?.provider,
       signer: signer,
@@ -76,18 +87,28 @@ export class LobbyClient {
   }
 
   private async request(route: string, init?: RequestInit) {
+    console.log('Route: in client.ts', route);
+
     const config: RequestInit = {
       method: init?.method,
       body: init?.body,
       headers: init?.headers,
     };
 
+    console.log('Request configuration: in client.ts', config);
+
     try {
-      const fullUrl = this.server + route;
+      const fullUrl = this.nodeUrl + route.replace(/^\//, ''); //* Saco primer barra
+      //! server or nodeUrl
+      console.log('config: in client.ts', config);
+      console.log('route: in client.ts', route);
+
+      console.log('Full URL: in client.ts', fullUrl);
 
       const response = await this.cartesifyFetch(fullUrl, config);
 
       const responseText = await response.text();
+      console.log('Response Text: in client.ts', responseText);
 
       if (!response.ok) {
         let details: any;
@@ -114,16 +135,23 @@ export class LobbyClient {
       body: JSON.stringify(opts.body),
       headers: { 'Content-Type': 'application/json' },
     };
-    if (opts.init)
+    if (opts.init) {
       init = {
         ...init,
         ...opts.init,
         headers: { ...init.headers, ...opts.init.headers },
       };
+    }
+
+    console.log('Post route: in client.ts', route); // Log de la ruta en la solicitud POST
+    console.log('Post body: in client.ts', opts.body); // Log del cuerpo en la solicitud POST
+    console.log('Post init: in client.ts', init); // Log de la configuración init en la solicitud POST
+
     return this.request(route, init);
   }
 
   async listGames(init?: RequestInit): Promise<string[]> {
+    console.log('Listing games with init: in client.ts', init); // Log del init al listar juegos
     return this.request('/games', init);
   }
 
@@ -138,6 +166,8 @@ export class LobbyClient {
   ): Promise<LobbyAPI.MatchList> {
     assertGameName(gameName);
     let query = '';
+    console.log('where: in client.ts', where);
+
     if (where) {
       const queries = [];
       const { isGameover, updatedBefore, updatedAfter } = where;
@@ -150,12 +180,13 @@ export class LobbyClient {
     }
 
     const fullUrl = `/games/${gameName}${query}`;
+    console.log('listMatches fullUrl: in client.ts', fullUrl); // Log de la URL completa para listMatches
 
     try {
       const response = await this.request(fullUrl, init);
       return response;
     } catch (error) {
-      console.error('listMatches error:', error);
+      console.error('listMatches error: in client.ts', error);
       throw error;
     }
   }
@@ -167,7 +198,9 @@ export class LobbyClient {
   ): Promise<LobbyAPI.Match> {
     assertGameName(gameName);
     assertMatchID(matchID);
-    return this.request(`/games/${gameName}/${matchID}`, init);
+    const fullUrl = `/games/${gameName}/${matchID}`;
+    console.log('getMatch fullUrl: in client.ts', fullUrl); // Log de la URL completa para getMatch
+    return this.request(fullUrl, init);
   }
 
   async createMatch(
@@ -182,7 +215,7 @@ export class LobbyClient {
   ): Promise<LobbyAPI.CreatedMatch> {
     assertGameName(gameName);
     validateBody(body, { numPlayers: 'number' });
-
+    console.log('createMatch body: in client.ts', body); // Log del cuerpo de createMatch
     return this.post(`/games/${gameName}/create`, { body, init });
   }
 
@@ -203,6 +236,7 @@ export class LobbyClient {
       playerID: ['string', 'undefined'],
       playerName: 'string',
     });
+    console.log('joinMatch body: in client.ts', body); // Log del cuerpo de joinMatch
     return this.post(`/games/${gameName}/${matchID}/join`, { body, init });
   }
 
@@ -219,6 +253,7 @@ export class LobbyClient {
     assertGameName(gameName);
     assertMatchID(matchID);
     validateBody(body, { playerID: 'string', credentials: 'string' });
+    console.log('leaveMatch body: in client.ts', body); // Log del cuerpo de leaveMatch
     await this.post(`/games/${gameName}/${matchID}/leave`, { body, init });
   }
 
@@ -237,6 +272,7 @@ export class LobbyClient {
     assertGameName(gameName);
     assertMatchID(matchID);
     validateBody(body, { playerID: 'string', credentials: 'string' });
+    console.log('updatePlayer body: in client.ts', body); // Log del cuerpo de updatePlayer
     await this.post(`/games/${gameName}/${matchID}/update`, { body, init });
   }
 
@@ -254,6 +290,7 @@ export class LobbyClient {
     assertGameName(gameName);
     assertMatchID(matchID);
     validateBody(body, { playerID: 'string', credentials: 'string' });
+    console.log('playAgain body: in client.ts', body); // Log del cuerpo de playAgain
     return this.post(`/games/${gameName}/${matchID}/playAgain`, { body, init });
   }
 }
