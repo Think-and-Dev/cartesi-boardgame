@@ -14,7 +14,6 @@ export const MetaMaskProvider = ({ children }) => {
       }
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      console.log('Signer obtained:', signer);
       setSigner(signer);
     }
     fetchSigner();

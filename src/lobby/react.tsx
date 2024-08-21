@@ -21,6 +21,8 @@ import type { MatchOpts } from './match-instance';
 import LobbyMatchInstance from './match-instance';
 import LobbyCreateMatchForm from './create-match-form';
 import type { LobbyAPI } from '../types';
+import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
+import { useMetaMask } from '../../examples/react-web/src';
 
 enum LobbyPhases {
   ENTER = 'enter',
@@ -249,6 +251,8 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
 
   _startMatch = (gameName: string, matchOpts: MatchOpts) => {
     const gameCode = this.connection._getGameComponents(gameName);
+    const signer = useMetaMask();
+
     if (!gameCode) {
       this.setState({
         errorMsg: 'game ' + gameName + ' not supported',
@@ -258,9 +262,17 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
 
     let multiplayer = undefined;
     if (matchOpts.numPlayers > 1) {
-      multiplayer = this.props.gameServer
-        ? SocketIO({ server: this.props.gameServer })
-        : SocketIO();
+      try {
+        multiplayer = CartesiMultiplayer({
+          server: 'http://127.0.0.1:8000',
+          dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
+          nodeUrl: 'http://localhost:8080',
+          signer: signer,
+        });
+        
+      } catch (error) {
+        console.error('Error creating Cartesify multiplayer:', error);
+      }
     }
 
     if (matchOpts.numPlayers == 1) {

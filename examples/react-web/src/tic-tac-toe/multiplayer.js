@@ -3,7 +3,7 @@ import { Client } from 'boardgame.io/react';
 import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
 import TicTacToe from './game';
 import Board from './board';
-import { useMetaMask } from './metamaskSigner';
+import { useMetaMask } from '../metamaskSigner';
 
 const Multiplayer = () => {
   const signer = useMetaMask();

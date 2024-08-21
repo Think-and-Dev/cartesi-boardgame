@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app';
-import { MetaMaskProvider } from './tic-tac-toe/metamaskSigner';
+import { MetaMaskProvider } from './metamaskSigner';
 
 const container =
   document.getElementById('test') || document.createElement('div');

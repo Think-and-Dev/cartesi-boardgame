@@ -16,6 +16,7 @@ import { terser } from 'rollup-plugin-terser';
 import pkg from './package.json';
 import typescript from 'rollup-plugin-typescript2';
 import ts from 'typescript';
+import css from 'rollup-plugin-css-only';
 const subpackages = require('./subpackages');
 
 const internalDeps = new Set(['svelte']);
@@ -23,6 +24,16 @@ const external = [
   ...Object.keys(pkg.dependencies).filter((name) => !internalDeps.has(name)),
   'react',
   'socket.io-client',
+  'nanoid/non-secure',
+  'react-dom/client',
+  'boardgame.io/react',
+  'boardgame.io/client',
+  'boardgame.io/multiplayer',
+  'boardgame.io/debug',
+  'boardgame.io/ai',
+  'superagent',
+  'boardgame.io/core',
+  'chess',
 ];
 
 const plugins = [
@@ -39,6 +50,7 @@ const plugins = [
     useTsconfigDeclarationDir: true,
   }),
   svelte({ extensions: ['.svelte'] }),
+  css({ output: 'bundle.css' }),
 ];
 
 const serverPlugins = [

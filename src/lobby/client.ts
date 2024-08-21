@@ -55,10 +55,12 @@ export class LobbyClient {
   constructor({
     server,
     dappAddress,
+    nodeUrl,
     signer,
   }: {
     server?: string;
     dappAddress?: string;
+    nodeUrl?: string;
     signer?: ethers.Signer;
   } = {}) {
     if (!server) throw new Error('Server URL is required');
@@ -67,8 +69,8 @@ export class LobbyClient {
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress,
       endpoints: {
-        graphQL: new URL(`${server}/graphql`),
-        inspect: new URL(`${server}/inspect`),
+        graphQL: new URL(`${nodeUrl}/graphql`),
+        inspect: new URL(`${nodeUrl}/inspect`),
       },
       provider: signer?.provider,
       signer: signer,
@@ -84,20 +86,17 @@ export class LobbyClient {
 
     try {
       const fullUrl = this.server + route;
-
       const response = await this.cartesifyFetch(fullUrl, config);
-
       const responseText = await response.text();
 
       if (!response.ok) {
         let details: any;
-
         try {
           details = JSON.parse(responseText);
-        } catch {
+        } catch (error) {
           details = responseText;
+          console.error('Detailed request error:', error);
         }
-
         throw new LobbyClientError(`HTTP status ${response.status}`, details);
       }
 
