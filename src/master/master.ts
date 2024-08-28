@@ -159,6 +159,7 @@ export class Master {
     if (StorageAPI.isSynchronous(this.storageAPI)) {
       ({ metadata } = this.storageAPI.fetch(matchID, { metadata: true }));
     } else {
+      console.log('OBTAIN METADATA');
       ({ metadata } = await this.storageAPI.fetch(matchID, { metadata: true }));
     }
 
