@@ -154,7 +154,7 @@ export class Master {
     if (!credAction || !credAction.payload) {
       return { error: 'missing action or action payload' };
     }
-
+    console.log('INIT UPDATE');
     let metadata: Server.MatchData | undefined;
     if (StorageAPI.isSynchronous(this.storageAPI)) {
       ({ metadata } = this.storageAPI.fetch(matchID, { metadata: true }));
@@ -260,7 +260,7 @@ export class Master {
     }
 
     const prevState = store.getState();
-
+    console.log('DISPATCH');
     // Update server's version of the store.
     store.dispatch(action);
     state = store.getState();
@@ -270,7 +270,7 @@ export class Master {
       action,
       matchID,
     });
-
+    console.log('SEND ALL');
     if (this.game.deltaState) {
       this.transportAPI.sendAll({
         type: 'patch',
@@ -284,7 +284,7 @@ export class Master {
     }
 
     const { deltalog, ...stateWithoutDeltalog } = state;
-
+    console.log('LET METADATA');
     let newMetadata: Server.MatchData | undefined;
     if (
       metadata &&
@@ -300,9 +300,11 @@ export class Master {
     }
 
     if (StorageAPI.isSynchronous(this.storageAPI)) {
+      console.log('set state SYNC');
       this.storageAPI.setState(key, stateWithoutDeltalog, deltalog);
       if (newMetadata) this.storageAPI.setMetadata(key, newMetadata);
     } else {
+      console.log('set state ASYNC');
       const writes = [
         this.storageAPI.setState(key, stateWithoutDeltalog, deltalog),
       ];
