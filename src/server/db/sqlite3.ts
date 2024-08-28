@@ -120,7 +120,8 @@ export class Sqlite extends StorageAPI.Async {
         [matchID, jsonInitialState, jsonInitialState],
         (err) => {
           if (err) {
-            reject('Error in updateMatchinDb: ' + err);
+            console.log('Error in createMatchinDb' + err);
+            reject('Error in createMatchinDb: ' + err);
             return;
           } else {
             console.log(`A new match has been created with ID: ${matchID}`);
@@ -141,6 +142,7 @@ export class Sqlite extends StorageAPI.Async {
         [jsonState, matchID],
         (err) => {
           if (err) {
+            console.log('Error in updateMatchinDb' + err);
             reject('Error in updateMatchinDb: ' + err);
             return;
           } else {
@@ -183,6 +185,7 @@ export class Sqlite extends StorageAPI.Async {
             }
             resolve();
           } catch (error) {
+            console.log('Error in setMetadata (players):' + error);
             reject('Error in setMetadata (players): ' + error);
           }
         }
@@ -206,7 +209,8 @@ export class Sqlite extends StorageAPI.Async {
           ],
           (err) => {
             if (err) {
-              reject('Error in setMetadata: ' + err);
+              console.log('Error in setPlayers' + err);
+              reject('Error in setPlayers: ' + err);
             } else {
               resolve();
             }
@@ -242,6 +246,7 @@ export class Sqlite extends StorageAPI.Async {
         [matchID],
         (err, rows) => {
           if (err) {
+            console.log('Error in getLog: ' + err);
             reject('Error in getLog: ' + err);
             return;
           } else {
@@ -270,6 +275,7 @@ export class Sqlite extends StorageAPI.Async {
             [matchID],
             (err, row) => {
               if (err) {
+                console.log('Error in getMetadata (metadata): ' + err);
                 reject('Error in getMetadata (metadata): ' + err);
               } else {
                 resolve(row);
@@ -299,6 +305,7 @@ export class Sqlite extends StorageAPI.Async {
         updatedAt: metadataRow.updatedAt,
       };
     } catch (error) {
+      console.log('Error in getMetadata' + error);
       throw new Error('Error in getMetadata: ' + error);
     }
   }
@@ -311,6 +318,7 @@ export class Sqlite extends StorageAPI.Async {
         [matchID],
         (err, rows) => {
           if (err) {
+            console.log('Error in getPlayers' + err);
             reject('Error in getPlayers: ' + err);
           } else {
             const playersObject: { [id: number]: Server.PlayerMetadata } = {};
@@ -360,6 +368,7 @@ export class Sqlite extends StorageAPI.Async {
 
       db.finalize((err) => {
         if (err) {
+          console.log('Error in setLog: ' + err);
           reject('Error in setLog: ' + err);
           return;
         }
@@ -393,6 +402,7 @@ export class Sqlite extends StorageAPI.Async {
           }
         );
       } catch {
+        console.log('Error in getState');
         return undefined;
       }
     });
@@ -437,6 +447,7 @@ export class Sqlite extends StorageAPI.Async {
         [matchID],
         (err) => {
           if (err) {
+            console.log('Error in delete match: ' + err);
             reject('Error in delete match: ' + err);
             return;
           } else {
@@ -457,6 +468,7 @@ export class Sqlite extends StorageAPI.Async {
         [matchID],
         (err) => {
           if (err) {
+            console.log('Error in delete state: ' + err);
             reject('Error in delete state: ' + err);
             return;
           } else {
@@ -476,6 +488,7 @@ export class Sqlite extends StorageAPI.Async {
         [matchID],
         (err) => {
           if (err) {
+            console.log('Error in delete metadata: ' + err);
             reject('Error in delete metadata: ' + err);
             return;
           } else {
@@ -492,7 +505,8 @@ export class Sqlite extends StorageAPI.Async {
     return new Promise((resolve, reject) => {
       this.db.run('DELETE from players WHERE matchID = ?', [matchID], (err) => {
         if (err) {
-          reject('Error in delete metadata: ' + err);
+          console.log('Error in delete players: ' + err);
+          reject('Error in delete players: ' + err);
           return;
         } else {
           return resolve();
@@ -513,7 +527,7 @@ export class Sqlite extends StorageAPI.Async {
       ]);
       console.log(`Successfully wiped all data for matchID: ${matchID}`);
     } catch (error) {
-      console.error(
+      console.log(
         `Failed to wipe data for matchID: ${matchID}. Error: ${error}`
       );
       throw error;
@@ -555,6 +569,7 @@ export class Sqlite extends StorageAPI.Async {
     return new Promise<string[]>((resolve, reject) => {
       this.db.all<{ matchID: string }>(query, params, (err, rows) => {
         if (err) {
+          console.log('Error in listMatches: ' + err);
           reject('Error in listMatches: ' + err);
         } else {
           const matchIDs = rows.map((row) => row.matchID);
@@ -574,6 +589,7 @@ export class Sqlite extends StorageAPI.Async {
         new Promise<void>((resolve, reject) => {
           this.db.run(`DELETE FROM ${table}`, (err) => {
             if (err) {
+              console.log(`Error deleting from ${table}: ${err}`);
               reject(`Error deleting from ${table}: ${err}`);
             } else {
               resolve();
@@ -585,7 +601,7 @@ export class Sqlite extends StorageAPI.Async {
       await Promise.all(promises);
       console.log('All tables cleared successfully.');
     } catch (error) {
-      console.error('Error clearing all tables:', error);
+      console.log('Error clearing all tables:', error);
       throw error;
     }
   }
@@ -597,6 +613,7 @@ export class Sqlite extends StorageAPI.Async {
     return new Promise((resolve, reject) => {
       this.db.run(query, (err) => {
         if (err) {
+          console.log('Error run query  all tables:', err);
           reject(err);
         } else {
           resolve();
