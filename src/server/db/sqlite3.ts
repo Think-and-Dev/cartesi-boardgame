@@ -19,7 +19,7 @@ export class Sqlite extends StorageAPI.Async {
   constructor() {
     super();
     this.initPromise = new Promise<void>((resolve, reject) => {
-      this.db = new sqlite3.Database('sqlite.db', (err) => {
+      this.db = new sqlite3.Database('sqlite.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
         if (err) {
           console.error('Error creating DB:', err.message);
           reject(err);
