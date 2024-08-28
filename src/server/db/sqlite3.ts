@@ -227,6 +227,7 @@ export class Sqlite extends StorageAPI.Async {
    */
   async setState(matchID: string, state: State, deltalog?: LogEntry[]) {
     try {
+      console.log('inside set state');
       if (deltalog && deltalog.length > 0) {
         const existingLogs = (await this.getLog(matchID)) as LogEntry[];
         const combinedLogs = [...existingLogs, ...deltalog];
