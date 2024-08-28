@@ -146,6 +146,7 @@ export class Sqlite extends StorageAPI.Async {
             reject('Error in updateMatchinDb: ' + err);
             return;
           } else {
+            console.log('updateMatchinDb succesfully');
             return resolve();
           }
         }
@@ -373,6 +374,7 @@ export class Sqlite extends StorageAPI.Async {
           reject('Error in setLog: ' + err);
           return;
         }
+        console.log('Set log succesfully: ');
         resolve();
       });
     });
