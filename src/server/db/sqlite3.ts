@@ -19,15 +19,19 @@ export class Sqlite extends StorageAPI.Async {
   constructor() {
     super();
     this.initPromise = new Promise<void>((resolve, reject) => {
-      this.db = new sqlite3.Database('sqlite.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
-        if (err) {
-          console.error('Error creating DB:', err.message);
-          reject(err);
-        } else {
-          this.initializeTables().then(resolve).catch(reject);
-          console.log('DB Sqlite created successfully');
+      this.db = new sqlite3.Database(
+        'sqlite.db',
+        sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+        (err) => {
+          if (err) {
+            console.error('Error creating DB:', err.message);
+            reject(err);
+          } else {
+            this.initializeTables().then(resolve).catch(reject);
+            console.log('DB Sqlite created successfully');
+          }
         }
-      });
+      );
     });
   }
 
@@ -344,42 +348,64 @@ export class Sqlite extends StorageAPI.Async {
   private setLog(matchID: string, logs: LogEntry[]): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db.run(
-        `
-      DELETE FROM logs WHERE matchID = ?;
-    `,
-        [matchID]
-      );
+        `DELETE FROM logs WHERE matchID = ?;`,
+        [matchID],
+        (deleteErr) => {
+          if (deleteErr) {
+            console.log('Error deleting logs: ' + deleteErr);
+            return reject('Error deleting logs: ' + deleteErr);
+          }
 
-      const db = this.db.prepare(`
-      INSERT INTO logs (matchID, action, _stateID, turn, phase, redact, automatic, metadata, patch)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+          const insertStmt = this.db.prepare(`
+            INSERT INTO logs (matchID, action, _stateID, turn, phase, redact, automatic, metadata, patch)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `);
 
-      logs.forEach((log) => {
-        db.run([
-          matchID,
-          JSON.stringify(log.action),
-          log._stateID,
-          log.turn,
-          log.phase,
-          log.redact ?? null,
-          log.automatic ?? null,
-          JSON.stringify(log.metadata),
-          JSON.stringify(log.patch),
-        ]);
-      });
+          const insertPromises: Promise<void>[] = logs.map((log) => {
+            return new Promise<void>((resolve, reject) => {
+              insertStmt.run(
+                [
+                  matchID,
+                  JSON.stringify(log.action),
+                  log._stateID,
+                  log.turn,
+                  log.phase,
+                  log.redact ?? null,
+                  log.automatic ?? null,
+                  JSON.stringify(log.metadata),
+                  JSON.stringify(log.patch),
+                ],
+                (insertErr) => {
+                  if (insertErr) {
+                    console.log('Error inserting log: ' + insertErr);
+                    return reject('Error inserting log: ' + insertErr);
+                  }
+                  console.log('Inserting log succesfully');
+                  resolve();
+                }
+              );
+            });
+          });
 
-      db.finalize((err) => {
-        if (err) {
-          console.log('Error in setLog: ' + err);
-          reject('Error in setLog: ' + err);
-          return;
+          Promise.all(insertPromises)
+            .then(() => {
+              insertStmt.finalize((finalizeErr) => {
+                if (finalizeErr) {
+                  console.log('Error finalizing log insertion: ' + finalizeErr);
+                  return reject(
+                    'Error finalizing log insertion: ' + finalizeErr
+                  );
+                }
+                console.log('Set log successfully');
+                resolve();
+              });
+            })
+            .catch(reject);
         }
-        console.log('Set log succesfully: ');
-        resolve();
-      });
+      );
     });
   }
+
   private getState(matchID, isInitialState): Promise<string | undefined> {
     return new Promise((resolve, reject) => {
       try {

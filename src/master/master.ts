@@ -304,21 +304,21 @@ export class Master {
       console.log('set state SYNC');
       this.storageAPI.setState(key, stateWithoutDeltalog, deltalog);
       if (newMetadata) this.storageAPI.setMetadata(key, newMetadata);
-    } else{
+    } else {
       console.log('set state ASYNC');
-    try {
-      const writes = [
-        this.storageAPI.setState(key, stateWithoutDeltalog, deltalog),
-      ];
-      console.log('new metadata'+ newMetadata);
-      if (newMetadata) {
-        writes.push(this.storageAPI.setMetadata(key, newMetadata));
+      try {
+        const writes = [
+          this.storageAPI.setState(key, stateWithoutDeltalog, deltalog),
+        ];
+        console.log('new metadata' + newMetadata);
+        if (newMetadata) {
+          writes.push(this.storageAPI.setMetadata(key, newMetadata));
+        }
+        await Promise.all(writes);
+      } catch (error) {
+        console.error('Error setting state:', error);
       }
-      await Promise.all(writes);
-    } catch (error) {
-      console.error('Error setting state:', error);
     }
-  }
   }
 
   /**
