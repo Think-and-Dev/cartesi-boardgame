@@ -176,6 +176,7 @@ export class Sqlite extends StorageAPI.Async {
         ],
         async (err) => {
           if (err) {
+            console.log('Error in setMetadata:' + err);
             reject('Error in setMetadata: ' + err);
             return;
           }
