@@ -257,6 +257,7 @@ export class Sqlite extends StorageAPI.Async {
     }
   }
   private getLog(matchID: string): Promise<LogEntry[]> {
+    console.log('inside get log');
     return new Promise((resolve, reject) => {
       this.db.all<any>(
         'SELECT * FROM logs WHERE matchID = ?;',
