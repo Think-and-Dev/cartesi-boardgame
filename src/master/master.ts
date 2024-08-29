@@ -319,8 +319,10 @@ export class Master {
           console.log('inside metadata new metadata');
           writes.push(this.storageAPI.setMetadata(key, newMetadata));
         }
-        console.log(writes);
+       
         await Promise.all(writes);
+        console.log('after writes');
+        console.log(writes);
       } catch (error) {
         console.error('Error setting state:', error);
       }
