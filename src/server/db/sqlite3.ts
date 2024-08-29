@@ -241,6 +241,7 @@ export class Sqlite extends StorageAPI.Async {
         console.log('inside IF set state');
         const existingLogs = (await this.getLog(matchID)) as LogEntry[];
         const combinedLogs = [...existingLogs, ...deltalog];
+        console.log('antes el set log');
         await this.setLog(matchID, combinedLogs);
         console.log('pase el set log');
         console.log(`Create a log succesfully for matchId:${matchID}`);
