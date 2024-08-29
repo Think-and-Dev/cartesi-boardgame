@@ -240,7 +240,7 @@ export class Sqlite extends StorageAPI.Async {
       if (deltalog && deltalog.length > 0) {
         console.log('inside IF set state');
         const existingLogs = (await this.getLog(matchID)) as LogEntry[];
-        console.log('existingLogs'+existingLogs);
+        console.log('despues existingLogs'+existingLogs);
         const combinedLogs = [...existingLogs, ...deltalog];
         console.log('antes el set log');
         await this.setLog(matchID, combinedLogs);
