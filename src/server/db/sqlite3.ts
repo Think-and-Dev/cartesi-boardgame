@@ -140,6 +140,7 @@ export class Sqlite extends StorageAPI.Async {
    */
   private updateMatchInDb(matchID: string, state: State): Promise<void> {
     return new Promise((resolve, reject) => {
+      console.log('in updateMatchinDb');
       const jsonState = JSON.stringify(state);
       this.db.run(
         'UPDATE matches SET currentState = ? WHERE matchID = ?',
@@ -161,6 +162,7 @@ export class Sqlite extends StorageAPI.Async {
    * Create metadata in DB for an especific matchId
    */
   async setMetadata(matchID: string, opts: Server.MatchData) {
+    console.log('inside set metadata');
     await new Promise<void>((resolve, reject) => {
       const jsonMetadata = {
         ...opts,
@@ -232,7 +234,11 @@ export class Sqlite extends StorageAPI.Async {
   async setState(matchID: string, state: State, deltalog?: LogEntry[]) {
     try {
       console.log('inside set state');
+      console.log(deltalog);
+      console.log(deltalog.length);
+      console.log('updateMatchinDb succesfully');
       if (deltalog && deltalog.length > 0) {
+        console.log('inside IF set state');
         const existingLogs = (await this.getLog(matchID)) as LogEntry[];
         const combinedLogs = [...existingLogs, ...deltalog];
         await this.setLog(matchID, combinedLogs);

@@ -307,6 +307,10 @@ export class Master {
     } else {
       console.log('set state ASYNC');
       try {
+        console.log('iside try master');
+        console.log(stateWithoutDeltalog);
+        console.log(deltalog);
+        console.log(key);
         const writes = [
           this.storageAPI.setState(key, stateWithoutDeltalog, deltalog),
         ];
@@ -314,6 +318,7 @@ export class Master {
         if (newMetadata) {
           writes.push(this.storageAPI.setMetadata(key, newMetadata));
         }
+        console.log(writes);
         await Promise.all(writes);
       } catch (error) {
         console.error('Error setting state:', error);
