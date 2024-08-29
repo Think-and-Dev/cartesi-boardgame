@@ -279,6 +279,8 @@ export class Sqlite extends StorageAPI.Async {
               metadata: row.metadata ? JSON.parse(row.metadata) : null,
               patch: row.patch ? JSON.parse(row.patch) : null,
             }));
+            console.log('adentro del get log');
+            console.log(logs);
             resolve(logs);
           }
         }
