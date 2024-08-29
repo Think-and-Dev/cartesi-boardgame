@@ -172,15 +172,23 @@ async function main() {
     return;
   }
 
+  try {
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+  } catch (error) {
+    alert(
+      'Failed to connect to MetaMask. Please ensure MetaMask is unlocked and try again.'
+    );
+    return;
+  }
+
   const lobbyClient = await initLobbyClient(SERVER, NODE_URL, DAPP_ADDRESS);
-  console.log('Lobby client in App.ts:', lobbyClient);
 
   if (!lobbyClient) {
     return;
   }
 
   // // Listar juegos disponibles
-  // await listAvailableGames(lobbyClient);
+  await listAvailableGames(lobbyClient);
 
   // Crear lista de partidas si no existe
   let matchesListElement = document.getElementById(
@@ -193,7 +201,7 @@ async function main() {
   }
 
   // // Listar partidas disponibles para el juego
-  // await listMatchesForGame(lobbyClient, gameName, matchesListElement);
+  await listMatchesForGame(lobbyClient, gameName, matchesListElement);
 
   const provider = new BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();

@@ -47,7 +47,6 @@ export async function initLobbyClient(
       signer: signer,
     });
 
-    console.log('LobbyClient successfully initialized in Lobby.ts.');
     return lobbyClient;
   } catch (error) {
     console.error('Error initializing LobbyClient in Lobby.ts:', error);
@@ -59,10 +58,8 @@ export async function initLobbyClient(
 export async function listAvailableGames(
   lobbyClient: LobbyClient
 ): Promise<void> {
-  console.log('Listing available games... in Lobby.ts'); //* ACA rompe 'Eror: Wrong inspect response format.'
   try {
     const games: string[] = await lobbyClient.listGames();
-    console.log('Available games in Lobby.ts:', games);
   } catch (error) {
     console.error('Error listing games in Lobby.ts:', error);
   }
@@ -75,19 +72,14 @@ export async function listMatchesForGame(
 ): Promise<void> {
   try {
     const matches = await lobbyClient.listMatches(gameName);
-    console.log(`Available matches for in Lobby.ts ${gameName}:`, matches);
 
-    // Limpiar la lista existente
     matchesListElement.innerHTML = '';
 
-    // Iterar sobre las partidas y crear elementos de lista
     matches.matches.forEach((match) => {
       const listItem = document.createElement('li');
 
-      // Determina si el partido está en progreso o finalizado
       const isGameOver = match.gameover ? 'Finished' : 'In Progress';
 
-      // Determina quién ganó si la partida ha terminado
       const winner = match.gameover?.winner ?? 'N/A';
 
       listItem.textContent = `Match ID: ${
@@ -109,10 +101,8 @@ export async function getMatchDetails(
   gameName: string,
   matchID: string
 ): Promise<void> {
-  console.log(`Getting details for match ID in Lobby.ts: ${matchID}`);
   try {
     const match = await lobbyClient.getMatch(gameName, matchID);
-    console.log(`Details for match in Lobby.ts ${matchID}:`, match);
   } catch (error) {
     console.error(`Error getting details for match ${matchID}:`, error);
   }
@@ -124,15 +114,11 @@ export async function createNewMatch(
   gameName: string,
   numPlayers: number
 ): Promise<string | null> {
-  console.log(
-    `Creating a new match for game: ${gameName} with ${numPlayers} players  in Lobby.ts`
-  );
   try {
     const match = await lobbyClient.createMatch(gameName, { numPlayers });
-    console.log(`New match created with ID in Lobby.ts: ${match.matchID}`);
+
     return match.matchID;
   } catch (error) {
-    console.error('Error creating new match in Lobby.ts:', error);
     return null;
   }
 }
@@ -144,16 +130,11 @@ export async function joinMatch(
   matchID: string,
   playerName: string
 ): Promise<{ playerID: string; playerCredentials: string } | null> {
-  console.log(
-    `Joining match ${matchID} for game: ${gameName} as player: ${playerName} in Lobby.ts`
-  );
   try {
     const match = await lobbyClient.joinMatch(gameName, matchID, {
       playerName,
     });
-    console.log(
-      `Player ${playerName} joined match ${matchID} as player ${match.playerID}. Credentials: ${match.playerCredentials} in Lobby.ts`
-    );
+
     return {
       playerID: match.playerID,
       playerCredentials: match.playerCredentials,
@@ -173,18 +154,12 @@ export async function updatePlayerInfo(
   credentials: string,
   newName?: string
 ): Promise<void> {
-  console.log(
-    `Updating player ${playerID} info in match ${matchID} in Lobby.ts`
-  );
   try {
     await lobbyClient.updatePlayer(gameName, matchID, {
       playerID,
       credentials,
       newName,
     });
-    console.log(
-      `Player ${playerID} in match ${matchID} updated their name to ${newName}. in Lobby.ts`
-    );
   } catch (error) {
     console.error(
       `Error updating player ${playerID} in match ${matchID}: in Lobby.ts`,
@@ -201,10 +176,8 @@ export async function leaveMatch(
   playerID: string,
   credentials: string
 ): Promise<void> {
-  console.log(`Player ${playerID} leaving match ${matchID} in Lobby.ts`);
   try {
     await lobbyClient.leaveMatch(gameName, matchID, { playerID, credentials });
-    console.log(`Player ${playerID} left match ${matchID}. in Lobby.ts`);
   } catch (error) {
     console.error(`Error leaving match ${matchID}: in Lobby.ts`, error);
   }
@@ -218,17 +191,12 @@ export async function playAgain(
   playerID: string,
   credentials: string
 ): Promise<string | null> {
-  console.log(
-    `Player ${playerID} playing again from match ${matchID} in Lobby.ts`
-  );
   try {
     const match = await lobbyClient.playAgain(gameName, matchID, {
       playerID,
       credentials,
     });
-    console.log(
-      `Player ${playerID} can play again in new match ${match.nextMatchID}. in Lobby.ts`
-    );
+
     return match.nextMatchID;
   } catch (error) {
     console.error(
