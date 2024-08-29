@@ -201,6 +201,7 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   private async setPlayers(matchId, playersList) {
+    console.log('inside try set players');
     const players = playersList;
     const playerInsertPromises = Object.keys(players).map(async (playerID) => {
       const player = players[playerID];

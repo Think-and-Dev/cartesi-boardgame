@@ -316,6 +316,7 @@ export class Master {
         ];
         console.log('new metadata' + newMetadata);
         if (newMetadata) {
+          console.log('inside metadata new metadata');
           writes.push(this.storageAPI.setMetadata(key, newMetadata));
         }
         console.log(writes);
