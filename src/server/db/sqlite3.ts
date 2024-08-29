@@ -237,15 +237,17 @@ export class Sqlite extends StorageAPI.Async {
       console.log('inside set state');
       console.log(deltalog);
       console.log(deltalog.length);
-      console.log('updateMatchinDb succesfully');
       if (deltalog && deltalog.length > 0) {
         console.log('inside IF set state');
         const existingLogs = (await this.getLog(matchID)) as LogEntry[];
         const combinedLogs = [...existingLogs, ...deltalog];
         await this.setLog(matchID, combinedLogs);
+        console.log('pase el set log');
         console.log(`Create a log succesfully for matchId:${matchID}`);
       }
+      console.log('antes del update');
       await this.updateMatchInDb(matchID, state);
+      console.log('despues del update');
     } catch (error) {
       console.log(
         `An error ocurred for matchId in setState:${matchID}:`,
