@@ -354,6 +354,7 @@ export class Sqlite extends StorageAPI.Async {
 
   private setLog(matchID: string, logs: LogEntry[]): Promise<void> {
     return new Promise((resolve, reject) => {
+      console.log('inside set log');
       this.db.run(
         `DELETE FROM logs WHERE matchID = ?;`,
         [matchID],
