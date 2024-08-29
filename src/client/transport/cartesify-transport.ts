@@ -21,7 +21,7 @@ type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
 export class CartesifyTransport extends Transport {
   protected url: string;
   protected cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
-  protected pollingInterval = 15000; // 5 seconds
+  protected pollingInterval = 1000; // 5 seconds
   protected pollingEnabled: boolean;
   nextDataIndex: number;
 
