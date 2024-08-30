@@ -1,11 +1,3 @@
-/*
- * Copyright 2018 The boardgame.io Authors
- *
- * Use of this source code is governed by a MIT-style
- * license that can be found in the LICENSE file or at
- * https://opensource.org/licenses/MIT.
- */
-
 import type { ComponentType } from 'react';
 import { LobbyClient } from './client';
 import type { Game, LobbyAPI } from '../types';
@@ -20,6 +12,7 @@ interface LobbyConnectionOpts {
   playerName?: string;
   playerCredentials?: string;
   gameComponents: GameComponent[];
+  nodeUrl: string;
 }
 
 class _LobbyConnectionImpl {
@@ -34,6 +27,7 @@ class _LobbyConnectionImpl {
     gameComponents,
     playerName,
     playerCredentials,
+    nodeUrl,
   }: LobbyConnectionOpts) {
     this.client = new LobbyClient({ server });
     this.gameComponents = gameComponents;
@@ -144,19 +138,7 @@ class _LobbyConnectionImpl {
   }
 }
 
-/**
- * LobbyConnection
- *
- * Lobby model.
- *
- * @param {string}   server - '<host>:<port>' of the server.
- * @param {Array}    gameComponents - A map of Board and Game objects for the supported games.
- * @param {string}   playerName - The name of the player.
- * @param {string}   playerCredentials - The credentials currently used by the player, if any.
- *
- * Returns:
- *   A JS object that synchronizes the list of running game instances with the server and provides an API to create/join/start instances.
- */
 export function LobbyConnection(opts: LobbyConnectionOpts) {
+  console.log('LobbyConnection called with opts:', opts);
   return new _LobbyConnectionImpl(opts);
 }

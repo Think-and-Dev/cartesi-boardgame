@@ -21,7 +21,7 @@
     "@babel/preset-env": "^7.13.12",
     "@babel/preset-react": "^7.13.13",
     "@think-and-dev/cartesi-boardgame": "^0.0.12-beta",
-    "chess.js": "^0.11.0",
+    "cors": "^2.8.5",
     "parcel-plugin-svelte": "^4.0.6",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",

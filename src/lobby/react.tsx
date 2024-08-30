@@ -1,11 +1,3 @@
-/*
- * Copyright 2018 The boardgame.io Authors.
- *
- * Use of this source code is governed by a MIT-style
- * license that can be found in the LICENSE file or at
- * https://opensource.org/licenses/MIT.
- */
-
 import React from 'react';
 import Cookies from 'react-cookies';
 import PropTypes from 'prop-types';
@@ -13,7 +5,6 @@ import type { DebugOpt } from '../client/client';
 import { Client } from '../client/react';
 import { MCTSBot } from '../ai/mcts-bot';
 import { Local } from '../client/transport/local';
-import { SocketIO } from '../client/transport/socketio';
 import type { GameComponent } from './connection';
 import { LobbyConnection } from './connection';
 import LobbyLoginForm from './login-form';
@@ -22,7 +13,13 @@ import LobbyMatchInstance from './match-instance';
 import LobbyCreateMatchForm from './create-match-form';
 import type { LobbyAPI } from '../types';
 import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
-import { useMetaMask } from '../../examples/react-web/src';
+import { ethers, BrowserProvider } from 'ethers';
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 enum LobbyPhases {
   ENTER = 'enter',
@@ -64,6 +61,8 @@ type LobbyProps = {
     handleRefreshMatches: () => Promise<void>;
     handleStartMatch: (gameName: string, matchOpts: MatchOpts) => void;
   }) => JSX.Element;
+  nodeUrl: string;
+  signer: ethers.Signer;
 };
 
 type LobbyState = {
@@ -178,12 +177,14 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   }
 
   _createConnection = (props: LobbyProps) => {
+    console.log('Creating connection with props:', props);
     const name = this.state.playerName;
     this.connection = LobbyConnection({
       server: props.lobbyServer,
       gameComponents: props.gameComponents,
       playerName: name,
       playerCredentials: this.state.credentialStore[name],
+      nodeUrl: props.nodeUrl,
     });
   };
 
@@ -249,10 +250,8 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     }
   };
 
-  _startMatch = (gameName: string, matchOpts: MatchOpts) => {
+  _startMatch = async (gameName: string, matchOpts: MatchOpts) => {
     const gameCode = this.connection._getGameComponents(gameName);
-    const signer = useMetaMask();
-
     if (!gameCode) {
       this.setState({
         errorMsg: 'game ' + gameName + ' not supported',
@@ -263,15 +262,28 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     let multiplayer = undefined;
     if (matchOpts.numPlayers > 1) {
       try {
+        let signer: ethers.Signer;
+      if (window.ethereum) {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+      } else {
+        throw new Error("Ethereum object not found, do you have MetaMask installed?");
+      }
+
+      const address = await signer.getAddress();
+      console.log("Signer address:", address);
+
         multiplayer = CartesiMultiplayer({
-          server: 'http://127.0.0.1:8000',
+          server: 'http://localhost:8000',
           dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
           nodeUrl: 'http://localhost:8080',
           signer: signer,
         });
-        
       } catch (error) {
         console.error('Error creating Cartesify multiplayer:', error);
+        this.setState({ errorMsg: error.message });
+        return;
       }
     }
 
