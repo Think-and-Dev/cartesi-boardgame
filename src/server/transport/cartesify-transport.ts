@@ -131,7 +131,8 @@ export default class CartesifyTransport {
           .send({ playerID: client.playerID, ...data });
       });
     };
-
+    console.log('ESTE ES EL BORADCAST');
+    console.log(broadcast);
     this.pubSub.subscribe(getPubSubChannelId(matchID), broadcast);
   }
 

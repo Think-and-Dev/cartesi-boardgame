@@ -138,7 +138,7 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Update the match in DB for an especific matchId.
    */
-  private updateMatchInDb(matchID: string, state: State): Promise<void> {
+  private async updateMatchInDb(matchID: string, state: State): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log('in updateMatchinDb');
       const jsonState = JSON.stringify(state);
@@ -257,7 +257,7 @@ export class Sqlite extends StorageAPI.Async {
       );
     }
   }
-  private getLog(matchID: string): Promise<LogEntry[]> {
+  private async getLog(matchID: string): Promise<LogEntry[]> {
     console.log('inside get log');
     return new Promise((resolve, reject) => {
       this.db.all<any>(

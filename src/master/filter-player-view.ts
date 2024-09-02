@@ -25,6 +25,7 @@ export const getFilterPlayerView =
   ): TransportData => {
     switch (payload.type) {
       case 'patch': {
+        console.log('patch');
         const [matchID, stateID, prevState, state] = payload.args;
         const log = redactLog(state.deltalog, playerID);
         const filteredState = applyPlayerView(game, playerID, state);
@@ -37,9 +38,12 @@ export const getFilterPlayerView =
         };
       }
       case 'update': {
+        console.log('update dentro DEL SWITCH');
         const [matchID, state] = payload.args;
+        console.log(matchID,state);
         const log = redactLog(state.deltalog, playerID);
         const filteredState = applyPlayerView(game, playerID, state);
+        console.log('filtrado'+filteredState);
         return {
           type: 'update',
           args: [matchID, filteredState, log],

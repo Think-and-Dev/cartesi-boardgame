@@ -129,6 +129,7 @@ export class Master {
     transportAPI: TransportAPI,
     auth?: Auth
   ) {
+    console.log(transportAPI);
     this.game = ProcessGameConfig(game);
     this.storageAPI = storageAPI;
     this.transportAPI = transportAPI;
@@ -201,7 +202,7 @@ export class Master {
       game: this.game,
     });
     const middleware = applyMiddleware(TransientHandlingMiddleware);
-    const store = createStore(reducer, state);
+    const store = createStore(reducer, state,middleware);
 
     // Only allow UNDO / REDO if there is exactly one player
     // that can make moves right now and the person doing the
