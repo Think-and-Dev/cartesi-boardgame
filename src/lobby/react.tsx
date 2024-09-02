@@ -180,7 +180,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     console.log('Creating connection with props:', props);
     const name = this.state.playerName;
     this.connection = LobbyConnection({
-      server: props.lobbyServer,
+      nodeUrl: props.lobbyServer,
       gameComponents: props.gameComponents,
       playerName: name,
       playerCredentials: this.state.credentialStore[name],

@@ -184,6 +184,7 @@ export default class CartesifyTransport {
       });
 
       appRouter.post(`/${gameName}/sync`, koaBody(), async (ctx) => {
+        //* sync te lleva a onSync
         console.log('Received sync request');
         const { matchID, playerID, credentials } = ctx.request.body;
         this.removeClient(playerID);

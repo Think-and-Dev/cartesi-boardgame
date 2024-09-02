@@ -1,9 +1,17 @@
-import { Client } from '@think-and-dev/cartesi-boardgame/client'; // Still workaround on this
 import { TicTacToe } from './Game';
+import { TicTacToeClient } from './TicTacToeClient';
 import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
 import { ethers, BrowserProvider } from 'ethers';
+import { Client, LobbyClient } from '@think-and-dev/cartesi-boardgame/client';
 
-// We let the TypesScript compiler that the ethereum object might be available in the window object, as it added by the MetaMask extension
+import {
+  initLobbyClient,
+  listAvailableGames,
+  listMatchesForGame,
+  createNewMatch,
+  joinMatch,
+} from './Lobby';
+
 declare global {
   interface Window {
     ethereum?: any;
@@ -18,108 +26,136 @@ interface State {
     gameover?: {
       winner?: string;
     };
+    currentPlayer: string;
   };
+  matchID: string;
 }
 
-class TicTacToeClient {
-  private client: any;
-  private rootElement: HTMLElement;
-
-  constructor(
-    rootElement: HTMLElement,
-    signer: ethers.Signer,
-    playerID: string = '0'
-  ) {
-    this.rootElement = rootElement;
-    this.client = Client({
-      game: TicTacToe,
-      playerID,
-      multiplayer: CartesiMultiplayer({
-        server: 'http://localhost:8000',
-        dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
-        nodeUrl: 'http://localhost:8080',
-        signer: signer,
-      }),
-    });
-    this.client.subscribe((state: State) => this.update(state));
-    this.client.start();
-    this.createBoard();
-    this.attachListeners();
-  }
-
-  private createBoard() {
-    const rows: string[] = [];
-    for (let i = 0; i < 3; i++) {
-      const cells: string[] = [];
-      for (let j = 0; j < 3; j++) {
-        const id = 3 * i + j;
-        cells.push(`<td class="cell" data-id="${id}"></td>`);
-      }
-      rows.push(`<tr>${cells.join('')}</tr>`);
-    }
-
-    this.rootElement.innerHTML = `
-      <table>${rows.join('')}</table>
-      <p class="winner"></p>
-    `;
-  }
-
-  private attachListeners() {
-    const handleCellClick = (event: Event) => {
-      const target = event.target as HTMLElement;
-      const id = parseInt(target.dataset.id!);
-      this.client.moves.clickCell(id);
-    };
-
-    const cells = this.rootElement.querySelectorAll('.cell');
-    cells.forEach((cell) => {
-      (cell as HTMLElement).addEventListener('click', handleCellClick);
-    });
-  }
-
-  private update(state: State) {
-    if (state === null) {
-      return;
-    }
-    const cells = this.rootElement.querySelectorAll('.cell');
-    cells.forEach((cell) => {
-      const cellId = parseInt((cell as HTMLElement).dataset.id!);
-      const cellValue = state.G.cells[cellId];
-      (cell as HTMLElement).textContent = cellValue !== null ? cellValue : '';
-    });
-
-    const messageEl = this.rootElement.querySelector('.winner') as HTMLElement;
-    if (messageEl) {
-      if (state.ctx.gameover) {
-        messageEl.textContent =
-          state.ctx.gameover.winner !== undefined
-            ? 'Winner: ' + state.ctx.gameover.winner
-            : 'Draw!';
-      } else {
-        messageEl.textContent = '';
-      }
-    }
-  }
-}
+const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
+const SERVER = 'http://localhost:8000';
+const NODE_URL = 'http://localhost:8080';
 
 async function main() {
+  const { name } = TicTacToe;
+  const gameName = name;
+
   const appElement = document.getElementById('app');
+  const lobbyElement = document.createElement('div');
+  lobbyElement.id = 'lobby';
+  appElement?.appendChild(lobbyElement);
+
   if (!window.ethereum) {
     alert('Please install MetaMask to play this game');
     return;
   }
-  const provider = new BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-  const playerID = prompt('Enter player id (0 or 1):');
-  if (!playerID || (playerID !== '0' && playerID !== '1')) {
+
+  try {
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+  } catch (error) {
+    alert(
+      'Failed to connect to MetaMask. Please ensure MetaMask is unlocked and try again.'
+    );
     return;
   }
-  if (appElement) {
-    const app = new TicTacToeClient(
-      appElement as HTMLElement,
-      signer,
-      playerID
-    );
+
+  const lobbyClient = await initLobbyClient(SERVER, NODE_URL, DAPP_ADDRESS);
+
+  if (!lobbyClient) {
+    return;
+  }
+
+  await listAvailableGames(lobbyClient);
+
+  let matchesListElement = document.getElementById(
+    'match-list'
+  ) as HTMLUListElement;
+  if (!matchesListElement) {
+    matchesListElement = document.createElement('ul');
+    matchesListElement.id = 'match-list';
+    lobbyElement.appendChild(matchesListElement);
+  }
+
+  await listMatchesForGame(lobbyClient, gameName, matchesListElement);
+
+  const provider = new BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  let matchID = '';
+
+  const createMatchButton = document.createElement('button');
+  createMatchButton.textContent = 'Create Game';
+  createMatchButton.addEventListener('click', async () => {
+    matchID = await createNewMatch(lobbyClient, gameName, 2);
+    if (!matchID) {
+      alert('Failed to create match. Please try again.');
+      return;
+    }
+
+    const matchCreatedMsg = document.createElement('p');
+    matchCreatedMsg.textContent = `Game created with Match ID: ${matchID};`;
+    lobbyElement.appendChild(matchCreatedMsg);
+
+    const playerSelectionMsg = document.createElement('p');
+    playerSelectionMsg.textContent = 'Select your player ID:';
+
+    const player0Button = document.createElement('button');
+    player0Button.textContent = 'Player 0';
+    player0Button.addEventListener('click', () => {
+      initializeClient('0', matchID);
+    });
+
+    const player1Button = document.createElement('button');
+    player1Button.textContent = 'Player 1';
+    player1Button.addEventListener('click', () => {
+      initializeClient('1', matchID);
+    });
+
+    lobbyElement.appendChild(playerSelectionMsg);
+    lobbyElement.appendChild(player0Button);
+    lobbyElement.appendChild(player1Button);
+  });
+  lobbyElement.appendChild(createMatchButton);
+
+  const joinMatchButton = document.createElement('button');
+  joinMatchButton.textContent = 'Join Game';
+  joinMatchButton.addEventListener('click', () => {
+    matchID = prompt('Enter match ID:') || '';
+    const playerSelectionMsg = document.createElement('p');
+    playerSelectionMsg.textContent = 'Select your player ID:';
+
+    const player0Button = document.createElement('button');
+    player0Button.textContent = 'Player 0';
+    player0Button.addEventListener('click', () => {
+      initializeClient('0', matchID);
+    });
+
+    const player1Button = document.createElement('button');
+    player1Button.textContent = 'Player 1';
+    player1Button.addEventListener('click', () => {
+      initializeClient('1', matchID);
+    });
+
+    lobbyElement.appendChild(playerSelectionMsg);
+    lobbyElement.appendChild(player0Button);
+    lobbyElement.appendChild(player1Button);
+  });
+  lobbyElement.appendChild(joinMatchButton);
+
+  function initializeClient(playerID: string, matchID: string) {
+    if (appElement) {
+      appElement.innerHTML = '';
+      new TicTacToeClient(
+        appElement as HTMLElement,
+        signer,
+        playerID,
+        matchID,
+        backToLobby
+      );
+    }
+  }
+
+  function backToLobby() {
+    appElement!.innerHTML = '';
+    main();
   }
 }
 

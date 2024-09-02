@@ -1,4 +1,4 @@
-import { Ctx, Game } from "@think-and-dev/cartesi-boardgame/client";
+import { Ctx, Game } from '@think-and-dev/cartesi-boardgame/client';
 
 interface G {
   cells: Array<string | null>;
@@ -6,12 +6,11 @@ interface G {
 
 const clickCell = ({ G, playerID }: { G: G; playerID: string }, id: number) => {
   if (G.cells[id] !== null) {
-    return "INVALID_MOVE";
+    return 'INVALID_MOVE';
   }
   G.cells[id] = playerID;
 };
 
-// Return true if `cells` is in a winning configuration.
 function IsVictory(cells: Array<string | null>): boolean {
   const positions = [
     [0, 1, 2],
@@ -32,12 +31,12 @@ function IsVictory(cells: Array<string | null>): boolean {
   return positions.map(isRowComplete).some((i) => i === true);
 }
 
-// Return true if all `cells` are occupied.
 function IsDraw(cells: Array<string | null>): boolean {
   return cells.filter((c) => c === null).length === 0;
 }
 
 export const TicTacToe: Game<G> = {
+  name: 'tic-tac-toe',
   setup: (): G => ({ cells: Array(9).fill(null) }),
   turn: {
     minMoves: 1,

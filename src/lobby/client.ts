@@ -1,4 +1,6 @@
 import type { LobbyAPI } from '../types';
+import { Cartesify } from '@calindra/cartesify';
+import type { ethers } from 'ethers';
 
 const assertString = (str: unknown, label: string) => {
   if (!str || typeof str !== 'string') {
@@ -46,47 +48,87 @@ export class LobbyClientError extends Error {
 }
 
 export class LobbyClient {
+  private nodeUrl: string;
   private server: string;
 
-  constructor({ server = '' }: { server?: string } = {}) {
-    // strip trailing slash if passed
-    this.server = server.replace(/\/$/, '');
+  constructor({
+    server,
+    nodeUrl,
+    dappAddress,
+    signer,
+  }: {
+    server?: string;
+    nodeUrl?: string;
+    dappAddress?: string;
+    signer?: ethers.Signer;
+  } = {}) {
+    if (!nodeUrl) throw new Error('Node URL is required');
+
+    this.nodeUrl = nodeUrl || 'http://localhost:8080';
+    this.server = server || 'http://localhost:8000';
+
+    if (this.nodeUrl.slice(-1) !== '/') {
+      this.nodeUrl += '/';
+    }
+
+    this.cartesifyFetch = Cartesify.createFetch({
+      dappAddress,
+      endpoints: {
+        graphQL: new URL(`${this.nodeUrl}graphql`),
+        inspect: new URL(`${this.nodeUrl}inspect`),
+      },
+      provider: signer?.provider,
+      signer: signer,
+    });
   }
 
   private async request(route: string, init?: RequestInit) {
-    const response = await fetch(this.server + route, init);
+    const config: RequestInit = {
+      method: init?.method,
+      body: init?.body,
+      headers: init?.headers,
+    };
 
-    if (!response.ok) {
-      let details: any;
+    try {
+      const fullUrl = this.server + route;
 
-      try {
-        details = await response.clone().json();
-      } catch {
+      const response = await this.cartesifyFetch(fullUrl, config);
+
+      const responseText = await response.text();
+
+      if (!response.ok) {
+        let details: any;
+
         try {
-          details = await response.text();
-        } catch (error) {
-          details = error.message;
+          details = JSON.parse(responseText);
+        } catch {
+          details = responseText;
         }
+
+        throw new LobbyClientError(`HTTP status ${response.status}`, details);
       }
 
-      throw new LobbyClientError(`HTTP status ${response.status}`, details);
+      return JSON.parse(responseText);
+    } catch (error) {
+      console.error('Request error:', error);
+      throw new LobbyClientError(`Network error`, error.message);
     }
-
-    return response.json();
   }
 
   private async post(route: string, opts: { body?: any; init?: RequestInit }) {
     let init: RequestInit = {
-      method: 'post',
+      method: 'POST',
       body: JSON.stringify(opts.body),
       headers: { 'Content-Type': 'application/json' },
     };
-    if (opts.init)
+    if (opts.init) {
       init = {
         ...init,
         ...opts.init,
         headers: { ...init.headers, ...opts.init.headers },
       };
+    }
+
     return this.request(route, init);
   }
 
@@ -118,15 +160,27 @@ export class LobbyClient {
   ): Promise<LobbyAPI.MatchList> {
     assertGameName(gameName);
     let query = '';
+
     if (where) {
       const queries = [];
       const { isGameover, updatedBefore, updatedAfter } = where;
+
       if (isGameover !== undefined) queries.push(`isGameover=${isGameover}`);
       if (updatedBefore) queries.push(`updatedBefore=${updatedBefore}`);
       if (updatedAfter) queries.push(`updatedAfter=${updatedAfter}`);
+
       if (queries.length > 0) query = '?' + queries.join('&');
     }
-    return this.request(`/games/${gameName}${query}`, init);
+
+    const fullUrl = `/games/${gameName}${query}`;
+
+    try {
+      const response = await this.request(fullUrl, init);
+      return response;
+    } catch (error) {
+      console.error('listMatches error: in client.ts', error);
+      throw error;
+    }
   }
 
   async getMatch(
@@ -136,7 +190,8 @@ export class LobbyClient {
   ): Promise<LobbyAPI.Match> {
     assertGameName(gameName);
     assertMatchID(matchID);
-    return this.request(`/games/${gameName}/${matchID}`, init);
+    const fullUrl = `/games/${gameName}/${matchID}`;
+    return this.request(fullUrl, init);
   }
 
   async createMatch(
@@ -205,6 +260,7 @@ export class LobbyClient {
     assertGameName(gameName);
     assertMatchID(matchID);
     validateBody(body, { playerID: 'string', credentials: 'string' });
+
     await this.post(`/games/${gameName}/${matchID}/update`, { body, init });
   }
 
