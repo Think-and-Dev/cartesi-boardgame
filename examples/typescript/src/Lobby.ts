@@ -20,12 +20,10 @@ interface State {
   matchID: string;
 }
 
-// Constantes para la dirección del servidor y del contrato dApp
 const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
 const SERVER = 'http://localhost:8000';
 const NODE_URL = 'http://localhost:8080';
 
-// Función para inicializar la instancia de LobbyClient
 export async function initLobbyClient(
   SERVER,
   NODE_URL,
@@ -54,7 +52,6 @@ export async function initLobbyClient(
   }
 }
 
-// Función para listar los juegos disponibles
 export async function listAvailableGames(
   lobbyClient: LobbyClient
 ): Promise<void> {
@@ -95,7 +92,6 @@ export async function listMatchesForGame(
   }
 }
 
-// Función para obtener los detalles de una partida específica
 export async function getMatchDetails(
   lobbyClient: LobbyClient,
   gameName: string,
@@ -108,7 +104,6 @@ export async function getMatchDetails(
   }
 }
 
-// Función para crear una nueva partida
 export async function createNewMatch(
   lobbyClient: LobbyClient,
   gameName: string,
@@ -123,7 +118,6 @@ export async function createNewMatch(
   }
 }
 
-// Función para unirse a una partida
 export async function joinMatch(
   lobbyClient: LobbyClient,
   gameName: string,
@@ -145,7 +139,6 @@ export async function joinMatch(
   }
 }
 
-// Función para actualizar la información del jugador
 export async function updatePlayerInfo(
   lobbyClient: LobbyClient,
   gameName: string,
@@ -168,7 +161,6 @@ export async function updatePlayerInfo(
   }
 }
 
-// Función para abandonar una partida
 export async function leaveMatch(
   lobbyClient: LobbyClient,
   gameName: string,
@@ -183,7 +175,6 @@ export async function leaveMatch(
   }
 }
 
-// Función para jugar de nuevo
 export async function playAgain(
   lobbyClient: LobbyClient,
   gameName: string,

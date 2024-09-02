@@ -7,12 +7,6 @@ const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
 const SERVER = 'http://localhost:8000';
 const NODE_URL = 'http://localhost:8080';
 
-// declare global {
-//   interface Window {
-//     ethereum?: any;
-//   }
-// }
-
 interface State {
   G: {
     cells: Array<string | null>;
