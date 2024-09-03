@@ -161,12 +161,12 @@ export class Sqlite extends StorageAPI.Async {
    * Create metadata in DB for an especific matchId
    */
   async setMetadata(matchID: string, opts: Server.MatchData) {
+    const jsonMetadata = {
+      ...opts,
+      setupData: JSON.stringify(opts.setupData),
+      gameover: JSON.stringify(opts.gameover),
+    };
     await new Promise<void>((resolve, reject) => {
-      const jsonMetadata = {
-        ...opts,
-        setupData: JSON.stringify(opts.setupData),
-        gameover: JSON.stringify(opts.gameover),
-      };
       this.db.run(
         'INSERT OR REPLACE INTO metadata (matchID, gameName, setupData, gameover, nextMatchID, unlisted, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
         [
@@ -179,24 +179,25 @@ export class Sqlite extends StorageAPI.Async {
           jsonMetadata.createdAt,
           jsonMetadata.updatedAt,
         ],
-        async (err) => {
+        (err) => {
           if (err) {
             console.log('Error in setMetadata:' + err);
             reject('Error in setMetadata: ' + err);
-            return;
-          }
-          try {
-            if (opts.players) {
-              await this.setPlayers(matchID, opts.players);
-            }
+          } else {
+            console.log('Set metadata succesfully');
             resolve();
-          } catch (error) {
-            console.log('Error in setMetadata (players):' + error);
-            reject('Error in setMetadata (players): ' + error);
           }
         }
       );
     });
+    if (opts.players) {
+      try {
+        await this.setPlayers(matchID, opts.players);
+      } catch (error) {
+        console.log('Error in setMetadata (players):' + error);
+        throw new Error('Error in setMetadata (players): ' + error);
+      }
+    }
   }
   private async setPlayers(matchId, playersList) {
     const players = playersList;
@@ -218,6 +219,7 @@ export class Sqlite extends StorageAPI.Async {
               console.log('Error in setPlayers' + err);
               reject('Error in setPlayers: ' + err);
             } else {
+              console.log('Set players succesfully');
               resolve();
             }
           }
