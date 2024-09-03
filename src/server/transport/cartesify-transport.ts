@@ -180,7 +180,7 @@ export default class CartesifyTransport {
         const transport = this.getTransportAPI(matchID, filterPlayerView);
         const master = new Master(game, db, transport, auth);
 
-        master.onUpdate(action, stateID, matchID, playerID);
+        await master.onUpdate(action, stateID, matchID, playerID);
         ctx.body = { success: true };
       });
 

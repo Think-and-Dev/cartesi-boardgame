@@ -140,7 +140,6 @@ export class Sqlite extends StorageAPI.Async {
    */
   private async updateMatchInDb(matchID: string, state: State): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log('in updateMatchinDb');
       const jsonState = JSON.stringify(state);
       this.db.run(
         'UPDATE matches SET currentState = ? WHERE matchID = ?',
@@ -162,7 +161,6 @@ export class Sqlite extends StorageAPI.Async {
    * Create metadata in DB for an especific matchId
    */
   async setMetadata(matchID: string, opts: Server.MatchData) {
-    console.log('inside set metadata');
     await new Promise<void>((resolve, reject) => {
       const jsonMetadata = {
         ...opts,
@@ -201,7 +199,6 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   private async setPlayers(matchId, playersList) {
-    console.log('inside try set players');
     const players = playersList;
     const playerInsertPromises = Object.keys(players).map(async (playerID) => {
       const player = players[playerID];
@@ -234,22 +231,13 @@ export class Sqlite extends StorageAPI.Async {
    */
   async setState(matchID: string, state: State, deltalog?: LogEntry[]) {
     try {
-      console.log('inside set state');
-      console.log(deltalog);
-      console.log(deltalog.length);
       if (deltalog && deltalog.length > 0) {
-        console.log('inside IF set state');
         const existingLogs = (await this.getLog(matchID)) as LogEntry[];
-        console.log('despues existingLogs'+existingLogs);
         const combinedLogs = [...existingLogs, ...deltalog];
-        console.log('antes el set log');
         await this.setLog(matchID, combinedLogs);
-        console.log('pase el set log');
         console.log(`Create a log succesfully for matchId:${matchID}`);
       }
-      console.log('antes del update');
       await this.updateMatchInDb(matchID, state);
-      console.log('despues del update');
     } catch (error) {
       console.log(
         `An error ocurred for matchId in setState:${matchID}:`,
@@ -258,7 +246,6 @@ export class Sqlite extends StorageAPI.Async {
     }
   }
   private async getLog(matchID: string): Promise<LogEntry[]> {
-    console.log('inside get log');
     return new Promise((resolve, reject) => {
       this.db.all<any>(
         'SELECT * FROM logs WHERE matchID = ?;',
@@ -266,8 +253,8 @@ export class Sqlite extends StorageAPI.Async {
         (err, rows) => {
           if (err) {
             console.log('Error in getLog: ' + err);
-            reject('Error in getLog: ' + err);
-            return;
+            return reject('Error in getLog: ' + err);
+            
           } else {
             const logs = rows.map((row) => ({
               action: row.action ? JSON.parse(row.action) : null,
@@ -279,9 +266,7 @@ export class Sqlite extends StorageAPI.Async {
               metadata: row.metadata ? JSON.parse(row.metadata) : null,
               patch: row.patch ? JSON.parse(row.patch) : null,
             }));
-            console.log('adentro del get log');
-            console.log(logs);
-            resolve(logs);
+            return resolve(logs);
           }
         }
       );
@@ -299,7 +284,7 @@ export class Sqlite extends StorageAPI.Async {
                 console.log('Error in getMetadata (metadata): ' + err);
                 reject('Error in getMetadata (metadata): ' + err);
               } else {
-                resolve(row);
+                return resolve(row);
               }
             }
           );
@@ -340,7 +325,7 @@ export class Sqlite extends StorageAPI.Async {
         (err, rows) => {
           if (err) {
             console.log('Error in getPlayers' + err);
-            reject('Error in getPlayers: ' + err);
+            return reject('Error in getPlayers: ' + err);
           } else {
             const playersObject: { [id: number]: Server.PlayerMetadata } = {};
             rows.forEach((row) => {
@@ -352,7 +337,7 @@ export class Sqlite extends StorageAPI.Async {
                 isConnected: row.isConnected,
               };
             });
-            resolve(playersObject);
+            return resolve(playersObject);
           }
         }
       );
@@ -361,7 +346,6 @@ export class Sqlite extends StorageAPI.Async {
 
   private setLog(matchID: string, logs: LogEntry[]): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log('inside set log');
       this.db.run(
         `DELETE FROM logs WHERE matchID = ?;`,
         [matchID],
@@ -396,13 +380,13 @@ export class Sqlite extends StorageAPI.Async {
                     return reject('Error inserting log: ' + insertErr);
                   }
                   console.log('Inserting log succesfully');
-                  resolve();
+                  return resolve();
                 }
               );
             });
           });
 
-          Promise.all(insertPromises)
+          return Promise.all(insertPromises)
             .then(() => {
               insertStmt.finalize((finalizeErr) => {
                 if (finalizeErr) {
@@ -412,7 +396,7 @@ export class Sqlite extends StorageAPI.Async {
                   );
                 }
                 console.log('Set log successfully');
-                resolve();
+                return resolve();
               });
             })
             .catch(reject);
