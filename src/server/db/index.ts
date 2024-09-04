@@ -1,5 +1,6 @@
 import { InMemory } from './inmemory';
 import { FlatFile } from './flatfile';
+import { Sqlite } from './sqlite3';
 
 const DBFromEnv = () => {
   return process.env.FLATFILE_DIR
@@ -9,4 +10,4 @@ const DBFromEnv = () => {
     : new InMemory();
 };
 
-export { InMemory, FlatFile, DBFromEnv };
+export { InMemory, FlatFile, DBFromEnv, Sqlite };

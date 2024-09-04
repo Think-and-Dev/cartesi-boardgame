@@ -1,6 +1,6 @@
 {
   "name": "@think-and-dev/cartesi-boardgame",
-  "version": "0.0.9-alpha",
+  "version": "0.0.12-beta",
   "description": "library for turn-based games",
   "repository": "https://github.com/think-and-dev/cartesi-boardgame",
   "scripts": {
@@ -32,7 +32,8 @@
     "postpack": "npm run clean",
     "prettier": "prettier --write \"{examples,src,benchmark}/**/*.{ts,tsx,js,jsx,css,md}\"",
     "changelog": "node ./scripts/changelog.js",
-    "clean": "node ./scripts/clean.js"
+    "clean": "node ./scripts/clean.js",
+    "publish:playground":"npm pack && cp *.tgz ../cartesi-boardgame-playground/backend"
   },
   "exports": {
     ".": {
@@ -176,6 +177,7 @@
     "setimmediate": "^1.0.5",
     "socket.io": "^4.5.0",
     "socket.io-client": "^4.1.3",
+    "sqlite3": "^5.1.7",
     "svelte": "^3.41.0",
     "svelte-json-tree-auto": "^0.1.0",
     "ts-toolbelt": "^6.3.6"
@@ -205,7 +207,7 @@
       "^.+\\.svelte$": "jest-transform-svelte"
     },
     "transformIgnorePatterns": [
-      "node_modules\/(?!(@calindra\/cartesify|@calindra\/cartesify-backend|boardgame.io|flatted|svelte-icons)\/)"
+      "node_modules/(?!(@calindra/cartesify|@calindra/cartesify-backend|boardgame.io|flatted|svelte-icons)/)"
     ],
     "testPathIgnorePatterns": [
       "examples/",
