@@ -29,6 +29,15 @@ class _LobbyConnectionImpl {
   playerCredentials?: string;
   matches: LobbyAPI.MatchList['matches'];
 
+  /**
+   * Constructor para crear una nueva instancia de LobbyConnection.
+   *
+   * @param {LobbyConnectionOpts} param0 - Los parámetros necesarios para la conexión al lobby.
+   * @param {string} param0.nodeUrl - La URL del nodo al que se conectará el cliente del lobby.
+   * @param {any} param0.gameComponents - Los componentes del juego que se utilizarán.
+   * @param {string} [param0.playerName] - El nombre del jugador, si no se proporciona se usa 'Visitor'.
+   * @param {string} [param0.playerCredentials] - Las credenciales del jugador, opcionales.
+   */
   constructor({
     nodeUrl,
     gameComponents,

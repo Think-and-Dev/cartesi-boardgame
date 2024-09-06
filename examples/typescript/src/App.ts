@@ -1,8 +1,6 @@
 import { TicTacToe } from './Game';
 import { TicTacToeClient } from './TicTacToeClient';
-import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
-import { ethers, BrowserProvider } from 'ethers';
-import { Client, LobbyClient } from '@think-and-dev/cartesi-boardgame/client';
+import { BrowserProvider } from 'ethers';
 
 import {
   initLobbyClient,
@@ -36,8 +34,8 @@ const SERVER = 'http://localhost:8000';
 const NODE_URL = 'http://localhost:8080';
 
 async function main() {
-  const { name } = TicTacToe;
-  const gameName = name;
+  const importedGames = [TicTacToe];
+  const games = importedGames.map((game) => game.name);
 
   const appElement = document.getElementById('app');
   const lobbyElement = document.createElement('div');
@@ -75,15 +73,38 @@ async function main() {
     lobbyElement.appendChild(matchesListElement);
   }
 
-  await listMatchesForGame(lobbyClient, gameName, matchesListElement);
-
+  /**
+   * Initializes an Ethereum provider using the browser's injected Ethereum object (e.g., MetaMask).
+   *
+   * @remarks
+   * This code creates a new `BrowserProvider` instance using `window.ethereum`, which is typically injected by browser wallets such as MetaMask.
+   * It then retrieves the current user's signer, which is a representation of the user's account and can be used to sign transactions or messages.
+   *
+   * @throws Will throw an error if `window.ethereum` is not available (e.g., MetaMask is not installed).
+   */
   const provider = new BrowserProvider(window.ethereum);
+  // Retrieves the signer, which is used to sign transactions on behalf of the user's account
   const signer = await provider.getSigner();
   let matchID = '';
+
+  // Crear un menú desplegable para seleccionar el juego
+  const gameListElement = document.createElement('select');
+  gameListElement.id = 'game-list';
+  games.forEach((game) => {
+    const gameOption = document.createElement('option');
+    gameOption.value = game;
+    gameOption.textContent = game;
+    gameListElement.appendChild(gameOption);
+  });
+  lobbyElement.appendChild(gameListElement);
+  const gameName = gameListElement.value;
+
+  await listMatchesForGame(lobbyClient, gameName, matchesListElement);
 
   const createMatchButton = document.createElement('button');
   createMatchButton.textContent = 'Create Game';
   createMatchButton.addEventListener('click', async () => {
+    const gameName = gameListElement.value;
     matchID = await createNewMatch(lobbyClient, gameName, 2);
     if (!matchID) {
       alert('Failed to create match. Please try again.');
@@ -140,6 +161,18 @@ async function main() {
   });
   lobbyElement.appendChild(joinMatchButton);
 
+  /**
+   * Initializes the Tic-Tac-Toe client and renders the game in the specified application element.
+   *
+   * @param {string} playerID - The unique identifier of the player who is initializing the game client.
+   * @param {string} matchID - The unique identifier of the match that the player is joining.
+   *
+   * @remarks
+   * This function clears the current content of the application element (`appElement`) and then
+   * creates a new instance of the `TicTacToeClient`, which starts the game for the given player and match.
+   *
+   * @throws Will silently fail if `appElement` is not defined.
+   */
   function initializeClient(playerID: string, matchID: string) {
     if (appElement) {
       appElement.innerHTML = '';
