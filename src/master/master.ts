@@ -199,7 +199,7 @@ export class Master {
       game: this.game,
     });
     const middleware = applyMiddleware(TransientHandlingMiddleware);
-    const store = createStore(reducer, state,middleware);
+    const store = createStore(reducer, state, middleware);
 
     // Only allow UNDO / REDO if there is exactly one player
     // that can make moves right now and the person doing the
@@ -306,7 +306,7 @@ export class Master {
         if (newMetadata) {
           writes.push(this.storageAPI.setMetadata(key, newMetadata));
         }
-       
+
         await Promise.all(writes);
       } catch (error) {
         console.error('Error setting state:', error);

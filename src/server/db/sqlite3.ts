@@ -266,6 +266,7 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Get logs from DB for a specific matchID.
    * @param {string} matchID - MatchId of the game.
+   * @returns {Promise<LogEntry[]>} - Returns logs.
    */
   private async getLog(matchID: string): Promise<LogEntry[]> {
     return new Promise((resolve, reject) => {
@@ -296,6 +297,7 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Get metadata from DB for a specific matchID.
    * @param {string} matchID - MatchId of the game.
+   * @returns {Object} - Returns match data.
    */
   async getMetadata(matchID: string): Promise<Server.MatchData | undefined> {
     try {
@@ -343,6 +345,7 @@ export class Sqlite extends StorageAPI.Async {
   /**
    * Get players from DB for a specific matchID.
    * @param {string} matchID - MatchId of the game.
+   * @returns {Object} - Returns all players.
    */
   private async getPlayers(
     matchID: string
@@ -441,6 +444,7 @@ export class Sqlite extends StorageAPI.Async {
    * Get  state from DB for a specific matchID.
    * @param {string} matchID - MatchId of the game.
    * @param {boolean} isInitialState - indicates whether the initial state or the current state is to be returned depending on its value.
+   * @returns {string} - Returns the initial state or current state.
    */
   private getState(matchID, isInitialState): Promise<string | undefined> {
     return new Promise((resolve, reject) => {
