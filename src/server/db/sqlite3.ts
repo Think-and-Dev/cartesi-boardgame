@@ -34,7 +34,9 @@ export class Sqlite extends StorageAPI.Async {
       );
     });
   }
-
+  /**
+   * Initialize tables.
+   */
   private async initializeTables(): Promise<void> {
     try {
       await Promise.all([
@@ -114,7 +116,9 @@ export class Sqlite extends StorageAPI.Async {
     }
   }
   /**
-   * Create the match in DB for an especific matchId.
+   * Create the match in DB for a specific matchId.
+   * @param {string} matchID - MatchId of the game.
+   * @param {State} InitialState - Initial state of the game.
    */
   private createMatchInDb(matchID, InitialState): Promise<void> {
     const jsonInitialState = JSON.stringify(InitialState);
@@ -136,7 +140,9 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   /**
-   * Update the match in DB for an especific matchId.
+   * Update the match in DB for a specific matchId.
+   * @param {string} matchID - MatchId of the game.
+   * @param {State} state - New state.
    */
   private async updateMatchInDb(matchID: string, state: State): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -158,7 +164,9 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   /**
-   * Create metadata in DB for an especific matchId
+   * Set metadata in DB for a specific matchId
+   * @param {string} matchID - MatchId of the game.
+   * @param {Server.MatchData} opts - New game metadata.
    */
   async setMetadata(matchID: string, opts: Server.MatchData) {
     const jsonMetadata = {
@@ -199,6 +207,11 @@ export class Sqlite extends StorageAPI.Async {
       }
     }
   }
+  /**
+   * Set players in the DB for a specific matchId
+   * @param {string} matchID - MatchId of the game.
+   * @param {{[id: number]: PlayerMetadata }} playersList - List of players.
+   */
   private async setPlayers(matchId, playersList) {
     const players = playersList;
     const playerInsertPromises = Object.keys(players).map(async (playerID) => {
@@ -230,6 +243,9 @@ export class Sqlite extends StorageAPI.Async {
   }
   /**
    * Write the match state in DB.
+   * @param {string} matchID - MatchId of the game.
+   * @param {State} state - New state.
+   * @param {LogEntry[]} deltalog - Existings states.
    */
   async setState(matchID: string, state: State, deltalog?: LogEntry[]) {
     try {
@@ -247,6 +263,11 @@ export class Sqlite extends StorageAPI.Async {
       );
     }
   }
+  /**
+   * Get logs from DB for a specific matchID.
+   * @param {string} matchID - MatchId of the game.
+   * @returns {Promise<LogEntry[]>} - Returns logs.
+   */
   private async getLog(matchID: string): Promise<LogEntry[]> {
     return new Promise((resolve, reject) => {
       this.db.all<any>(
@@ -256,7 +277,6 @@ export class Sqlite extends StorageAPI.Async {
           if (err) {
             console.log('Error in getLog: ' + err);
             return reject('Error in getLog: ' + err);
-            
           } else {
             const logs = rows.map((row) => ({
               action: row.action ? JSON.parse(row.action) : null,
@@ -274,6 +294,11 @@ export class Sqlite extends StorageAPI.Async {
       );
     });
   }
+  /**
+   * Get metadata from DB for a specific matchID.
+   * @param {string} matchID - MatchId of the game.
+   * @returns {Object} - Returns match data.
+   */
   async getMetadata(matchID: string): Promise<Server.MatchData | undefined> {
     try {
       const metadataRow = await new Promise<Server.MatchData>(
@@ -317,6 +342,11 @@ export class Sqlite extends StorageAPI.Async {
       throw new Error('Error in getMetadata: ' + error);
     }
   }
+  /**
+   * Get players from DB for a specific matchID.
+   * @param {string} matchID - MatchId of the game.
+   * @returns {Object} - Returns all players.
+   */
   private async getPlayers(
     matchID: string
   ): Promise<{ [id: number]: Server.PlayerMetadata }> {
@@ -345,7 +375,11 @@ export class Sqlite extends StorageAPI.Async {
       );
     });
   }
-
+  /**
+   * Set logs in the DB for a specific matchID.
+   * @param {string} matchID - MatchId of the game.
+   * @param {LogEntry[]} logs - New logs to be set in the database.
+   */
   private setLog(matchID: string, logs: LogEntry[]): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db.run(
@@ -406,7 +440,12 @@ export class Sqlite extends StorageAPI.Async {
       );
     });
   }
-
+  /**
+   * Get  state from DB for a specific matchID.
+   * @param {string} matchID - MatchId of the game.
+   * @param {boolean} isInitialState - indicates whether the initial state or the current state is to be returned depending on its value.
+   * @returns {string} - Returns the initial state or current state.
+   */
   private getState(matchID, isInitialState): Promise<string | undefined> {
     return new Promise((resolve, reject) => {
       try {
@@ -469,6 +508,7 @@ export class Sqlite extends StorageAPI.Async {
   }
   /**
    * Remove the match  from DB for matchId
+   * @param {string} matchID - Matchid that wants to be eliminated.
    */
   private deleteMatch(matchID: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -490,6 +530,7 @@ export class Sqlite extends StorageAPI.Async {
   }
   /**
    * Remove the logs from DB for matchId
+   * @param {string} matchID - MatchId of the game.
    */
   private deleteLogs(matchID: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -510,7 +551,8 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   /**
-   * Remove the match metadata from DB for matchId
+   * Deletes the match metadata for a specific match id
+   * @param {string} matchID - MatchId of the game.
    */
   private deleteMetadata(matchID: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -530,7 +572,8 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   /**
-   * Remove the players from DB for matchId
+   * Deletes the players for a specific match id
+   * @param {string} matchID - MatchId of the game.
    */
   private deletePlayers(matchID: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -546,7 +589,8 @@ export class Sqlite extends StorageAPI.Async {
     });
   }
   /**
-   * Remove the match state from DB.
+   * Deletes all data of a set for a specific matchid
+   * @param {string} matchID - MatchId of the game.
    */
   async wipe(matchID: string) {
     try {
@@ -638,7 +682,7 @@ export class Sqlite extends StorageAPI.Async {
   }
   /**
    * Execute query.
-   *
+   * @param {string} query - Query to be executed.
    */
   private runQuery(query: string): Promise<void> {
     return new Promise((resolve, reject) => {
