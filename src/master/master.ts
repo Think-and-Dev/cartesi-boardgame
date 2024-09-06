@@ -310,6 +310,7 @@ export class Master {
         await Promise.all(writes);
       } catch (error) {
         console.error('Error setting state:', error);
+        throw error;
       }
     }
   }
