@@ -10,54 +10,7 @@ import { Sqlite } from './sqlite3';
 import type { State, Server, LogEntry } from '../../types';
 
 describe('Sqlite', () => {
-  //Initial values.
   let db: Sqlite;
-  const matchIdentifier = 'matchID';
-  const logEntry1: LogEntry = {
-    _stateID: 0,
-    action: {
-      type: 'MAKE_MOVE',
-      payload: { type: '', playerID: '0', args: [] },
-    },
-    turn: 0,
-    phase: '',
-    redact: null,
-    metadata: null,
-    automatic: null,
-    patch: null,
-  };
-  const logEntry2: LogEntry = {
-    _stateID: 1,
-    action: {
-      type: 'MAKE_MOVE',
-      payload: { type: '', playerID: '0', args: [] },
-    },
-    turn: 1,
-    phase: '',
-    redact: null,
-    metadata: null,
-    automatic: null,
-    patch: null,
-  };
-  const logEntry3: LogEntry = {
-    _stateID: 1,
-    action: {
-      type: 'MAKE_MOVE',
-      payload: { type: '', playerID: '0', args: [] },
-    },
-    turn: 1,
-    phase: '',
-  };
-  const timestamp = new Date(2020, 4);
-  const timestamp2 = new Date(2020, 2, 15);
-  // Create game.
-  const state: unknown = { a: 1 };
-  const metadata: Server.MatchData = {
-    gameName: 'tic-tac-toe',
-    players: {},
-    createdAt: null,
-    updatedAt: null,
-  };
 
   beforeAll(async () => {
     db = new Sqlite();
@@ -67,17 +20,28 @@ describe('Sqlite', () => {
     await db.clear();
   });
 
-  test('create a match', async () => {
+  test('basic', async () => {
     // Must return undefined when no game exists.
-    const result = await db.fetch(matchIdentifier, { state: true });
+    const result = await db.fetch('matchID', { state: true });
     expect(result.state).toEqual(undefined);
-    await db.createMatch(matchIdentifier, {
+
+    // Create game.
+    const state: unknown = { a: 1 };
+    const metadata: Server.MatchData = {
+      gameName: 'tic-tac-toe',
+      players: {},
+      createdAt: null,
+      updatedAt: null,
+    };
+
+    await db.createMatch('matchID', {
       initialState: state as State,
       metadata: metadata,
     });
+
     //Must return created game.
     {
-      const result = await db.fetch(matchIdentifier, {
+      const result = await db.fetch('matchID', {
         state: true,
         metadata: true,
         initialState: true,
@@ -98,20 +62,16 @@ describe('Sqlite', () => {
 
     // // Must return all keys
     const keys = await db.listMatches();
-    expect(keys).toEqual([matchIdentifier]);
+    expect(keys).toEqual(['matchID']);
 
     // Must remove match from DB
-    await db.wipe(matchIdentifier);
+    await db.wipe('matchID');
     expect(
-      await db.fetch(matchIdentifier, {
-        metadata: true,
-        state: true,
-        log: true,
-      })
+      await db.fetch('matchID', { metadata: true, state: true, log: true })
     ).toEqual({ log: [], metadata: undefined, state: undefined });
 
     // Shall not return error
-    await db.wipe(matchIdentifier);
+    await db.wipe('matchID');
 
     // Shall create match, then clear DB, then check whether DB is cleared
     await db.setState('game2', state as State);
@@ -120,21 +80,67 @@ describe('Sqlite', () => {
   });
 
   test('log', async () => {
-    await db.setState(matchIdentifier, null, [logEntry1]);
-    await db.setState(matchIdentifier, null, [logEntry2]);
-    await db.setState(matchIdentifier, null, [logEntry3]);
+    const logEntry1: LogEntry = {
+      _stateID: 0,
+      action: {
+        type: 'MAKE_MOVE',
+        payload: { type: '', playerID: '0', args: [] },
+      },
+      turn: 0,
+      phase: '',
+      redact: null,
+      metadata: null,
+      automatic: null,
+      patch: null,
+    };
 
-    const result = await db.fetch(matchIdentifier, { log: true });
-    expect(result.log).toEqual([logEntry1, logEntry2, logEntry2]);
+    const logEntry2: LogEntry = {
+      _stateID: 1,
+      action: {
+        type: 'MAKE_MOVE',
+        payload: { type: '', playerID: '0', args: [] },
+      },
+      turn: 1,
+      phase: '',
+      redact: null,
+      metadata: null,
+      automatic: null,
+      patch: null,
+    };
+    const logEntry3: LogEntry = {
+      _stateID: 1,
+      action: {
+        type: 'MAKE_MOVE',
+        payload: { type: '', playerID: '0', args: [] },
+      },
+      turn: 1,
+      phase: '',
+    };
+
+    await db.setState('matchID', null, [logEntry1]);
+    await db.setState('matchID', null, [logEntry2]);
+    await db.setState('matchID', null, [logEntry3]);
+
+    const result = await db.fetch('matchID', { log: true });
+    expect(result.log).toEqual([
+      logEntry1,
+      logEntry2,
+      {
+        _stateID: 1,
+        action: {
+          type: 'MAKE_MOVE',
+          payload: { type: '', playerID: '0', args: [] },
+        },
+        turn: 1,
+        phase: '',
+        redact: null,
+        metadata: null,
+        automatic: null,
+        patch: null,
+      },
+    ]);
   });
 
-  let listOfMatchesIds;
-  const verifyInitialKeys = async () => {
-    listOfMatchesIds = await db.listMatches();
-    expect(listOfMatchesIds).toEqual(
-      expect.arrayContaining(['matchID', 'matchID2', 'matchID3'])
-    );
-  };
   describe('listMatches', () => {
     beforeEach(async () => {
       const state: unknown = { a: 1 };
@@ -165,77 +171,92 @@ describe('Sqlite', () => {
     });
 
     test('filter by gameName', async () => {
-      await verifyInitialKeys();
-
-      listOfMatchesIds = await db.listMatches({ gameName: 'game1' });
-      expect(listOfMatchesIds).toEqual(
-        expect.arrayContaining(['matchID', 'matchID2'])
+      let keys = await db.listMatches();
+      expect(keys).toEqual(
+        expect.arrayContaining(['matchID', 'matchID2', 'matchID3'])
       );
 
-      listOfMatchesIds = await db.listMatches({ gameName: 'game2' });
-      expect(listOfMatchesIds).toEqual(['matchID3']);
+      keys = await db.listMatches({ gameName: 'game1' });
+      expect(keys).toEqual(expect.arrayContaining(['matchID', 'matchID2']));
+
+      keys = await db.listMatches({ gameName: 'game2' });
+      expect(keys).toEqual(['matchID3']);
     });
     test('filter by isGameover', async () => {
-      await verifyInitialKeys();
+      let keys = await db.listMatches({});
 
-      listOfMatchesIds = await db.listMatches({ where: { isGameover: true } });
-      expect(listOfMatchesIds).toEqual(['matchID2']);
-
-      listOfMatchesIds = await db.listMatches({ where: { isGameover: false } });
-      expect(listOfMatchesIds).toEqual(
-        expect.arrayContaining(['matchID', 'matchID3'])
+      expect(keys).toEqual(
+        expect.arrayContaining(['matchID', 'matchID2', 'matchID3'])
       );
+
+      keys = await db.listMatches({ where: { isGameover: true } });
+      expect(keys).toEqual(['matchID2']);
+
+      keys = await db.listMatches({ where: { isGameover: false } });
+      expect(keys).toEqual(expect.arrayContaining(['matchID', 'matchID3']));
     });
     test('filter by updatedBefore', async () => {
-      await verifyInitialKeys();
+      const timestamp = new Date(2020, 4);
 
-      listOfMatchesIds = await db.listMatches({
+      let keys = await db.listMatches({});
+      expect(keys).toEqual(
+        expect.arrayContaining(['matchID', 'matchID2', 'matchID3'])
+      );
+
+      keys = await db.listMatches({
         where: { updatedBefore: timestamp.getTime() },
       });
-      expect(listOfMatchesIds).toEqual(expect.arrayContaining(['matchID']));
+      expect(keys).toEqual(expect.arrayContaining(['matchID']));
     });
     test('filter by updatedAfter', async () => {
-      await verifyInitialKeys();
+      const timestamp = new Date(2020, 4);
 
-      listOfMatchesIds = await db.listMatches({
+      let keys = await db.listMatches({});
+      expect(keys).toEqual(
+        expect.arrayContaining(['matchID', 'matchID2', 'matchID3'])
+      );
+
+      keys = await db.listMatches({
         where: { updatedAfter: timestamp.getTime() },
       });
-      expect(listOfMatchesIds).toEqual(['matchID2']);
+      expect(keys).toEqual(['matchID2']);
     });
     test('filter combined', async () => {
-      let listOfMatchedIds = await db.listMatches({
+      const timestamp = new Date(2020, 4);
+      const timestamp2 = new Date(2020, 2, 15);
+      let keys = await db.listMatches({
         gameName: 'chess',
         where: { isGameover: true },
       });
-      expect(listOfMatchedIds).toEqual([]);
+      expect(keys).toEqual([]);
 
-      listOfMatchedIds = await db.listMatches({
+      keys = await db.listMatches({
         where: { isGameover: true, updatedBefore: timestamp.getTime() },
       });
-      expect(listOfMatchedIds).toEqual([]);
+      expect(keys).toEqual([]);
 
-      listOfMatchedIds = await db.listMatches({
+      keys = await db.listMatches({
         where: { isGameover: false, updatedBefore: timestamp.getTime() },
       });
-      expect(listOfMatchedIds).toEqual(['matchID']);
+      expect(keys).toEqual(['matchID']);
 
-      listOfMatchedIds = await db.listMatches({
+      keys = await db.listMatches({
         where: { isGameover: true, updatedAfter: timestamp.getTime() },
       });
-      expect(listOfMatchedIds).toEqual(['matchID2']);
+      expect(keys).toEqual(['matchID2']);
 
-      listOfMatchedIds = await db.listMatches({
+      keys = await db.listMatches({
         where: { isGameover: false, updatedAfter: timestamp.getTime() },
       });
-      expect(listOfMatchedIds).toEqual([]);
+      expect(keys).toEqual([]);
 
-      listOfMatchedIds = await db.listMatches({
+      keys = await db.listMatches({
         where: {
           updatedBefore: timestamp.getTime(),
           updatedAfter: timestamp2.getTime(),
         },
       });
-      expect(listOfMatchedIds).toEqual(['matchID']);
+      expect(keys).toEqual(['matchID']);
     });
   });
 });
