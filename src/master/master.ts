@@ -154,7 +154,6 @@ export class Master {
     if (!credAction || !credAction.payload) {
       return { error: 'missing action or action payload' };
     }
-
     let metadata: Server.MatchData | undefined;
     if (StorageAPI.isSynchronous(this.storageAPI)) {
       ({ metadata } = this.storageAPI.fetch(matchID, { metadata: true }));
@@ -260,7 +259,6 @@ export class Master {
     }
 
     const prevState = store.getState();
-
     // Update server's version of the store.
     store.dispatch(action);
     state = store.getState();
@@ -270,7 +268,6 @@ export class Master {
       action,
       matchID,
     });
-
     if (this.game.deltaState) {
       this.transportAPI.sendAll({
         type: 'patch',
@@ -284,7 +281,6 @@ export class Master {
     }
 
     const { deltalog, ...stateWithoutDeltalog } = state;
-
     let newMetadata: Server.MatchData | undefined;
     if (
       metadata &&
@@ -303,13 +299,18 @@ export class Master {
       this.storageAPI.setState(key, stateWithoutDeltalog, deltalog);
       if (newMetadata) this.storageAPI.setMetadata(key, newMetadata);
     } else {
-      const writes = [
-        this.storageAPI.setState(key, stateWithoutDeltalog, deltalog),
-      ];
-      if (newMetadata) {
-        writes.push(this.storageAPI.setMetadata(key, newMetadata));
+      try {
+        const writes = [
+          this.storageAPI.setState(key, stateWithoutDeltalog, deltalog),
+        ];
+        if (newMetadata) {
+          writes.push(this.storageAPI.setMetadata(key, newMetadata));
+        }
+
+        await Promise.all(writes);
+      } catch (error) {
+        console.error('Error setting state:', error);
       }
-      await Promise.all(writes);
     }
   }
 
