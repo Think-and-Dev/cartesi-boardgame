@@ -32,8 +32,7 @@
     "postpack": "npm run clean",
     "prettier": "prettier --write \"{examples,src,benchmark}/**/*.{ts,tsx,js,jsx,css,md}\"",
     "changelog": "node ./scripts/changelog.js",
-    "clean": "node ./scripts/clean.js",
-    "publish:playground":"npm pack && cp *.tgz ../cartesi-boardgame-playground/backend"
+    "clean": "node ./scripts/clean.js"
   },
   "exports": {
     ".": {
