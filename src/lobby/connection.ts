@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { LobbyClient } from './client';
 import type { Game, LobbyAPI } from '../types';
+import { ethers } from 'ethers';
 
 export interface GameComponent {
   game: Game;
@@ -8,11 +9,13 @@ export interface GameComponent {
 }
 
 interface LobbyConnectionOpts {
+  server: string;
   nodeUrl: string;
+  dappAddress: string;
+  signer: ethers.Signer;
   playerName?: string;
   playerCredentials?: string;
   gameComponents: GameComponent[];
-  nodeUrl: string;
 }
 
 class _LobbyConnectionImpl {
@@ -23,13 +26,15 @@ class _LobbyConnectionImpl {
   matches: LobbyAPI.MatchList['matches'];
 
   constructor({
+    server,
     nodeUrl,
+    dappAddress,
+    signer,
     gameComponents,
     playerName,
     playerCredentials,
-    nodeUrl,
   }: LobbyConnectionOpts) {
-    this.client = new LobbyClient({ nodeUrl });
+    this.client = new LobbyClient({ server, nodeUrl, dappAddress, signer });
     this.gameComponents = gameComponents;
     this.playerName = playerName || 'Visitor';
     this.playerCredentials = playerCredentials;
@@ -129,8 +134,10 @@ class _LobbyConnectionImpl {
         numPlayers > comp.game.maxPlayers
       )
         throw new Error('invalid number of players ' + numPlayers);
-      await this.client.createMatch(gameName, { numPlayers });
+      const result = await this.client.createMatch(gameName, { numPlayers });
+      return result;
     } catch (error) {
+      console.error('Error in create method:', error);
       throw new Error(
         'failed to create match for ' + gameName + ' (' + error + ')'
       );
@@ -139,6 +146,5 @@ class _LobbyConnectionImpl {
 }
 
 export function LobbyConnection(opts: LobbyConnectionOpts) {
-  console.log('LobbyConnection called with opts:', opts);
   return new _LobbyConnectionImpl(opts);
 }

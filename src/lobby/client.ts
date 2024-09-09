@@ -50,6 +50,7 @@ export class LobbyClientError extends Error {
 export class LobbyClient {
   private nodeUrl: string;
   private server: string;
+  private readonly cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
 
   constructor({
     server,
@@ -62,8 +63,6 @@ export class LobbyClient {
     dappAddress?: string;
     signer?: ethers.Signer;
   } = {}) {
-    if (!nodeUrl) throw new Error('Node URL is required');
-
     this.nodeUrl = nodeUrl || 'http://localhost:8080';
     this.server = server || 'http://localhost:8000';
 
@@ -91,26 +90,23 @@ export class LobbyClient {
 
     try {
       const fullUrl = this.server + route;
-
       const response = await this.cartesifyFetch(fullUrl, config);
-
       const responseText = await response.text();
 
       if (!response.ok) {
-        let details: any;
-
-        try {
-          details = JSON.parse(responseText);
-        } catch {
-          details = responseText;
-        }
-
-        throw new LobbyClientError(`HTTP status ${response.status}`, details);
+        console.error('Error response:', responseText);
+        throw new LobbyClientError(
+          `HTTP status ${response.status}`,
+          responseText
+        );
       }
 
       return JSON.parse(responseText);
     } catch (error) {
       console.error('Request error:', error);
+      if (error instanceof LobbyClientError) {
+        throw error;
+      }
       throw new LobbyClientError(`Network error`, error.message);
     }
   }
@@ -129,7 +125,13 @@ export class LobbyClient {
       };
     }
 
-    return this.request(route, init);
+    try {
+      const result = await this.request(route, init);
+      return result;
+    } catch (error) {
+      console.error('Error in POST request:', error);
+      throw error;
+    }
   }
 
   async listGames(init?: RequestInit): Promise<string[]> {
@@ -139,21 +141,8 @@ export class LobbyClient {
   async listMatches(
     gameName: string,
     where?: {
-      /**
-       * If true, only games that have ended will be returned.
-       * If false, only games that have not yet ended will be returned.
-       * Leave undefined to receive both finished and unfinished games.
-       */
       isGameover?: boolean;
-      /**
-       * List matches last updated before a specific time.
-       * Value should be a timestamp in milliseconds after January 1, 1970.
-       */
       updatedBefore?: number;
-      /**
-       * List matches last updated after a specific time.
-       * Value should be a timestamp in milliseconds after January 1, 1970.
-       */
       updatedAfter?: number;
     },
     init?: RequestInit
@@ -168,7 +157,6 @@ export class LobbyClient {
       if (isGameover !== undefined) queries.push(`isGameover=${isGameover}`);
       if (updatedBefore) queries.push(`updatedBefore=${updatedBefore}`);
       if (updatedAfter) queries.push(`updatedAfter=${updatedAfter}`);
-
       if (queries.length > 0) query = '?' + queries.join('&');
     }
 
@@ -206,7 +194,16 @@ export class LobbyClient {
   ): Promise<LobbyAPI.CreatedMatch> {
     assertGameName(gameName);
     validateBody(body, { numPlayers: 'number' });
-    return this.post(`/games/${gameName}/create`, { body, init });
+    try {
+      const result = await this.post(`/games/${gameName}/create`, {
+        body,
+        init,
+      });
+      return result;
+    } catch (error) {
+      console.error('Error creating match:', error);
+      throw error;
+    }
   }
 
   async joinMatch(

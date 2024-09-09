@@ -13,7 +13,7 @@ import LobbyMatchInstance from './match-instance';
 import LobbyCreateMatchForm from './create-match-form';
 import type { LobbyAPI } from '../types';
 import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
-import { ethers, BrowserProvider } from 'ethers';
+import { ethers } from 'ethers';
 
 declare global {
   interface Window {
@@ -62,6 +62,7 @@ type LobbyProps = {
     handleStartMatch: (gameName: string, matchOpts: MatchOpts) => void;
   }) => JSX.Element;
   nodeUrl: string;
+  dappAddress: string
   signer: ethers.Signer;
 };
 
@@ -71,6 +72,7 @@ type LobbyState = {
   runningMatch?: RunningMatch;
   errorMsg: string;
   credentialStore?: { [playerName: string]: string };
+  signer?: ethers.Signer;
 };
 
 /**
@@ -113,6 +115,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     runningMatch: null,
     errorMsg: '',
     credentialStore: {},
+    signer: null,
   };
 
   private connection?: ReturnType<typeof LobbyConnection>;
@@ -121,6 +124,26 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   constructor(props: LobbyProps) {
     super(props);
     this._createConnection(this.props);
+    this._initializeEthereum();
+  }
+
+  _initializeEthereum = async () => {
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        this.setState({ signer }, () => {
+          this._createConnection(this.props);
+        });
+      } catch (error) {
+        console.error("Failed to initialize Ethereum signer:", error);
+        this.setState({ errorMsg: "Failed to connect to Ethereum wallet" });
+      }
+    } else {
+      console.error("Ethereum object not found, do you have MetaMask installed?");
+      this.setState({ errorMsg: "Ethereum wallet not detected" });
+    }
   }
 
   componentDidMount() {
@@ -177,14 +200,15 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   }
 
   _createConnection = (props: LobbyProps) => {
-    console.log('Creating connection with props:', props);
     const name = this.state.playerName;
     this.connection = LobbyConnection({
-      nodeUrl: props.lobbyServer,
       gameComponents: props.gameComponents,
       playerName: name,
       playerCredentials: this.state.credentialStore[name],
       nodeUrl: props.nodeUrl,
+      server: props.lobbyServer,
+      dappAddress: props.dappAddress,
+      signer: this.state.signer,
     });
   };
 
@@ -220,6 +244,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
       // rerender
       this.setState({});
     } catch (error) {
+      console.error('Error in _createMatch:', error); // Add
       this.setState({ errorMsg: error.message });
     }
   };
@@ -263,16 +288,15 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     if (matchOpts.numPlayers > 1) {
       try {
         let signer: ethers.Signer;
-      if (window.ethereum) {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await provider.getSigner();
-      } else {
-        throw new Error("Ethereum object not found, do you have MetaMask installed?");
-      }
+        if (window.ethereum) {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          signer = await provider.getSigner();
+        } else {
+          throw new Error("Ethereum object not found, do you have MetaMask installed?");
+        }
 
       const address = await signer.getAddress();
-      console.log("Signer address:", address);
 
         multiplayer = CartesiMultiplayer({
           server: 'http://localhost:8000',
