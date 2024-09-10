@@ -3,11 +3,17 @@ import { LobbyClient } from './client';
 import type { Game, LobbyAPI } from '../types';
 import { ethers } from 'ethers';
 
+/**
+ * Represents a game component, combining the game logic and its React component.
+ */
 export interface GameComponent {
   game: Game;
   board: ComponentType<any>;
 }
 
+/**
+ * Options for initializing a LobbyConnection.
+ */
 interface LobbyConnectionOpts {
   server: string;
   nodeUrl: string;
@@ -18,6 +24,13 @@ interface LobbyConnectionOpts {
   gameComponents: GameComponent[];
 }
 
+/**
+ * LobbyConnection Class
+ *
+ * This class serves as a higher-level abstraction over the LobbyClient,
+ * providing additional functionality for managing game matches and player interactions.
+ * It maintains the state of the current player, available matches, and game components.
+ */
 class _LobbyConnectionImpl {
   client: LobbyClient;
   gameComponents: GameComponent[];
@@ -25,6 +38,11 @@ class _LobbyConnectionImpl {
   playerCredentials?: string;
   matches: LobbyAPI.MatchList['matches'];
 
+  /**
+   * Creates a new LobbyConnection instance.
+   *
+   * @param opts - Configuration options for the LobbyConnection.
+   */
   constructor({
     server,
     nodeUrl,
@@ -41,6 +59,12 @@ class _LobbyConnectionImpl {
     this.matches = [];
   }
 
+  /**
+   * Refreshes the list of available matches for all games.
+   * This method should be called periodically to keep the match list up-to-date.
+   *
+   * @throws Will throw an error if unable to retrieve the list of matches.
+   */
   async refresh() {
     try {
       this.matches = [];
@@ -74,6 +98,14 @@ class _LobbyConnectionImpl {
     }
   }
 
+  /**
+   * Joins a specific match.
+   *
+   * @param gameName - The name of the game.
+   * @param matchID - The ID of the match to join.
+   * @param playerID - The ID to assign to the joining player.
+   * @throws Will throw an error if unable to join the match.
+   */
   async join(gameName: string, matchID: string, playerID: string) {
     try {
       let inst = this._findPlayer(this.playerName);
@@ -95,6 +127,13 @@ class _LobbyConnectionImpl {
     }
   }
 
+  /**
+   * Leaves the current match.
+   *
+   * @param gameName - The name of the game.
+   * @param matchID - The ID of the match to leave.
+   * @throws Will throw an error if unable to leave the match.
+   */
   async leave(gameName: string, matchID: string) {
     try {
       const inst = this._getMatchInstance(matchID);
@@ -116,6 +155,10 @@ class _LobbyConnectionImpl {
     }
   }
 
+  /**
+   * Disconnects the current player from the lobby.
+   * This method should be called when the player wants to exit the lobby entirely.
+   */
   async disconnect() {
     const inst = this._findPlayer(this.playerName);
     if (inst) {
@@ -125,6 +168,14 @@ class _LobbyConnectionImpl {
     this.playerName = 'Visitor';
   }
 
+  /**
+   * Creates a new match for a specific game.
+   *
+   * @param gameName - The name of the game to create a match for.
+   * @param numPlayers - The number of players for the new match.
+   * @returns A Promise that resolves with the created match details.
+   * @throws Will throw an error if unable to create the match.
+   */
   async create(gameName: string, numPlayers: number) {
     try {
       const comp = this._getGameComponents(gameName);
@@ -145,6 +196,13 @@ class _LobbyConnectionImpl {
   }
 }
 
+/**
+ * Creates and returns a new LobbyConnection instance.
+ * This function serves as the public interface for creating a LobbyConnection.
+ *
+ * @param opts - Configuration options for the LobbyConnection.
+ * @returns A new LobbyConnection instance.
+ */
 export function LobbyConnection(opts: LobbyConnectionOpts) {
   return new _LobbyConnectionImpl(opts);
 }

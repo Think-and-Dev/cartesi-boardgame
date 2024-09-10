@@ -76,10 +76,15 @@ type LobbyState = {
 };
 
 /**
- * Lobby
- *
- * React lobby component.
- *
+ * Lobby Component
+ * 
+ * This React component serves as the main interface for the game lobby.
+ * It manages the lobby's state, including user authentication, game creation,
+ * joining matches, and transitioning between different lobby phases.
+ * 
+ * The component integrates with the LobbyConnection to communicate with the server
+ * and uses various sub-components to render different parts of the lobby interface.
+ * 
  * @param {Array}  gameComponents - An array of Board and Game objects for the supported games.
  * @param {string} lobbyServer - Address of the lobby server (for example 'localhost:8000').
  *                               If not set, defaults to the server that served the page.
@@ -92,7 +97,7 @@ type LobbyState = {
  * Returns:
  *   A React component that provides a UI to create, list, join, leave, play or
  *   spectate matches (game instances).
- */
+*/
 class Lobby extends React.Component<LobbyProps, LobbyState> {
   static propTypes = {
     gameComponents: PropTypes.array.isRequired,
@@ -109,7 +114,8 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     refreshInterval: 2000,
   };
 
-  state = {
+  // state = {
+  state: LobbyState = {
     phase: LobbyPhases.ENTER,
     playerName: 'Visitor',
     runningMatch: null,
@@ -121,31 +127,18 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   private connection?: ReturnType<typeof LobbyConnection>;
   private _currentInterval?: NodeJS.Timeout;
 
+  /**
+   * Initializes the component, setting up the LobbyConnection and loading saved state.
+   */
   constructor(props: LobbyProps) {
     super(props);
     this._createConnection(this.props);
-    this._initializeEthereum();
+    // this._initializeEthereum();
   }
 
-  _initializeEthereum = async () => {
-    if (window.ethereum) {
-      try {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        this.setState({ signer }, () => {
-          this._createConnection(this.props);
-        });
-      } catch (error) {
-        console.error("Failed to initialize Ethereum signer:", error);
-        this.setState({ errorMsg: "Failed to connect to Ethereum wallet" });
-      }
-    } else {
-      console.error("Ethereum object not found, do you have MetaMask installed?");
-      this.setState({ errorMsg: "Ethereum wallet not detected" });
-    }
-  }
-
+  /**
+   * Lifecycle method: Loads saved state from cookies and initializes Ethereum connection.
+   */
   componentDidMount() {
     const cookie = Cookies.load('lobbyState') || {};
     if (cookie.phase && cookie.phase === LobbyPhases.PLAY) {
@@ -159,8 +152,12 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
       playerName: cookie.playerName || 'Visitor',
       credentialStore: cookie.credentialStore || {},
     });
+    this._initializeEthereum();
   }
 
+  /**
+   * Lifecycle method: Updates the connection when relevant state changes.
+   */
   componentDidUpdate(prevProps: LobbyProps, prevState: LobbyState) {
     const name = this.state.playerName;
     const creds = this.state.credentialStore[name];
@@ -183,6 +180,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     }
   }
 
+  /**
+   * Lifecycle method: Cleans up intervals when the component is unmounted.
+   */
   componentWillUnmount() {
     this._clearRefreshInterval();
   }
@@ -199,6 +199,32 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     clearInterval(this._currentInterval);
   }
 
+  /**
+   * Initializes the Ethereum connection for the lobby.
+   * This method attempts to connect to the user's Ethereum wallet (e.g., MetaMask).
+   */
+  _initializeEthereum = async () => {
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        this.setState({ signer }, () => {
+          this._createConnection(this.props);
+        });
+      } catch (error) {
+        console.error("Failed to initialize Ethereum signer:", error);
+        this.setState({ errorMsg: "Failed to connect to Ethereum wallet" });
+      }
+    } else {
+      console.error("Ethereum object not found, do you have MetaMask installed?");
+      this.setState({ errorMsg: "Ethereum wallet not detected" });
+    }
+  }
+
+  /**
+   * Creates or updates the LobbyConnection based on current props and state.
+   */
   _createConnection = (props: LobbyProps) => {
     const name = this.state.playerName;
     this.connection = LobbyConnection({
@@ -212,6 +238,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     });
   };
 
+  /**
+   * Updates the player's credentials in the state.
+   */
   _updateCredentials = (playerName: string, credentials: string) => {
     this.setState((prevState) => {
       // clone store or componentDidUpdate will not be triggered
@@ -221,22 +250,34 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     });
   };
 
+  /**
+   * Refreshes the lobby state by fetching updated information from the server.
+   */
   _updateConnection = async () => {
     await this.connection.refresh();
     this.forceUpdate();
   };
 
+  /**
+   * Handles the player entering the lobby.
+   */
   _enterLobby = (playerName: string) => {
     this._startRefreshInterval();
     this.setState({ playerName, phase: LobbyPhases.LIST });
   };
 
+  /**
+   * Handles the player exiting the lobby.
+   */
   _exitLobby = async () => {
     this._clearRefreshInterval();
     await this.connection.disconnect();
     this.setState({ phase: LobbyPhases.ENTER, errorMsg: '' });
   };
 
+  /**
+   * Creates a new match for the specified game.
+   */
   _createMatch = async (gameName: string, numPlayers: number) => {
     try {
       await this.connection.create(gameName, numPlayers);
@@ -249,6 +290,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     }
   };
 
+  /**
+   * Joins an existing match.
+   */
   _joinMatch = async (gameName: string, matchID: string, playerID: string) => {
     try {
       await this.connection.join(gameName, matchID, playerID);
@@ -262,6 +306,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     }
   };
 
+  /**
+   * Leaves the current match.
+   */
   _leaveMatch = async (gameName: string, matchID: string) => {
     try {
       await this.connection.leave(gameName, matchID);
@@ -275,6 +322,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     }
   };
 
+  /**
+   * Starts a match, setting up the game client and transitioning to the play phase.
+   */
   _startMatch = async (gameName: string, matchOpts: MatchOpts) => {
     const gameCode = this.connection._getGameComponents(gameName);
     if (!gameCode) {
@@ -295,8 +345,6 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
         } else {
           throw new Error("Ethereum object not found, do you have MetaMask installed?");
         }
-
-      const address = await signer.getAddress();
 
         multiplayer = CartesiMultiplayer({
           server: 'http://localhost:8000',
@@ -338,6 +386,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     this.setState({ phase: LobbyPhases.PLAY, runningMatch: match });
   };
 
+  /**
+   * Exits the current match and returns to the lobby.
+   */
   _exitMatch = () => {
     this._startRefreshInterval();
     this.setState({ phase: LobbyPhases.LIST, runningMatch: null });
@@ -347,15 +398,20 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     return this.state.phase !== phase ? 'hidden' : 'phase';
   };
 
+  /**
+   * Renders the list of available matches.
+   */
   renderMatches = (
     matches: LobbyAPI.MatchList['matches'],
     playerName: string
   ) => {
     return matches.map((match) => {
       const { matchID, gameName, players } = match;
+      const uniqueKey = `${gameName}-${matchID}-${Date.now()}`;
       return (
         <LobbyMatchInstance
-          key={'instance-' + matchID}
+          // key={'instance-' + matchID}
+          key={uniqueKey}
           match={{ matchID, gameName, players: Object.values(players) }}
           playerName={playerName}
           onClickJoin={this._joinMatch}
@@ -366,6 +422,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
     });
   };
 
+  /**
+   * Renders the main lobby interface, including login, match list, and game interface.
+   */
   render() {
     const { gameComponents, renderer } = this.props;
     const { errorMsg, playerName, phase, runningMatch } = this.state;

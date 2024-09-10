@@ -38,20 +38,48 @@ const validateBody = (
   }
 };
 
+/**
+ * Custom error class for LobbyClient errors.
+ * This class extends the built-in Error class to include additional details about the error.
+ */
 export class LobbyClientError extends Error {
   readonly details: any;
 
+  /**
+   * Creates a new LobbyClientError instance.
+   *
+   * @param message - The error message.
+   * @param details - Additional details about the error.
+   */
   constructor(message: string, details: any) {
     super(message);
     this.details = details;
   }
 }
 
+/**
+ * LobbyClient Class
+ *
+ * This class is responsible for handling all communications with the lobby server.
+ * It provides methods for creating, joining, and managing game matches, as well as
+ * retrieving information about available games and current matches.
+ *
+ * The class uses Cartesify for making authenticated requests to the server, which
+ * is crucial for maintaining the integrity and security of the lobby system.
+ */
 export class LobbyClient {
   private nodeUrl: string;
   private server: string;
   private readonly cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
 
+  /**
+   * Creates a new LobbyClient instance.
+   *
+   * @param server - The URL of the lobby server. Defaults to 'http://localhost:8000'.
+   * @param nodeUrl - The URL of the node. Defaults to 'http://localhost:8080'.
+   * @param dappAddress - The Ethereum address of the dapp.
+   * @param signer - An ethers.js Signer object for authentication.
+   */
   constructor({
     server,
     nodeUrl,
@@ -70,6 +98,7 @@ export class LobbyClient {
       this.nodeUrl += '/';
     }
 
+    // Initialize Cartesify for authenticated requests
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress,
       endpoints: {
@@ -81,6 +110,14 @@ export class LobbyClient {
     });
   }
 
+  /**
+   * Sends a request to the specified route using the Cartesify fetch.
+   *
+   * @param route - The server route to send the request to.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves with the JSON response from the server.
+   * @throws {LobbyClientError} If there's an error with the request or response.
+   */
   private async request(route: string, init?: RequestInit) {
     const config: RequestInit = {
       method: init?.method,
@@ -111,6 +148,14 @@ export class LobbyClient {
     }
   }
 
+  /**
+   * Sends a POST request to the specified route.
+   *
+   * @param route - The server route to send the request to.
+   * @param opts - Options for the request, including body and additional init options.
+   * @returns A Promise that resolves with the JSON response from the server.
+   * @throws {LobbyClientError} If there's an error with the request or response.
+   */
   private async post(route: string, opts: { body?: any; init?: RequestInit }) {
     let init: RequestInit = {
       method: 'POST',
@@ -134,10 +179,24 @@ export class LobbyClient {
     }
   }
 
+  /**
+   * Retrieves a list of all available games from the server.
+   *
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves with an array of game names.
+   */
   async listGames(init?: RequestInit): Promise<string[]> {
     return this.request('/games', init);
   }
 
+  /**
+   * Retrieves a list of matches for a specific game.
+   *
+   * @param gameName - The name of the game to list matches for.
+   * @param where - Optional filter criteria for the matches.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves with a MatchList object containing the matches.
+   */
   async listMatches(
     gameName: string,
     where?: {
@@ -171,6 +230,15 @@ export class LobbyClient {
     }
   }
 
+  /**
+   * Retrieves information about a specific match.
+   *
+   * @param gameName - The name of the game.
+   * @param matchID - The ID of the match to retrieve.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves with the Match object containing the match details.
+   * @throws {LobbyClientError} If there's an error retrieving the match information.
+   */
   async getMatch(
     gameName: string,
     matchID: string,
@@ -182,6 +250,15 @@ export class LobbyClient {
     return this.request(fullUrl, init);
   }
 
+  /**
+   * Creates a new match for the specified game.
+   *
+   * @param gameName - The name of the game to create a match for.
+   * @param body - The request body containing match creation details.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves with the CreatedMatch object containing the new match details.
+   * @throws {LobbyClientError} If there's an error creating the match.
+   */
   async createMatch(
     gameName: string,
     body: {
@@ -206,6 +283,16 @@ export class LobbyClient {
     }
   }
 
+  /**
+   * Joins an existing match for the specified game.
+   *
+   * @param gameName - The name of the game.
+   * @param matchID - The ID of the match to join.
+   * @param body - The request body containing player details.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves with the JoinedMatch object containing the joined match details.
+   * @throws {LobbyClientError} If there's an error joining the match.
+   */
   async joinMatch(
     gameName: string,
     matchID: string,
@@ -226,6 +313,16 @@ export class LobbyClient {
     return this.post(`/games/${gameName}/${matchID}/join`, { body, init });
   }
 
+  /**
+   * Leaves an existing match.
+   *
+   * @param gameName - The name of the game.
+   * @param matchID - The ID of the match to leave.
+   * @param body - The request body containing player credentials.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves when the player has successfully left the match.
+   * @throws {LobbyClientError} If there's an error leaving the match.
+   */
   async leaveMatch(
     gameName: string,
     matchID: string,
@@ -242,6 +339,16 @@ export class LobbyClient {
     await this.post(`/games/${gameName}/${matchID}/leave`, { body, init });
   }
 
+  /**
+   * Updates a player's information in an existing match.
+   *
+   * @param gameName - The name of the game.
+   * @param matchID - The ID of the match.
+   * @param body - The request body containing updated player information.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves when the player information has been successfully updated.
+   * @throws {LobbyClientError} If there's an error updating the player information.
+   */
   async updatePlayer(
     gameName: string,
     matchID: string,
@@ -261,6 +368,16 @@ export class LobbyClient {
     await this.post(`/games/${gameName}/${matchID}/update`, { body, init });
   }
 
+  /**
+   * Initiates a new match with the same players after the current match ends.
+   *
+   * @param gameName - The name of the game.
+   * @param matchID - The ID of the current match.
+   * @param body - The request body containing player credentials and new match options.
+   * @param init - Optional RequestInit object for additional request options.
+   * @returns A Promise that resolves with the NextMatch object containing the new match details.
+   * @throws {LobbyClientError} If there's an error initiating the new match.
+   */
   async playAgain(
     gameName: string,
     matchID: string,
