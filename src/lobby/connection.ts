@@ -16,7 +16,7 @@ export interface GameComponent {
 }
 
 interface LobbyConnectionOpts {
-  server: string;
+  nodeUrl: string;
   playerName?: string;
   playerCredentials?: string;
   gameComponents: GameComponent[];
@@ -29,13 +29,22 @@ class _LobbyConnectionImpl {
   playerCredentials?: string;
   matches: LobbyAPI.MatchList['matches'];
 
+  /**
+   * Constructor para crear una nueva instancia de LobbyConnection.
+   *
+   * @param {LobbyConnectionOpts} param0 - Los parámetros necesarios para la conexión al lobby.
+   * @param {string} param0.nodeUrl - La URL del nodo al que se conectará el cliente del lobby.
+   * @param {any} param0.gameComponents - Los componentes del juego que se utilizarán.
+   * @param {string} [param0.playerName] - El nombre del jugador, si no se proporciona se usa 'Visitor'.
+   * @param {string} [param0.playerCredentials] - Las credenciales del jugador, opcionales.
+   */
   constructor({
-    server,
+    nodeUrl,
     gameComponents,
     playerName,
     playerCredentials,
   }: LobbyConnectionOpts) {
-    this.client = new LobbyClient({ server });
+    this.client = new LobbyClient({ nodeUrl });
     this.gameComponents = gameComponents;
     this.playerName = playerName || 'Visitor';
     this.playerCredentials = playerCredentials;

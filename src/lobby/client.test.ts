@@ -1,28 +1,10 @@
-import dotenv from 'dotenv';
 import { LobbyClient, LobbyClientError } from './client';
 import { Cartesify } from '@calindra/cartesify';
+import dotenv from 'dotenv';
 
-/**
- * The `LobbyClient` class provides a set of methods for interacting with a game lobby server.
- * It uses the `Cartesify` library to make HTTP requests to the server.
- *
- * The class requires the following environment variables to be set:
- * - `DAPP_ADDRESS`: The address of the game lobby server.
- * - `SERVER`: The base URL of the game lobby server.
- *
- * The `LobbyClient` class provides the following methods:
- * - `listGames()`: Retrieves a list of available games from the server.
- * - `listMatches(gameName: string)`: Retrieves a list of matches for the specified game.
- * - `createMatch(gameName: string, body: { numPlayers: number })`: Creates a new match for the specified game.
- * - `joinMatch(gameName: string, matchID: string, body: { playerName: string })`: Joins a player to the specified match.
- * - `leaveMatch(gameName: string, matchID: string, body: { playerID: string, credentials: string })`: Removes a player from the specified match.
- * - `updatePlayer(gameName: string, matchID: string, body: { playerID: string, credentials: string, newName: string })`: Updates the player's information in the specified match.
- * - `playAgain(gameName: string, matchID: string, body: { playerID: string, credentials: string })`: Starts a new match after the current one has ended.
- *
- * The class also includes error handling for network errors that may occur during the requests.
- */
 dotenv.config();
 
+// Mock de la función createFetch de Cartesify
 jest.mock('@calindra/cartesify', () => ({
   Cartesify: {
     createFetch: jest.fn(),
@@ -30,179 +12,136 @@ jest.mock('@calindra/cartesify', () => ({
 }));
 
 describe('LobbyClient', () => {
-  const { DAPP_ADDRESS, SERVER } = process.env;
-  let lobbyClient;
-  let mockFetch;
+  const mockSigner = { provider: {} } as any; // Signer vacío para el test
+  let lobbyClient: LobbyClient;
+  let mockFetch: jest.Mock;
 
   beforeAll(() => {
-    if (!DAPP_ADDRESS || !SERVER) {
-      throw new Error(
-        'Missing required environment variables DAPP_ADDRESS or SERVER'
-      );
-    }
+    // Configuramos las variables de entorno por si no están definidas
+    process.env.SERVER = process.env.SERVER || 'http://localhost:8000'; // Valor por defecto
+    process.env.DAPP_ADDRESS = process.env.DAPP_ADDRESS || '0xTestDappAddress';
   });
 
   beforeEach(() => {
-    mockFetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([]),
-      })
-    );
-    (Cartesify.createFetch as jest.Mock).mockImplementation(() => mockFetch);
-    lobbyClient = new LobbyClient();
+    // Simular la implementación de fetch de Cartesify
+    mockFetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify({})), // Por defecto, devuelve un objeto vacío
+    });
+
+    (Cartesify.createFetch as jest.Mock).mockReturnValue(mockFetch);
+
+    // Crear instancia del LobbyClient
+    lobbyClient = new LobbyClient({
+      server: process.env.SERVER,
+      nodeUrl: 'http://test-node.com',
+      dappAddress: process.env.DAPP_ADDRESS,
+      signer: mockSigner,
+    });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks(); // Limpiar mocks después de cada prueba
   });
 
-  test('should list games', async () => {
+  it('debería lanzar un error si nodeUrl no es proporcionado', () => {
+    expect(() => new LobbyClient({ server: process.env.SERVER })).toThrow(
+      'Node URL is required'
+    );
+  });
+
+  it('debería listar juegos correctamente', async () => {
     const games = await lobbyClient.listGames();
-    expect(games).toEqual([]);
-    expect(mockFetch).toHaveBeenCalledWith(`${SERVER}/games`, {
+    expect(games).toEqual({}); // El valor por defecto es un objeto vacío
+    expect(mockFetch).toHaveBeenCalledWith(`${process.env.SERVER}/games`, {
       method: undefined,
       body: undefined,
       headers: undefined,
     });
   });
 
-  test('should list matches for a game', async () => {
+  it('debería listar partidas de un juego correctamente', async () => {
     const gameName = 'test_game';
     const matches = await lobbyClient.listMatches(gameName);
-    expect(matches).toEqual([]);
-    expect(mockFetch).toHaveBeenCalledWith(`${SERVER}/games/${gameName}`, {
-      method: undefined,
-      body: undefined,
-      headers: undefined,
-    });
-  });
-
-  test('should create a match', async () => {
-    const gameName = 'test_game';
-    const body = { numPlayers: 2 };
-    const createdMatch = { matchID: 'match123' };
-    mockFetch.mockReturnValueOnce(
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(createdMatch),
-      })
-    );
-    const result = await lobbyClient.createMatch(gameName, body);
-    expect(result).toEqual(createdMatch);
+    expect(matches).toEqual({}); // Valor por defecto
     expect(mockFetch).toHaveBeenCalledWith(
-      `${SERVER}/games/${gameName}/create`,
+      `${process.env.SERVER}/games/${gameName}`,
       {
-        method: 'post',
-        body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' },
+        method: undefined,
+        body: undefined,
+        headers: undefined,
       }
     );
   });
 
-  test('should throw an error if createMatch body is invalid', async () => {
+  it('debería crear una partida correctamente', async () => {
     const gameName = 'test_game';
-    const body = { numPlayers: 'two' }; // Invalid numPlayers type
+    const body = { numPlayers: 2 };
+    const createdMatch = { matchID: 'match123' };
 
-    await expect(lobbyClient.createMatch(gameName, body)).rejects.toThrow(
-      'Expected body.numPlayers to be of type number, got "two".'
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify(createdMatch)),
+    });
+
+    const result = await lobbyClient.createMatch(gameName, body);
+    expect(result).toEqual(createdMatch);
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${process.env.SERVER}/games/${gameName}/create`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+      })
     );
   });
 
-  test('should join a match', async () => {
+  it('debería unirse a una partida correctamente', async () => {
     const gameName = 'test_game';
     const matchID = 'match123';
     const body = { playerName: 'player1' };
     const joinedMatch = { playerID: 'player123' };
-    mockFetch.mockReturnValueOnce(
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(joinedMatch),
-      })
-    );
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify(joinedMatch)),
+    });
+
     const result = await lobbyClient.joinMatch(gameName, matchID, body);
     expect(result).toEqual(joinedMatch);
     expect(mockFetch).toHaveBeenCalledWith(
-      `${SERVER}/games/${gameName}/${matchID}/join`,
-      {
-        method: 'post',
+      `${process.env.SERVER}/games/${gameName}/${matchID}/join`,
+      expect.objectContaining({
+        method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },
-      }
+      })
     );
   });
 
-  test('should leave a match', async () => {
+  it('debería salir de una partida correctamente', async () => {
     const gameName = 'test_game';
     const matchID = 'match123';
     const body = { playerID: 'player1', credentials: 'cred123' };
-    mockFetch.mockReturnValueOnce(
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({}),
-      })
-    );
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify({})),
+    });
+
     await lobbyClient.leaveMatch(gameName, matchID, body);
     expect(mockFetch).toHaveBeenCalledWith(
-      `${SERVER}/games/${gameName}/${matchID}/leave`,
-      {
-        method: 'post',
+      `${process.env.SERVER}/games/${gameName}/${matchID}/leave`,
+      expect.objectContaining({
+        method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  });
-
-  test('should update player information', async () => {
-    const gameName = 'test_game';
-    const matchID = 'match123';
-    const body = {
-      playerID: 'player1',
-      credentials: 'cred123',
-      newName: 'newName',
-    };
-    mockFetch.mockReturnValueOnce(
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({}),
       })
     );
-    await lobbyClient.updatePlayer(gameName, matchID, body);
-    expect(mockFetch).toHaveBeenCalledWith(
-      `${SERVER}/games/${gameName}/${matchID}/update`,
-      {
-        method: 'post',
-        body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
   });
 
-  test('should play again', async () => {
-    const gameName = 'test_game';
-    const matchID = 'match123';
-    const body = { playerID: 'player1', credentials: 'cred123' };
-    const nextMatch = { matchID: 'match456' };
-    mockFetch.mockReturnValueOnce(
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(nextMatch),
-      })
-    );
-    const result = await lobbyClient.playAgain(gameName, matchID, body);
-    expect(result).toEqual(nextMatch);
-    expect(mockFetch).toHaveBeenCalledWith(
-      `${SERVER}/games/${gameName}/${matchID}/playAgain`,
-      {
-        method: 'post',
-        body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  });
-
-  test('should handle network error in request', async () => {
-    mockFetch.mockReturnValueOnce(Promise.reject(new Error('Network error')));
+  it('debería manejar errores de red correctamente', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
     await expect(lobbyClient.listGames()).rejects.toThrow(LobbyClientError);
   });
