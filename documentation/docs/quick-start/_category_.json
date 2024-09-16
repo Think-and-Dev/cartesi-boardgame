@@ -1,0 +1,11 @@
+{
+  "label": "Quick Start Guide",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Welcome to the Quick Start Guide for Cartesi Boardgame. In this section, 
+    we’ll walk you through the steps needed to start using the library and create your own digital 
+    board games. We’ll take a step-by-step approach, covering the essential concepts and providing 
+    concise examples to help you quickly get up and running with your development."
+  }
+}
