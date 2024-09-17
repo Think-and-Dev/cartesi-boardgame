@@ -346,7 +346,6 @@ export class _ClientImpl<
     });
 
     this.createDispatchers();
-
     this.chatMessages = [];
     this.sendChatMessage = (payload) => {
       this.transport.sendChatMessage(this.matchID, {

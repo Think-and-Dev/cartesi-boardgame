@@ -7,7 +7,8 @@ import type {
   PlayerID,
 } from '../../types';
 import { Cartesify } from '@calindra/cartesify';
-import type { ethers } from 'ethers';
+import { ethers } from 'ethers';
+import { Client as XMTPClient } from '@xmtp/xmtp-js';
 
 interface CartesifyOpts {
   server?: string;
@@ -23,6 +24,8 @@ export class CartesifyTransport extends Transport {
   protected cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
   protected pollingInterval = 1000; // 5 seconds
   protected pollingEnabled: boolean;
+  protected signer: ethers.Signer;
+  protected xmtp: any;
   nextDataIndex: number;
 
   constructor(opts: CartesifyTransportOpts) {
@@ -40,7 +43,7 @@ export class CartesifyTransport extends Transport {
     this.credentials = opts.credentials;
     this.pollingEnabled = false;
     this.nextDataIndex = 0;
-
+    this.signer = opts.signer;
     this.cartesifyFetch = Cartesify.createFetch({
       dappAddress: opts.dappAddress,
       endpoints: {
@@ -48,7 +51,7 @@ export class CartesifyTransport extends Transport {
         inspect: new URL(`${opts.nodeUrl}/inspect`),
       },
       provider: opts.signer?.provider,
-      signer: opts.signer,
+      signer: this.signer,
     });
   }
 
@@ -57,6 +60,9 @@ export class CartesifyTransport extends Transport {
       await this.requestSync();
       this.startPolling();
       this.setConnectionStatus(true);
+      this.xmtp = await XMTPClient.create(this.signer, {
+        env: 'production',
+      });
     } catch (error) {
       console.error('Error connecting to backend:', error);
     }
@@ -171,24 +177,40 @@ export class CartesifyTransport extends Transport {
     chatMessage: ChatMessage
   ): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          matchID,
-          chatMessage,
-          playerID: this.playerID,
-          credentials: this.credentials,
-        }),
+      let address = '0x8DC925338C1eE1fE62c0C43404371deb701BfB55'; // tiene q ser el adress del q quiero mandarle mensaje
+      const isOnNetwork = await XMTPClient.canMessage(address, {
+        env: 'production',
       });
-
-      if (response.ok) {
-        this.notifyClient({ type: 'chat', args: [matchID, chatMessage] });
+      if (isOnNetwork) {
+        const conversation = await this.xmtp.conversations.newConversation(
+          address
+        );
+        await conversation.send(chatMessage.payload);
+        // for await (const message of await conversation.streamMessages()) {
+        //   console.log(`[${message.senderAddress}]: ${message.content}`);
+        // }
       } else {
-        throw new Error('Failed to send chat message');
+        console.log('Address ', address, 'is not in a network valid');
       }
+
+      // const response = await this.cartesifyFetch(`${this.url}/chat`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     matchID,
+      //     chatMessage,
+      //     playerID: this.playerID,
+      //     credentials: this.credentials,
+      //   }),
+      // });
+
+      // if (response.ok) {
+      //   this.notifyClient({ type: 'chat', args: [matchID, chatMessage] });
+      // } else {
+      //   throw new Error('Failed to send chat message');
+      // }
     } catch (error) {
       console.error('Error sending chat message:', error);
     }
