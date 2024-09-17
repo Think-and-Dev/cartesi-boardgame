@@ -1,11 +1,3 @@
-/*
- * Copyright 2018 The boardgame.io Authors
- *
- * Use of this source code is governed by a MIT-style
- * license that can be found in the LICENSE file or at
- * https://opensource.org/licenses/MIT.
- */
-
 import type { CorsOptions } from 'cors';
 import type Koa from 'koa';
 import type Router from '@koa/router';
@@ -119,7 +111,10 @@ export const configureRouter = ({
     const numPlayers = Number.parseInt(ctx.request.body.numPlayers);
 
     const game = games.find((g) => g.name === gameName);
-    if (!game) ctx.throw(404, 'Game ' + gameName + ' not found');
+    if (!game) {
+      console.error(`Game ${gameName} not found in api.ts`); // Log si no se encuentra el juego
+      ctx.throw(404, 'Game ' + gameName + ' not found in api.ts');
+    }
 
     if (
       ctx.request.body.numPlayers !== undefined &&
@@ -154,6 +149,7 @@ export const configureRouter = ({
    */
   router.get('/games/:name', async (ctx) => {
     const gameName = ctx.params.name;
+
     const isGameoverString = unwrapQuery(ctx.query.isGameover);
     const updatedBeforeString = unwrapQuery(ctx.query.updatedBefore);
     const updatedAfterString = unwrapQuery(ctx.query.updatedAfter);
@@ -180,6 +176,7 @@ export const configureRouter = ({
         updatedAfter = parsedNumber;
       }
     }
+
     const matchList = await db.listMatches({
       gameName,
       where: {
@@ -188,6 +185,7 @@ export const configureRouter = ({
         updatedBefore,
       },
     });
+
     const matches = [];
     for (const matchID of matchList) {
       const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
@@ -210,6 +208,7 @@ export const configureRouter = ({
    */
   router.get('/games/:name/:id', async (ctx) => {
     const matchID = ctx.params.id;
+
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -235,6 +234,7 @@ export const configureRouter = ({
     const playerName = ctx.request.body.playerName;
     const data = ctx.request.body.data;
     const matchID = ctx.params.id;
+
     if (!playerName) {
       ctx.throw(403, 'playerName is required');
     }
@@ -290,6 +290,7 @@ export const configureRouter = ({
     const matchID = ctx.params.id;
     const playerID = ctx.request.body.playerID;
     const credentials = ctx.request.body.credentials;
+
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -337,6 +338,7 @@ export const configureRouter = ({
     const playerID = ctx.request.body.playerID;
     const credentials = ctx.request.body.credentials;
     const unlisted = ctx.request.body.unlisted;
+
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -371,7 +373,6 @@ export const configureRouter = ({
     // The number of players for this game instance.
     const numPlayers =
       Number.parseInt(ctx.request.body.numPlayers) ||
-      // eslint-disable-next-line unicorn/explicit-length-check
       Object.keys(metadata.players).length;
 
     const game = games.find((g) => g.name === gameName);
@@ -398,6 +399,7 @@ export const configureRouter = ({
     const credentials = ctx.request.body.credentials;
     const newName = ctx.request.body.newName;
     const data = ctx.request.body.data;
+
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
       metadata: true,
     });
@@ -475,10 +477,12 @@ export const configureApp = (
 ): void => {
   app.use(
     cors({
-      // Set Access-Control-Allow-Origin header for allowed origins.
       origin: (ctx) => {
         const origin = ctx.get('Origin');
-        return isOriginAllowed(origin, origins) ? origin : '';
+
+        const allowed = isOriginAllowed(origin, origins);
+
+        return allowed ? origin : '';
       },
     })
   );
