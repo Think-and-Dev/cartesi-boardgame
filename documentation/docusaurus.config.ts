@@ -6,9 +6,9 @@ const config: Config = {
   title: 'Cartesi Boardgame',
   tagline: 'Boardgame.io-Inspired Library for Cartesi',
   favicon: 'img/favicon.ico',
-  url: 'https://mmvazzano.github.io',
+  url: 'http://localhost:3000/',
   baseUrl: '/cartesi-boardgame/',
-  organizationName: 'mmvazzano',
+  organizationName: 'think-and-dev-cartesi-boardgame',
   projectName: 'cartesi-boardgame',
   deploymentBranch: 'gh-pages',
   trailingSlash: false,
@@ -26,9 +26,13 @@ const config: Config = {
         entryPoints: ['../src/index.ts'],
         out: './docs/api',
         tsconfig: '../tsconfig.json',
+        excludeExternals: true,
+        excludePrivate: true,
+        excludeProtected: true,
+        excludeNotDocumented: true,
+        skipErrorChecking: true,
       },
     ],
-    '@docusaurus/plugin-debug',
   ],
 
   presets: [
@@ -37,7 +41,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/mmvazzano/cartesi-boardgame/edit/main/',
+          editUrl:
+            'https://github.com/think-and-dev/cartesi-boardgame/edit/main/',
         },
         blog: {
           showReadingTime: true,
@@ -45,7 +50,8 @@ const config: Config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          editUrl: 'https://github.com/mmvazzano/cartesi-boardgame/edit/main/',
+          editUrl:
+            'https://github.com/think-and-dev/cartesi-boardgame/edit/main/',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',

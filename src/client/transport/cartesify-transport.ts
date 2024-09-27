@@ -9,7 +9,16 @@ import type {
 import { Cartesify } from '@calindra/cartesify';
 import type { ethers } from 'ethers';
 
-interface CartesifyOpts {
+/**
+ * CartesifyOpts is an interface that defines the options for the Cartesify
+ * transport layer.
+ *
+ * @param {string} server - The server URL running inside the Cartesi Node (Probably https://127.0.0.1:8000)
+ * @param {string} dappAddress - The address of the Cartesi DApp
+ * @param {string} nodeUrl - The URL of the Cartesi Node
+ * @param {ethers.Signer} signer - The signer that will be used to sign transactions sent to the Cartesi Node
+ */
+export interface CartesifyOpts {
   server?: string;
   dappAddress: string;
   nodeUrl?: string;
@@ -233,6 +242,16 @@ export class CartesifyTransport extends Transport {
   }
 }
 
+/**
+ * CartesifyTransport is a transport layer for boardgame.io that uses Cartesify
+ * to communicate with a Cartesi Node. It is used to connect a boardgame.io
+ * client to a Cartesi Node, enabling multiplayer games that are run on the
+ * Cartesi Machine.
+ *
+ * @param {CartesifyOpts} cartesifyOpts - Options for Cartesify
+ * @param {TransportOpts} transportOpts - Options for the transport layer
+ * @returns {CartesifyTransport} - A new instance of CartesifyTransport
+ */
 export function CartesiMultiplayer(cartesifyOpts: CartesifyOpts) {
   return (transportOpts: TransportOpts) =>
     new CartesifyTransport({

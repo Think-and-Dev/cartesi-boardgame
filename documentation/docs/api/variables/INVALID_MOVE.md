@@ -8,4 +8,4 @@ the move ought to be discarded.
 
 ## Defined in
 
-[constants.ts:6](https://github.com/mmvazzano/cartesi-boardgame/blob/4469e018d21e011877168ef8aaa8e773d1a2c707/src/core/constants.ts#L6)
+[core/constants.ts:6](https://github.com/Think-and-Dev/cartesi-boardgame/blob/8fd55e0812bf33145abcef1d5daf0bf23fa34815/src/core/constants.ts#L6)

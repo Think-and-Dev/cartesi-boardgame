@@ -3,5 +3,7 @@
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
     "baseUrl": "."
-  }
+  },
+  "files": ["../dist/think-and-dev-cartesi-boardgame.js"],
+  "include": ["../dist/think-and-dev-cartesi-boardgame.js"]
 }

@@ -14,5 +14,6 @@
     "jsx": "react",
     "skipLibCheck": true,
     "plugins": [{ "transform": "ts-transformer-imports" }]
-  }
+  },
+  "include": ["src/**/*"]
 }
