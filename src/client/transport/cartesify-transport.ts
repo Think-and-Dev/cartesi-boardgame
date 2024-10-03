@@ -8,7 +8,8 @@ import type {
 } from '../../types';
 import { Cartesify } from '@calindra/cartesify';
 import { ethers } from 'ethers';
-import { Client as XMTPClient } from '@xmtp/xmtp-js';
+import { toBytes } from 'viem';
+import { Client as XMTPClient } from '@xmtp/mls-client';
 
 interface CartesifyOpts {
   server?: string;
@@ -60,11 +61,60 @@ export class CartesifyTransport extends Transport {
       await this.requestSync();
       this.startPolling();
       this.setConnectionStatus(true);
-      this.xmtp = await XMTPClient.create(this.signer, {
+      let address = await this.signer.getAddress();
+      this.xmtp = await XMTPClient.create(address, {
         env: 'production',
       });
+      await this.registerClient(this.xmtp, this.signer);
     } catch (error) {
       console.error('Error connecting to backend:', error);
+    }
+  }
+
+  async registerClient(client, wallet) {
+    if (!client.isRegistered) {
+      const signature = toBytes(
+        await wallet.signMessage({
+          message: client.signatureText,
+        })
+      );
+      client.addEcdsaSignature(signature);
+      await client.registerIdentity();
+    }
+  }
+  // Function to send a message to a specific group
+  async sendMessageToGroup(client, groupId, messageContent) {
+    const conversation = client.conversations.getConversationById(groupId);
+    if (!conversation) {
+      console.log(`No conversation found with ID: ${groupId}`);
+      return;
+    }
+    await conversation.send(messageContent);
+    console.log(`Message sent to group ${groupId}: ${messageContent}`);
+  }
+  async createGroupConversation(client, msg) {
+    const conversation = await client.conversations.newConversation([
+      '0x90F79bf6EB2c4f870365E785982E1f101E93b906',
+      '0x3c7649064f3764Cdc4E63eEFD3cD0cbB8B715d27',
+    ]);
+    console.log(conversation.id);
+    // Paso 2: Iniciar el streaming de mensajes en la conversación
+    await this.streamAndRespond(client, conversation.id, msg);
+  }
+  // Function to stream all messages and respond to new ones
+  async streamAndRespond(client, conversationId, msg) {
+    console.log('Iniciando transmisión de mensajes');
+    const stream = await client.conversations.streamAllMessages();
+
+    for await (const message of stream) {
+      console.log(`Mensaje transmitido: ${message.content}`);
+      // Verifica que el mensaje sea de otro participante y que esté en la conversación correcta
+      if (
+        message.senderInboxId !== client.inboxId &&
+        message.conversationId === conversationId
+      ) {
+        await this.sendMessageToGroup(client, conversationId, msg);
+      }
     }
   }
 
@@ -177,40 +227,7 @@ export class CartesifyTransport extends Transport {
     chatMessage: ChatMessage
   ): Promise<void> {
     try {
-      let address = '0x8DC925338C1eE1fE62c0C43404371deb701BfB55'; // tiene q ser el adress del q quiero mandarle mensaje
-      const isOnNetwork = await XMTPClient.canMessage(address, {
-        env: 'production',
-      });
-      if (isOnNetwork) {
-        const conversation = await this.xmtp.conversations.newConversation(
-          address
-        );
-        await conversation.send(chatMessage.payload);
-        // for await (const message of await conversation.streamMessages()) {
-        //   console.log(`[${message.senderAddress}]: ${message.content}`);
-        // }
-      } else {
-        console.log('Address ', address, 'is not in a network valid');
-      }
-
-      // const response = await this.cartesifyFetch(`${this.url}/chat`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     matchID,
-      //     chatMessage,
-      //     playerID: this.playerID,
-      //     credentials: this.credentials,
-      //   }),
-      // });
-
-      // if (response.ok) {
-      //   this.notifyClient({ type: 'chat', args: [matchID, chatMessage] });
-      // } else {
-      //   throw new Error('Failed to send chat message');
-      // }
+      this.createGroupConversation(this.xmtp, chatMessage.payload);
     } catch (error) {
       console.error('Error sending chat message:', error);
     }

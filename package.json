@@ -158,7 +158,7 @@
     "@koa/router": "^10.1.1",
     "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.8",
-    "@xmtp/xmtp-js": "^13.0.0",
+    "@xmtp/mls-client": "^0.0.14",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.1",
     "flatted": "^3.2.1",
@@ -180,7 +180,8 @@
     "sqlite3": "^5.1.7",
     "svelte": "^3.41.0",
     "svelte-json-tree-auto": "^0.1.0",
-    "ts-toolbelt": "^6.3.6"
+    "ts-toolbelt": "^6.3.6",
+    "viem": "1.0.0"
   },
   "jest": {
     "preset": "ts-jest/presets/js-with-babel",
