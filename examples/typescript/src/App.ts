@@ -2,6 +2,8 @@ import { TicTacToe } from './Game';
 import { Board } from './Board2';
 import { Lobby } from '../../../src/lobby/typescriptLobby'; // Importar Lobby
 import { ethers, BrowserProvider } from 'ethers';
+import { renderLobby } from '../../../src/lobby/lobbyRender'; // Importar el renderizado del lobby
+import { renderLoginForm } from '../../../src/lobby/loginFormRenderer'; // Importar el renderizado del formulario de login
 
 declare global {
   interface Window {
@@ -60,6 +62,7 @@ async function main() {
 
   // Inicializa y renderiza el lobby
   await lobby.initialize();
+  await lobby._updateConnection();
 
   // Verificar el estado del lobby y mostrar el login o la lista de partidas
   if (lobby.state.phase === 'enter') {
@@ -69,86 +72,86 @@ async function main() {
   }
 }
 
-// Función para renderizar el formulario de login
-function renderLoginForm(appElement: HTMLElement, lobby: Lobby) {
-  // Limpiar el contenido previo
-  appElement.innerHTML = '';
+// // Función para renderizar el formulario de login
+// function renderLoginForm(appElement: HTMLElement, lobby: Lobby) {
+//   // Limpiar el contenido previo
+//   appElement.innerHTML = '';
 
-  // Crear los elementos del formulario de login
-  const loginContainer = document.createElement('div');
+//   // Crear los elementos del formulario de login
+//   const loginContainer = document.createElement('div');
 
-  const phaseTitle = document.createElement('p');
-  phaseTitle.className = 'phase-title';
-  phaseTitle.textContent = 'Choose a player name:';
-  loginContainer.appendChild(phaseTitle);
+//   const phaseTitle = document.createElement('p');
+//   phaseTitle.className = 'phase-title';
+//   phaseTitle.textContent = 'Choose a player name:';
+//   loginContainer.appendChild(phaseTitle);
 
-  const playerNameInput = document.createElement('input');
-  playerNameInput.type = 'text';
-  playerNameInput.value = lobby.state.playerName || ''; // Obtener el nombre del estado actual del lobby
-  loginContainer.appendChild(playerNameInput);
+//   const playerNameInput = document.createElement('input');
+//   playerNameInput.type = 'text';
+//   playerNameInput.value = lobby.state.playerName || ''; // Obtener el nombre del estado actual del lobby
+//   loginContainer.appendChild(playerNameInput);
 
-  const errorMsg = document.createElement('span');
-  errorMsg.className = 'error-msg';
-  loginContainer.appendChild(errorMsg);
+//   const errorMsg = document.createElement('span');
+//   errorMsg.className = 'error-msg';
+//   loginContainer.appendChild(errorMsg);
 
-  const enterButton = document.createElement('button');
-  enterButton.className = 'buttons';
-  enterButton.textContent = 'Enter';
-  loginContainer.appendChild(enterButton);
+//   const enterButton = document.createElement('button');
+//   enterButton.className = 'buttons';
+//   enterButton.textContent = 'Enter';
+//   loginContainer.appendChild(enterButton);
 
-  // Añadir comportamiento al botón y entrada
-  enterButton.addEventListener('click', () => {
-    const playerName = playerNameInput.value.trim();
-    if (playerName === '') {
-      errorMsg.textContent = 'empty player name';
-      return;
-    }
-    errorMsg.textContent = '';
-    console.log('playerName in App.ts:', playerName);
+//   // Añadir comportamiento al botón y entrada
+//   enterButton.addEventListener('click', () => {
+//     const playerName = playerNameInput.value.trim();
+//     if (playerName === '') {
+//       errorMsg.textContent = 'empty player name';
+//       return;
+//     }
+//     errorMsg.textContent = '';
+//     console.log('playerName in App.ts:', playerName);
 
-    lobby.enterLobby(playerName); // Cambiar la fase en el lobby
-    renderLobby(appElement, lobby); // Renderizar el lobby
-  });
+//     lobby.enterLobby(playerName); // Cambiar la fase en el lobby
+//     renderLobby(appElement, lobby); // Renderizar el lobby
+//   });
 
-  playerNameInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-      enterButton.click();
-    }
-  });
+//   playerNameInput.addEventListener('keypress', (event) => {
+//     if (event.key === 'Enter') {
+//       enterButton.click();
+//     }
+//   });
 
-  appElement.appendChild(loginContainer);
-}
+//   appElement.appendChild(loginContainer);
+// }
 
-// Función para renderizar el lobby
-function renderLobby(appElement: HTMLElement, lobby: Lobby) {
-  // Limpiar el contenido previo
-  appElement.innerHTML = '';
+// // Función para renderizar el lobby
+// function renderLobby(appElement: HTMLElement, lobby: Lobby) {
+//   // Limpiar el contenido previo
+//   appElement.innerHTML = '';
 
-  // Crear los elementos del lobby
-  const lobbyElement = document.createElement('div');
-  const welcomeText = document.createElement('p');
-  welcomeText.textContent = `Welcome, ${lobby.state.playerName}`;
-  lobbyElement.appendChild(welcomeText);
+//   // Crear los elementos del lobby
+//   const lobbyElement = document.createElement('div');
+//   const welcomeText = document.createElement('p');
+//   welcomeText.textContent = `Welcome, ${lobby.state.playerName}`;
+//   lobbyElement.appendChild(welcomeText);
 
-  // Tabla para las partidas
-  const table = document.createElement('table');
-  const tbody = document.createElement('tbody');
+//   // Tabla para las partidas
+//   const table = document.createElement('table');
+//   const tbody = document.createElement('tbody');
 
-  // Renderizar las partidas disponibles
-  lobby.connection?.matches.forEach((match) => {
-    const row = document.createElement('tr');
-    const cell = document.createElement('td');
-    cell.textContent = `Match ID: ${match.matchID}`;
-    row.appendChild(cell);
-    tbody.appendChild(row);
-  });
+//   // Renderizar las partidas disponibles
+//   lobby.connection?.matches.forEach((match) => {
+//     const row = document.createElement('tr');
+//     const cell = document.createElement('td');
+//     cell.textContent = `Match ID: ${match.matchID}`;
+//     row.appendChild(cell);
+//     tbody.appendChild(row);
+//   });
 
-  table.appendChild(tbody);
-  lobbyElement.appendChild(table);
+//   table.appendChild(tbody);
+//   lobbyElement.appendChild(table);
 
-  // Agregar el lobby al DOM
-  appElement.appendChild(lobbyElement);
-}
+//   // Agregar el lobby al DOM
+//   appElement.appendChild(lobbyElement);
+// }
 
 main();
 

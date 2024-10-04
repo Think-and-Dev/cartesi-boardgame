@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-enum LobbyPhases {
+export enum LobbyPhases {
   ENTER = 'enter',
   PLAY = 'play',
   LIST = 'list',
@@ -121,6 +121,11 @@ export class Lobby {
       })
     );
     console.log('PlayerName stored in state:', this.state.playerName);
+    console.log('phase stored in state:', this.state.phase);
+    console.log('credentialStore stored in state:', this.state.credentialStore);
+
+    console.log('Entrando al lobby, actualizando partidas');
+    this._startRefreshInterval(); // Esto asegura que se actualicen las partidas periódicamente
   }
 
   //* Equivalente a 'componentDidUpdate' para crear o actualizar la conexión
@@ -161,21 +166,24 @@ export class Lobby {
     }
   }
 
-  private _startRefreshInterval() {
+  public _startRefreshInterval() {
     this._clearRefreshInterval();
     this._currentInterval = setInterval(
       () => this._updateConnection(),
-      this.config.refreshInterval || 2000
+      this.config.refreshInterval || 10000 //!cambiar luego a 2000
     );
   }
 
   //* Equivalente a 'componentWillUnmount' para limpiar intervalos.
-  private _clearRefreshInterval() {
+  public _clearRefreshInterval() {
     if (this._currentInterval) clearInterval(this._currentInterval);
   }
 
   async _updateConnection() {
     await this.connection?.refresh();
+    //* FUNCIONAAA EL REFRESHHHHHHHHHHHH!!!!!
+    console.log('Conexión actualizada:', this.connection.matches);
+    //* Las partidas se muestran.
   }
 
   async createMatch(gameName: string, numPlayers: number) {

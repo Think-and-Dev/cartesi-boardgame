@@ -69,11 +69,14 @@ class _LobbyConnectionImpl {
     try {
       this.matches = [];
       const games = await this.client.listGames();
+      console.log('Lista de juegos obtenidos:', games);
       for (const game of games) {
         if (!this._getGameComponents(game)) continue;
         const { matches } = await this.client.listMatches(game);
+        console.log(`Partidas obtenidas para el juego ${game}:`, matches);
         this.matches.push(...matches);
       }
+      console.log('Lista final de partidas (matches):', this.matches);
     } catch (error) {
       throw new Error('failed to retrieve list of matches (' + error + ')');
     }
