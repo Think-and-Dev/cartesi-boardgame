@@ -20,7 +20,7 @@ interface State {
   matchID: string;
 }
 
-export class TicTacToeClient {
+export class Board {
   private client: any;
   private rootElement: HTMLElement;
   private matchID: string;
@@ -52,7 +52,7 @@ export class TicTacToeClient {
     this.attachListeners();
 
     const backButton = document.createElement('button');
-    backButton.textContent = 'Back to Lobby';
+    backButton.textContent = 'Leave Match';
     backButton.addEventListener('click', () => {
       this.client.stop();
       backToLobbyCallback();

@@ -1,25 +1,14 @@
-//* react.tsx version but with typescript.
-
-// import Cookies from 'react-cookies';
-// import { LobbyConnection } from './connection';
-// import { LobbyClient } from './client'; // Importa LobbyClient
-// import type { DebugOpt } from '../client/client';
-// import type { LobbyAPI } from '../types';
-// import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
-// import { ethers } from 'ethers';
-// import { MCTSBot } from '../ai/mcts-bot';
-// import { Local } from '../client/transport/local';
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
-
 // typescript.ts
 import { LobbyConnection } from './connection';
 import { LobbyClient } from './client'; // Importa LobbyClient
 import type { LobbyAPI } from '../types';
 import { ethers } from 'ethers';
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 // Definición de tipos personalizados
 interface LobbyConfig {
@@ -76,6 +65,7 @@ export class LobbyManager {
     gameName: string
   ): Promise<LobbyAPI.MatchList['matches']> {
     try {
+      console.log('gameName in listMatches:', gameName); //Llega bien
       const matchList = await this.client.listMatches(gameName);
       return matchList.matches;
     } catch (error) {

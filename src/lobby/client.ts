@@ -206,6 +206,7 @@ export class LobbyClient {
     },
     init?: RequestInit
   ): Promise<LobbyAPI.MatchList> {
+    // verifico llegue el name como string
     assertGameName(gameName);
     let query = '';
 
