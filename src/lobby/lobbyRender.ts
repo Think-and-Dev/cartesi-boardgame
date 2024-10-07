@@ -76,6 +76,7 @@ export function renderLobby(appElement: HTMLElement, lobby: Lobby) {
     );
     console.log('Match row in lobbyRender.ts:', matchRow);
     tbody.appendChild(matchRow);
+    lobby._startRefreshInterval(); // Actualizar las partidas periódicamente
   });
 
   table.appendChild(tbody);

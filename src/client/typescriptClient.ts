@@ -12,7 +12,7 @@ type RunningMatch = {
 };
 
 // Configuración similar a ReactClientOpts en React.tsx
-interface TypeScriptClientOpts {
+export interface TypeScriptClientOpts {
   game: GameComponent;
   matchID: string;
   playerID: string;
