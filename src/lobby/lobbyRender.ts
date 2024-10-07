@@ -13,6 +13,48 @@ export function renderLobby(appElement: HTMLElement, lobby: Lobby) {
   welcomeText.textContent = `Welcome, ${lobby.state.playerName}`;
   lobbyElement.appendChild(welcomeText);
 
+  // Crear formulario para seleccionar el juego y la cantidad de jugadores
+  const gameSelectionContainer = document.createElement('div');
+  const gameLabel = document.createElement('label');
+  gameLabel.textContent = 'Game: ';
+  const gameSelect = document.createElement('select');
+
+  // Obtener juegos dinámicamente de la configuración del lobby
+  lobby.config.gameComponents.forEach((gameComponent) => {
+    const option = document.createElement('option');
+    option.value = gameComponent.game.name;
+    option.textContent = gameComponent.game.name; // Muestra el nombre del juego
+    gameSelect.appendChild(option);
+  });
+
+  const playerLabel = document.createElement('label');
+  playerLabel.textContent = 'Players: ';
+  const playerSelect = document.createElement('select');
+
+  // Opciones para el número de jugadores (1 o 2)
+  [1, 2].forEach((num) => {
+    const option = document.createElement('option');
+    option.value = num.toString();
+    option.textContent = num.toString();
+    playerSelect.appendChild(option);
+  });
+
+  gameSelectionContainer.appendChild(gameLabel);
+  gameSelectionContainer.appendChild(gameSelect);
+  gameSelectionContainer.appendChild(playerLabel);
+  gameSelectionContainer.appendChild(playerSelect);
+  lobbyElement.appendChild(gameSelectionContainer);
+
+  // Crear botón para crear partida
+  const createMatchButton = document.createElement('button');
+  createMatchButton.textContent = 'Create Match';
+  createMatchButton.addEventListener('click', () => {
+    const gameName = gameSelect.value;
+    const numPlayers = parseInt(playerSelect.value, 10);
+    lobby.createMatch(gameName, numPlayers);
+  });
+  lobbyElement.appendChild(createMatchButton);
+
   // Tabla para las partidas
   const table = document.createElement('table');
   const tbody = document.createElement('tbody');
@@ -21,11 +63,9 @@ export function renderLobby(appElement: HTMLElement, lobby: Lobby) {
     'Lista de partidas (matches) lobbyRender.:',
     lobby.connection?.matches
   );
-  //! VIENE VACIO lobby.connection?.matches. Es un array vacio [].
 
   // Renderizar las partidas disponibles usando `renderMatchInstance`
   lobby.connection?.matches.forEach((match) => {
-    // Llamamos a la función `renderMatchInstance` para generar cada fila de partida
     const matchRow = renderMatchInstance(
       match,
       lobby.state.playerName,
@@ -35,19 +75,17 @@ export function renderLobby(appElement: HTMLElement, lobby: Lobby) {
       (gameName, matchOpts) => lobby.startMatch(gameName, matchOpts) // Pasamos la función para iniciar la partida
     );
     console.log('Match row in lobbyRender.ts:', matchRow);
-
     tbody.appendChild(matchRow);
   });
 
   table.appendChild(tbody);
   lobbyElement.appendChild(table);
-  // **Agregar el botón para salir del lobby**
+
+  // Botón para salir del lobby
   const exitButton = document.createElement('button');
   exitButton.textContent = 'Exit Lobby';
   exitButton.addEventListener('click', () => {
     lobby.state.phase = LobbyPhases.ENTER;
-
-    lobby._clearRefreshInterval(); // Detener el refresco de partidas
     console.log('Has salido del lobby');
     renderLoginForm(appElement, lobby); // Volver al formulario de login
   });

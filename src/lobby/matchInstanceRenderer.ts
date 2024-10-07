@@ -91,6 +91,10 @@ function createButtonPlay(match, seatId: number, onClickPlay) {
       numPlayers: match.players.length,
     });
   });
+  console.log('match en createButtonPlay:', match);
+  console.log('seatId en createButtonPlay:', seatId);
+  console.log('onClickPlay en createButtonPlay:', onClickPlay);
+
   return button;
 }
 

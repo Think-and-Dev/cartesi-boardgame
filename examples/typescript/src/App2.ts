@@ -53,7 +53,10 @@ async function main() {
     nodeUrl: NODE_URL,
     dappAddress: DAPP_ADDRESS,
     signer: signer,
+    onUpdate: () => renderLobby(appElement, lobby), //
   };
+
+  console.log('onUpdate en App.ts:', lobbyConfig.onUpdate);
 
   // Crear una instancia del lobby
   const lobby = new Lobby(lobbyConfig);
@@ -87,6 +90,10 @@ function renderLobby(appElement: HTMLElement, lobby: Lobby) {
     cell.textContent = `Match ID: ${match.matchID}`;
     row.appendChild(cell);
     tbody.appendChild(row);
+    if (this.onUpdate) {
+      console.log('Llamando a onUpdate después de crear y refrescar.');
+      this.onUpdate();
+    }
   });
 
   table.appendChild(tbody);

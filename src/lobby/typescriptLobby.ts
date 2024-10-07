@@ -40,6 +40,7 @@ type LobbyConfig = {
   nodeUrl: string;
   dappAddress: string;
   signer: ethers.Signer;
+  onUpdate?: () => void; // <-- Definir el callback opcional
 };
 
 type LobbyState = {
@@ -54,12 +55,14 @@ type LobbyState = {
 //* iniciamos el estado (this.state). el equivalente a propiedad state en ejemplo React.
 export class Lobby {
   public connection?: ReturnType<typeof LobbyConnection>;
-  private config: LobbyConfig;
+  public config: LobbyConfig;
   public state: LobbyState;
   private _currentInterval?: NodeJS.Timeout;
+  private onUpdate?: () => void; //
 
   constructor(config: LobbyConfig) {
     this.config = config;
+    this.onUpdate = config.onUpdate;
     this.state = {
       phase: LobbyPhases.ENTER,
       playerName: 'Visitor',
@@ -103,6 +106,7 @@ export class Lobby {
       playerName: cookieData.playerName || 'Visitor',
       credentialStore: cookieData.credentialStore || {},
     };
+    console.log('this.state in initialize:', this.state);
 
     await this._initializeEthereum();
   }
@@ -120,20 +124,13 @@ export class Lobby {
         credentialStore: this.state.credentialStore,
       })
     );
-    console.log('PlayerName stored in state:', this.state.playerName);
-    console.log('phase stored in state:', this.state.phase);
-    console.log('credentialStore stored in state:', this.state.credentialStore);
 
-    console.log('Entrando al lobby, actualizando partidas');
     this._startRefreshInterval(); // Esto asegura que se actualicen las partidas periódicamente
   }
 
   //* Equivalente a 'componentDidUpdate' para crear o actualizar la conexión
   private _createConnection() {
     const name = this.state.playerName;
-    console.log('name in typescriptLobby:', name);
-
-    console.log('name in _createConnection:', name);
 
     this.connection = LobbyConnection({
       gameComponents: this.config.gameComponents,
@@ -170,7 +167,7 @@ export class Lobby {
     this._clearRefreshInterval();
     this._currentInterval = setInterval(
       () => this._updateConnection(),
-      this.config.refreshInterval || 10000 //!cambiar luego a 2000
+      this.config.refreshInterval || 2000
     );
   }
 
@@ -181,15 +178,18 @@ export class Lobby {
 
   async _updateConnection() {
     await this.connection?.refresh();
-    //* FUNCIONAAA EL REFRESHHHHHHHHHHHH!!!!!
-    console.log('Conexión actualizada:', this.connection.matches);
-    //* Las partidas se muestran.
+    if (this.onUpdate) {
+      this.onUpdate(); // Asegurarse de que onUpdate se llama después de refrescar
+    }
   }
 
   async createMatch(gameName: string, numPlayers: number) {
     try {
       await this.connection?.create(gameName, numPlayers);
-      await this._updateConnection();
+      await this.connection?.refresh();
+
+      //*Prueba refrescar pagina.
+      window.location.reload();
     } catch (error) {
       console.error('Error creating match:', error);
       this.state.errorMsg = error.message;
@@ -211,6 +211,7 @@ export class Lobby {
 
   private _updateCredentials(playerName: string, credentials: string) {
     this.state.credentialStore[playerName] = credentials;
+
     Cookies.set(
       'lobbyState',
       JSON.stringify({
@@ -218,6 +219,7 @@ export class Lobby {
         playerName: this.state.playerName,
         credentialStore: this.state.credentialStore,
       }),
+
       { path: '/' }
     );
   }
@@ -231,9 +233,16 @@ export class Lobby {
     }
   }
 
+  //* ACA trabajo actualmente.
+
   async startMatch(gameName: string, matchOpts: MatchOpts) {
+    console.log('estoy pasando por starMatch en typescriptLobby');
+
+    console.log('gameName in startMatch in typescriptLobby:', gameName);
+    console.log('matchOpts in startMatchin typescriptLobby::', matchOpts);
+
     const gameCode = this.connection?._getGameComponents(gameName);
-    console.log('gameCode in startMatch', gameCode);
+    console.log('gameCode in startMatchin typescriptLobby:', gameCode);
 
     if (!gameCode) {
       this.state.errorMsg = `Game ${gameName} not supported`;
@@ -280,6 +289,14 @@ export class Lobby {
       debug: this.config.debug,
       multiplayer,
     });
+    console.log('Configuración del clientFactory en typescriptLobby:', {
+      game: gameCode.game,
+      board: gameCode.board,
+      debug: this.config.debug,
+      multiplayer,
+    });
+    //! app esta llegnado undefined.
+    console.log('app in startMatch in typescriptLobby:', app);
 
     const match = {
       app: app!,
@@ -291,5 +308,6 @@ export class Lobby {
     this._clearRefreshInterval();
     this.state.phase = LobbyPhases.PLAY;
     this.state.runningMatch = match;
+    console.log('this.state in startMatch in typescriptLobby:', this.state);
   }
 }

@@ -69,14 +69,11 @@ class _LobbyConnectionImpl {
     try {
       this.matches = [];
       const games = await this.client.listGames();
-      console.log('Lista de juegos obtenidos:', games);
       for (const game of games) {
         if (!this._getGameComponents(game)) continue;
         const { matches } = await this.client.listMatches(game);
-        console.log(`Partidas obtenidas para el juego ${game}:`, matches);
         this.matches.push(...matches);
       }
-      console.log('Lista final de partidas (matches):', this.matches);
     } catch (error) {
       throw new Error('failed to retrieve list of matches (' + error + ')');
     }
@@ -123,8 +120,13 @@ class _LobbyConnectionImpl {
         playerID,
         playerName: this.playerName,
       });
+      console.log('JSON in join:', json);
+
       inst.players[Number.parseInt(playerID)].name = this.playerName;
+      console.log('inst.players in join:', inst.players);
+
       this.playerCredentials = json.playerCredentials;
+      console.log('playerCredentials in join:', this.playerCredentials);
     } catch (error) {
       throw new Error('failed to join match ' + matchID + ' (' + error + ')');
     }
