@@ -1,45 +1,55 @@
 ---
-sidebar_position: 6
+sidebar_position: 4
 ---
 
 # Storage
 
-## SQLite Integration with T&D’s Boardgame Framework
+The Cartesi Boardgame Framework provides flexible options for backend storage, allowing developers to choose the best solution for their game’s needs. With the integration of **SQLite**, the framework now supports multiple storage methods, including **in-memory**, **FlatFile**, and **SQLite** databases. This flexibility enhances game data management by offering both lightweight and more advanced, persistent storage solutions.
 
-With this new functionality, we've added the option to use SQLite as a storage method for the framework, expanding the possibilities and catering to various storage needs.
-Integrating SQLite3 as a storage method within T&D’s Boardgame Framework offers numerous advantages.
+## SQLite Integration with Cartesi Boardgame Framework
+
+By integrating SQLite as a storage method, developers gain access to a powerful and efficient database solution that complements the existing in-memory and FlatFile storage methods. SQLite expands the framework’s storage capabilities, making it suitable for games that require persistent data handling, complex queries, or enhanced data portability.
 
 ### Advantages of Using SQLite
 
-- Data Persistence: SQLite allows for persistent storage of data.
-- Ease of Use: SQLite is a lightweight database that does not require a separate server, simplifying its implementation and use in local environments.
-- Portability: SQLite database files are highly portable, facilitating data transfer and backup for the game.
-- Advanced Queries: SQLite supports complex query operations, enabling efficient handling and manipulation of large volumes of data.
-- Compatibility and Flexibility: Adding SQLite as a storage option enhances the framework’s flexibility, allowing developers to choose between different persistence methods based on their specific needs.
+- **Data Persistence**: With SQLite, game data can be stored persistently across sessions, ensuring that important game states are saved and available for future use.
+- **Ease of Use**: SQLite is lightweight and serverless, which makes it easy to implement without the need for additional server configurations. This simplifies local development and testing.
+- **Portability**: SQLite databases are file-based, making them highly portable and easy to transfer or back up between environments.
+- **Advanced Queries**: SQLite supports complex SQL queries, enabling efficient handling and manipulation of larger datasets, such as game histories or player statistics.
+- **Compatibility and Flexibility**: With both FlatFile and SQLite options available, developers can choose the storage solution that best fits their game's performance and persistence needs.
 
-### How to Implement SQLite3
+## How to Implement SQLite3
 
-#### Running with NONODO (the local Cartesi node for development and testing):
+There are two main ways to implement SQLite3 within the Cartesi Boardgame Framework, depending on whether you are working locally with **NONODO** (the local Cartesi node for development and testing) or running the framework inside the **CVM** (Cartesi Virtual Machine).
 
-    - In Your Backend:
-        - SQLite3 must be installed locally on your system, as NONODO will interact directly with this installation. Ensure that SQLite3 is available and properly configured; if not, you can run the command npm install sqlite3 on your system.
+### Running with NONODO (Local Development):
 
-#### Running with CVM:
+1.  **Install SQLite3**: Ensure SQLite3 is installed locally on your system to enable interaction with NONODO. If SQLite3 is not already installed, you can easily add it to your project by running the following command:
 
-    - In Your Backend:
-        - If you prefer to run the framework with CVM, simply use the preconfigured Dockerfile that includes SQLite3.
-        - To run CVM, execute the command cartesi build and then cartesi run, ensuring that all necessary components are integrated.
+    ```
+    npm install sqlite3
+    ```
 
-    - Configuration Verification:
-        - Verify that the Dockerfile is correctly configured to integrate SQLite3 and that your application can access the database without issues.
+2.  **Configuration**: Once installed, verify that your backend is configured to use SQLite3 for data storage. The database can now persist game data locally.
 
-#### Incorporating SQLite into the Code:
+Running with CVM (Cartesi Virtual Machine)
+Use Preconfigured Dockerfile:
+When running the framework with the CVM, you can use the preconfigured Dockerfile that includes SQLite3 as part of the setup.
 
-    - In Your Backend:
-        - The database to be used must be sent to the server (if no database is sent, the default database is the in-memory).
+### Running with CVM (Cartesi Virtual Machine)
 
-        ![Boardgame Example](../img/storage.png)
+1.  **Use Preconfigured Dockerfile**: When running the framework with the CVM, you can use the preconfigured Dockerfile that includes SQLite3 as part of the setup. To build and run the framework inside the CVM, use the following commands:
 
-### Conclusion
+    ```
+    cartesi build
+    cartesi run
+    ```
 
-This feature enhances the flexibility of game data storage by introducing SQLite as an additional storage option, complementing the existing methods like in-memory and flat file storage.
+2.  **Verify Configuration**: Check the Dockerfile to ensure that SQLite3 is integrated correctly and that your application can interact with the database without any issues. The backend should now be capable of persistent data storage via SQLite3 within the CVM environment.
+
+### Incorporating SQLite into the Code
+
+- **Backend Integration**: The framework is designed to handle both SQLite3 and other storage methods seamlessly. The backend should be configured to accept a database file (SQLite3), or it will default to an in-memory database if no external storage is provided.
+- **Database Configuration**: Ensure that the game data is correctly stored in SQLite3 by sending the appropriate database file to the server.
+
+![Boardgame Example](../img/storage.png)

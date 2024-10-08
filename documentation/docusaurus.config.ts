@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Cartesi Boardgame',
   tagline: 'Boardgame.io-Inspired Library for Cartesi',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/image.png',
   url: 'http://localhost:3000/',
   baseUrl: '/cartesi-boardgame/',
   organizationName: 'think-and-dev-cartesi-boardgame',
@@ -31,6 +31,7 @@ const config: Config = {
         excludeProtected: true,
         excludeNotDocumented: true,
         skipErrorChecking: true,
+        readme: './code-docs.md',
       },
     ],
   ],
@@ -64,7 +65,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/image.png',
     navbar: {
       title: 'Cartesi Boardgame',
       logo: {

@@ -4,17 +4,17 @@
 
 - [\_ClientImpl](classes/ClientImpl.md)
 - [ReadQueueTransportAPI](classes/ReadQueueTransportAPI.md)
+- [Sqlite](classes/Sqlite.md)
 
 ## Interfaces
 
 - [CartesifyOpts](interfaces/CartesifyOpts.md)
-
-## Variables
-
-- [INVALID\_MOVE](variables/INVALID_MOVE.md)
+- [ClientOpts](interfaces/ClientOpts.md)
 
 ## Functions
 
 - [CartesiMultiplayer](functions/CartesiMultiplayer.md)
 - [Client](functions/Client.md)
-- [supportDeprecatedMoveLimit](functions/supportDeprecatedMoveLimit.md)
+- [createServerRunConfig](functions/createServerRunConfig.md)
+- [LobbyConnection](functions/LobbyConnection.md)
+- [Server](functions/Server.md)

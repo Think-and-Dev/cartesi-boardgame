@@ -114,17 +114,44 @@ export const createEventDispatchers = createDispatchers.bind(null, 'gameEvent');
 // Creates a set of dispatchers to dispatch actions to plugins.
 export const createPluginDispatchers = createDispatchers.bind(null, 'plugin');
 
+/**
+ * Options for configuring the Client.
+ *
+ * @template G - The game state type.
+ * @template PluginAPIs - The type for plugin APIs.
+ */
 export interface ClientOpts<
   G extends any = any,
   PluginAPIs extends Record<string, unknown> = Record<string, unknown>
 > {
+  /**
+   * The game configuration object returned from `Game`.
+   */
   game: Game<G, PluginAPIs>;
   debug?: DebugOpt | boolean;
+  /**
+   * Optional. The number of players in the game.
+   */
   numPlayers?: number;
+  /**
+   * Optional. Set to a falsy value or a transportFactory (e.g., SocketIO).
+   */
   multiplayer?: (opts: TransportOpts) => Transport;
+  /**
+   * Optional. The matchID that you want to connect to.
+   */
   matchID?: string;
+  /**
+   * Optional. The playerID associated with this client.
+   */
   playerID?: PlayerID;
+  /**
+   * Optional. The authentication credentials associated with this client.
+   */
   credentials?: string;
+  /**
+   * Optional. Enhancer for Redux store.
+   */
   enhancer?: StoreEnhancer;
 }
 
@@ -578,12 +605,8 @@ export class _ClientImpl<
  *
  * boardgame.io JS client.
  *
- * @param {...object} game - The return value of `Game`.
- * @param {...object} numPlayers - The number of players.
- * @param {...object} multiplayer - Set to a falsy value or a transportFactory, e.g., SocketIO()
- * @param {...object} matchID - The matchID that you want to connect to.
- * @param {...object} playerID - The playerID associated with this client.
- * @param {...string} credentials - The authentication credentials associated with this client.
+ * @param {ClientOpts} opts - Options for configuring the client.
+ *   See {@link ClientOpts} for a detailed description of available options.
  *
  * Returns:
  *   A JS object that provides an API to interact with the

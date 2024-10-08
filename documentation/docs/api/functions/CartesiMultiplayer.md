@@ -29,4 +29,4 @@ Options for Cartesify
 
 ## Defined in
 
-[client/transport/cartesify-transport.ts:255](https://github.com/Think-and-Dev/cartesi-boardgame/blob/8fd55e0812bf33145abcef1d5daf0bf23fa34815/src/client/transport/cartesify-transport.ts#L255)
+[client/transport/cartesify-transport.ts:255](https://github.com/Think-and-Dev/cartesi-boardgame/blob/3a054583808c7c40a2a0177388558713da9a788e/src/client/transport/cartesify-transport.ts#L255)

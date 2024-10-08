@@ -14,7 +14,14 @@ boardgame.io JS client.
 
 ## Parameters
 
-• **opts**: `ClientOpts`\<`G`, `PluginAPIs`\>
+• **opts**: [`ClientOpts`](../interfaces/ClientOpts.md)\<`G`, `PluginAPIs`\>
+
+Options for configuring the client.
+  See [ClientOpts](../interfaces/ClientOpts.md) for a detailed description of available options.
+
+Returns:
+  A JS object that provides an API to interact with the
+  game by dispatching moves and events.
 
 ## Returns
 
@@ -22,4 +29,4 @@ boardgame.io JS client.
 
 ## Defined in
 
-[client/client.ts:592](https://github.com/Think-and-Dev/cartesi-boardgame/blob/8fd55e0812bf33145abcef1d5daf0bf23fa34815/src/client/client.ts#L592)
+[client/client.ts:615](https://github.com/Think-and-Dev/cartesi-boardgame/blob/3a054583808c7c40a2a0177388558713da9a788e/src/client/client.ts#L615)

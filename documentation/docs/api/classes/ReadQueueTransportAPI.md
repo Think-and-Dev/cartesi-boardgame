@@ -29,4 +29,4 @@ Send a message to all clients.
 
 #### Defined in
 
-[server/transport/cartesify-transport.ts:54](https://github.com/Think-and-Dev/cartesi-boardgame/blob/8fd55e0812bf33145abcef1d5daf0bf23fa34815/src/server/transport/cartesify-transport.ts#L54)
+[server/transport/cartesify-transport.ts:54](https://github.com/Think-and-Dev/cartesi-boardgame/blob/3a054583808c7c40a2a0177388558713da9a788e/src/server/transport/cartesify-transport.ts#L54)
