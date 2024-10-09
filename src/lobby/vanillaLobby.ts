@@ -308,7 +308,9 @@ export class Lobby {
 
     const app = new VanillaClient({
       game: gameCode.game,
-      board: gameCode.board,
+      board: gameCode.board as unknown as
+        | ((opts: any) => HTMLElement)
+        | HTMLElement,
       debug: this.config.debug,
       multiplayer,
       rootElement: document.getElementById('game-container')!, // Asegúrate de tener un elemento root adecuado en tu HTML
