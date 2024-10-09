@@ -3,6 +3,7 @@
 import Cookies from 'js-cookie'; // Cambiado de 'react-cookies' a 'js-cookie'
 import { ethers } from 'ethers';
 import { Client } from '../client/react';
+import { VanillaClient } from '../client/vanillaClient';
 import { MCTSBot } from '../ai/mcts-bot';
 import { Local } from '../client/transport/local';
 import type { GameComponent } from './connection';
@@ -10,6 +11,7 @@ import { LobbyConnection } from './connection';
 import type { MatchOpts } from './match-instance';
 import type { LobbyAPI } from '../types';
 import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
+import { renderLobby } from './vanillaLobbyRender';
 
 declare global {
   interface Window {
@@ -24,7 +26,7 @@ export enum LobbyPhases {
 }
 
 type RunningMatch = {
-  app: ReturnType<typeof Client>;
+  app: VanillaClient<any>; // de Client a VanillaClient
   matchID: string;
   playerID: string;
   credentials?: string;
@@ -40,7 +42,7 @@ type LobbyConfig = {
   nodeUrl: string;
   dappAddress: string;
   signer: ethers.Signer;
-  onUpdate?: () => void; // <-- Definir el callback opcional
+  onUpdate?: () => void;
 };
 
 type LobbyState = {
@@ -62,7 +64,7 @@ export class Lobby {
 
   constructor(config: LobbyConfig) {
     this.config = config;
-    this.onUpdate = config.onUpdate;
+    this.onUpdate = config.onUpdate || (() => {});
     this.state = {
       phase: LobbyPhases.ENTER,
       playerName: 'Visitor',
@@ -75,7 +77,6 @@ export class Lobby {
   }
 
   //* Inicializamos el estado del juego.
-  ///!
   async initialize() {
     // Leer la cookie con Cookies.get
     const cookie = Cookies.get('lobbyState');
@@ -89,8 +90,6 @@ export class Lobby {
         console.error('Error parsing lobbyState cookie:', error);
       }
     }
-
-    console.log('Contenido de la cookie lobbyState:', cookieData); // Para verificar el contenido
 
     if (cookieData.phase && cookieData.phase === LobbyPhases.PLAY) {
       cookieData.phase = LobbyPhases.LIST;
@@ -106,7 +105,6 @@ export class Lobby {
       playerName: cookieData.playerName || 'Visitor',
       credentialStore: cookieData.credentialStore || {},
     };
-    console.log('this.state in initialize:', this.state);
 
     await this._initializeEthereum();
   }
@@ -141,6 +139,10 @@ export class Lobby {
       dappAddress: this.config.dappAddress,
       signer: this.state.signer,
     });
+    // console.log(
+    //   'this.connection en _createConnection in typescriptLobby:',
+    //   this.connection
+    // );
   }
 
   private async _initializeEthereum() {
@@ -178,8 +180,9 @@ export class Lobby {
 
   async _updateConnection() {
     await this.connection?.refresh();
+
     if (this.onUpdate) {
-      this.onUpdate(); // Asegurarse de que onUpdate se llama después de refrescar
+      this.onUpdate();
     }
   }
 
@@ -187,9 +190,7 @@ export class Lobby {
     try {
       await this.connection?.create(gameName, numPlayers);
       await this.connection?.refresh();
-
-      //*Prueba refrescar pagina.
-      window.location.reload();
+      console.log('gameName en createMatch in typescriptLobby:', gameName);
     } catch (error) {
       console.error('Error creating match:', error);
       this.state.errorMsg = error.message;
@@ -198,11 +199,24 @@ export class Lobby {
 
   async joinMatch(gameName: string, matchID: string, playerID: string) {
     try {
+      console.log('gameName en joinMatch in typescriptLobby:', gameName);
+      console.log('matchID en joinMatch in typescriptLobby:', matchID);
+      console.log('playerID en joinMatch in typescriptLobby:', playerID);
+
       await this.connection?.join(gameName, matchID, playerID);
       await this._updateConnection();
       const { playerName, playerCredentials } = this.connection || {};
+      console.log(
+        'playerCredentials en joinMatch in typescriptLobby:',
+        playerCredentials
+      );
+
       if (playerName && playerCredentials) {
         this._updateCredentials(playerName, playerCredentials);
+        console.log(
+          'playerCredentials en joinMatch in typescriptLobby:',
+          playerCredentials
+        );
       }
     } catch (error) {
       this.state.errorMsg = error.message;
@@ -211,6 +225,10 @@ export class Lobby {
 
   private _updateCredentials(playerName: string, credentials: string) {
     this.state.credentialStore[playerName] = credentials;
+    console.log(
+      'credentialStore en _updateCredentials in typescriptLobby:',
+      this.state.credentialStore
+    );
 
     Cookies.set(
       'lobbyState',
@@ -236,21 +254,24 @@ export class Lobby {
   //* ACA trabajo actualmente.
 
   async startMatch(gameName: string, matchOpts: MatchOpts) {
-    console.log('estoy pasando por starMatch en typescriptLobby');
-
-    console.log('gameName in startMatch in typescriptLobby:', gameName);
-    console.log('matchOpts in startMatchin typescriptLobby::', matchOpts);
+    //* gameName in startMatch in typescriptLobby: tic-tac-toe OK
+    //* Object { matchID: "TgdlFiykNK9", playerID: "1", numPlayers: 2 } OK
 
     const gameCode = this.connection?._getGameComponents(gameName);
-    console.log('gameCode in startMatchin typescriptLobby:', gameCode);
+    //*  Object { game: {…}, board: class Board}
+    //* board: class Board { constructor(rootElement, signer, playerID, matchID, backToLobby) }​
+    //* game: Object { name: "tic-tac-toe", minPlayers: 1, maxPlayers: 2, … }
+    //* <prototype>: Object { … }
 
     if (!gameCode) {
       this.state.errorMsg = `Game ${gameName} not supported`;
       return;
     }
 
-    let multiplayer;
+    let multiplayer = undefined;
     if (matchOpts.numPlayers > 1) {
+      //* llega 2
+
       try {
         let signer: ethers.Signer;
         if (window.ethereum) {
@@ -283,31 +304,31 @@ export class Lobby {
       multiplayer = Local({ bots });
     }
 
-    const app = this.config.clientFactory?.({
+    console.log('clientFactory en typescriptLobby:', this.config.clientFactory);
+
+    const app = new VanillaClient({
       game: gameCode.game,
       board: gameCode.board,
       debug: this.config.debug,
       multiplayer,
+      rootElement: document.getElementById('game-container')!, // Asegúrate de tener un elemento root adecuado en tu HTML
+      matchID: matchOpts.matchID,
+      playerID: matchOpts.playerID,
+      credentials: this.connection?.playerCredentials,
     });
-    console.log('Configuración del clientFactory en typescriptLobby:', {
-      game: gameCode.game,
-      board: gameCode.board,
-      debug: this.config.debug,
-      multiplayer,
-    });
-    //! app esta llegnado undefined.
-    console.log('app in startMatch in typescriptLobby:', app);
+
+    console.log('app in startMatch in typescriptLobby:', app); //! app esta llegnado undefined.
 
     const match = {
-      app: app!,
-      matchID: matchOpts.matchID,
-      playerID: matchOpts.numPlayers > 1 ? matchOpts.playerID : '0',
-      credentials: this.connection?.playerCredentials,
+      app: app!, //! undefined
+      matchID: matchOpts.matchID, //* OK
+      playerID: matchOpts.numPlayers > 1 ? matchOpts.playerID : '0', //* OK
+      credentials: this.connection?.playerCredentials, //* OK
     };
+    console.log('match in startMatch in typescriptLobby:', match);
 
     this._clearRefreshInterval();
     this.state.phase = LobbyPhases.PLAY;
     this.state.runningMatch = match;
-    console.log('this.state in startMatch in typescriptLobby:', this.state);
   }
 }

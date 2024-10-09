@@ -1,5 +1,5 @@
-import { Lobby } from './typescriptLobby';
-import { renderLobby } from './lobbyRender';
+import { Lobby } from './vanillaLobby';
+import { renderLobby } from './vanillaLobbyRender';
 
 export function renderLoginForm(appElement: HTMLElement, lobby: Lobby) {
   // Limpiar el contenido previo

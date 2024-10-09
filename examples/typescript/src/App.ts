@@ -1,9 +1,9 @@
 import { TicTacToe } from './Game';
 import { Board } from './Board2';
-import { Lobby } from '../../../src/lobby/typescriptLobby'; // Importar Lobby
+import { Lobby } from '../../../src/lobby/vanillaLobby'; // Importar Lobby
 import { ethers, BrowserProvider } from 'ethers';
-import { renderLobby } from '../../../src/lobby/lobbyRender'; // Importar el renderizado del lobby
-import { renderLoginForm } from '../../../src/lobby/loginFormRenderer'; // Importar el renderizado del formulario de login
+import { renderLobby } from '../../../src/lobby/vanillaLobbyRender'; // Importar el renderizado del lobby
+import { renderLoginForm } from '../../../src/lobby/vanillaLoginForm'; // Importar el renderizado del formulario de login
 
 declare global {
   interface Window {
@@ -27,6 +27,8 @@ const importedGames: GameComponent[] = [{ game: TicTacToe, board: Board }];
 
 // Función principal
 async function main() {
+  console.log('sale App.ts');
+
   const appElement = document.getElementById('app');
   if (!appElement) return;
 
@@ -55,6 +57,7 @@ async function main() {
     nodeUrl: NODE_URL,
     dappAddress: DAPP_ADDRESS,
     signer: signer,
+    onUpdate: () => renderLobby(appElement, lobby), //
   };
 
   // Crear una instancia del lobby

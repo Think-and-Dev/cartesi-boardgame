@@ -1,11 +1,10 @@
-import { Lobby, LobbyPhases } from './typescriptLobby';
-import { renderMatchInstance } from './matchInstanceRenderer';
-import { renderLoginForm } from './loginFormRenderer';
+import { Lobby, LobbyPhases } from './vanillaLobby';
+import { renderMatchInstance } from './vanillaMatchInstance';
+import { renderLoginForm } from './vanillaLoginForm';
 
 export function renderLobby(appElement: HTMLElement, lobby: Lobby) {
   // Limpiar el contenido previo
   appElement.innerHTML = '';
-  console.log('Renderizando el lobby:', lobby.state);
 
   // Crear los elementos del lobby
   const lobbyElement = document.createElement('div');
@@ -52,17 +51,13 @@ export function renderLobby(appElement: HTMLElement, lobby: Lobby) {
     const gameName = gameSelect.value;
     const numPlayers = parseInt(playerSelect.value, 10);
     lobby.createMatch(gameName, numPlayers);
+    lobby._startRefreshInterval(); // Actualizar las partidas periódicamente
   });
   lobbyElement.appendChild(createMatchButton);
 
   // Tabla para las partidas
   const table = document.createElement('table');
   const tbody = document.createElement('tbody');
-
-  console.log(
-    'Lista de partidas (matches) lobbyRender.:',
-    lobby.connection?.matches
-  );
 
   // Renderizar las partidas disponibles usando `renderMatchInstance`
   lobby.connection?.matches.forEach((match) => {
@@ -74,7 +69,7 @@ export function renderLobby(appElement: HTMLElement, lobby: Lobby) {
       (gameName, matchID) => lobby.leaveMatch(gameName, matchID), // Pasamos la función para abandonar la partida
       (gameName, matchOpts) => lobby.startMatch(gameName, matchOpts) // Pasamos la función para iniciar la partida
     );
-    console.log('Match row in lobbyRender.ts:', matchRow);
+
     tbody.appendChild(matchRow);
     lobby._startRefreshInterval(); // Actualizar las partidas periódicamente
   });

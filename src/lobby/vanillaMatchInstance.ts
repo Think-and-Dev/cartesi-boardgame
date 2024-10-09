@@ -13,7 +13,6 @@ export function renderMatchInstance(
 
   const cellGameName = document.createElement('td'); // Celda del nombre del juego
   cellGameName.textContent = match.gameName; // Mostrar el nombre del juego
-  console.log('Match in matchInstanceRenderer.ts:', match);
 
   row.appendChild(cellGameName);
 
@@ -91,9 +90,6 @@ function createButtonPlay(match, seatId: number, onClickPlay) {
       numPlayers: match.players.length,
     });
   });
-  console.log('match en createButtonPlay:', match);
-  console.log('seatId en createButtonPlay:', seatId);
-  console.log('onClickPlay en createButtonPlay:', onClickPlay);
 
   return button;
 }

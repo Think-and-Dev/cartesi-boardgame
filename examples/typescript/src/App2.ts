@@ -1,106 +1,107 @@
-import { TicTacToe } from './Game';
-import { Board } from './Board2';
-import { BrowserProvider } from 'ethers';
-import { Lobby } from '../../../src/lobby/typescriptLobby'; // Importar LobbyManager
-import { ethers } from 'ethers';
+// import { TicTacToe } from './Game';
+// import { Board } from './Board2';
+// import { Lobby } from '../../../src/lobby/vanillaLobby'; // Importar LobbyManager
+// import { ethers, BrowserProvider } from 'ethers';
 
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
+// declare global {
+//   interface Window {
+//     ethereum?: any;
+//   }
+// }
 
-TicTacToe.minPlayers = 1;
-TicTacToe.maxPlayers = 2;
+// TicTacToe.minPlayers = 1;
+// TicTacToe.maxPlayers = 2;
 
-const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
-const SERVER = 'http://localhost:8000';
-const NODE_URL = 'http://localhost:8080';
+// const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
+// const SERVER = 'http://localhost:8000';
+// const NODE_URL = 'http://localhost:8080';
 
-interface GameComponent {
-  game: typeof TicTacToe;
-  board: typeof Board;
-}
+// interface GameComponent {
+//   game: typeof TicTacToe;
+//   board: typeof Board;
+// }
 
-const importedGames: GameComponent[] = [{ game: TicTacToe, board: Board }];
+// const importedGames: GameComponent[] = [{ game: TicTacToe, board: Board }];
 
-async function main() {
-  const appElement = document.getElementById('app');
-  if (!appElement) return;
+// async function main() {
+//   console.log('sale App2.ts');
 
-  // Inicializar la conexión con Ethereum (MetaMask, etc.)
-  if (!window.ethereum) {
-    alert('Please install MetaMask to play this game');
-    return;
-  }
+//   const appElement = document.getElementById('app');
+//   if (!appElement) return;
 
-  try {
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
-  } catch (error) {
-    alert(
-      'Failed to connect to MetaMask. Please ensure MetaMask is unlocked and try again.'
-    );
-    return;
-  }
+//   // Inicializar la conexión con Ethereum (MetaMask, etc.)
+//   if (!window.ethereum) {
+//     alert('Please install MetaMask to play this game');
+//     return;
+//   }
 
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
+//   try {
+//     await window.ethereum.request({ method: 'eth_requestAccounts' });
+//   } catch (error) {
+//     alert(
+//       'Failed to connect to MetaMask. Please ensure MetaMask is unlocked and try again.'
+//     );
+//     return;
+//   }
 
-  // Configuración del lobby
-  const lobbyConfig = {
-    gameComponents: importedGames,
-    lobbyServer: SERVER,
-    nodeUrl: NODE_URL,
-    dappAddress: DAPP_ADDRESS,
-    signer: signer,
-    onUpdate: () => renderLobby(appElement, lobby), //
-  };
+//   const provider = new ethers.BrowserProvider(window.ethereum);
+//   const signer = await provider.getSigner();
 
-  console.log('onUpdate en App.ts:', lobbyConfig.onUpdate);
+//   // Configuración del lobby
+//   const lobbyConfig = {
+//     gameComponents: importedGames,
+//     lobbyServer: SERVER,
+//     nodeUrl: NODE_URL,
+//     dappAddress: DAPP_ADDRESS,
+//     signer: signer,
+//     onUpdate: () => renderLobby(appElement, lobby), //
+//   };
 
-  // Crear una instancia del lobby
-  const lobby = new Lobby(lobbyConfig);
+//   console.log('onUpdate en App.ts:', lobbyConfig.onUpdate);
 
-  // Inicializa y renderiza el lobby
-  await lobby.initialize();
+//   // Crear una instancia del lobby
+//   const lobby = new Lobby(lobbyConfig);
 
-  // Llamar al método que renderiza el lobby
-  renderLobby(appElement, lobby);
-}
+//   // Inicializa y renderiza el lobby
+//   await lobby.initialize();
 
-// Función para renderizar el lobby
-function renderLobby(appElement: HTMLElement, lobby: Lobby) {
-  // Limpiar el contenido previo
-  appElement.innerHTML = '';
+//   // Llamar al método que renderiza el lobby
+//   renderLobby(appElement, lobby);
+// }
 
-  // Crear los elementos del lobby
-  const lobbyElement = document.createElement('div');
-  const welcomeText = document.createElement('p');
-  welcomeText.textContent = `Welcome, ${lobby.state.playerName}`;
-  lobbyElement.appendChild(welcomeText);
+// // Función para renderizar el lobby
+// function renderLobby(appElement: HTMLElement, lobby: Lobby) {
+//   // Limpiar el contenido previo
+//   appElement.innerHTML = '';
 
-  // Tabla para las partidas
-  const table = document.createElement('table');
-  const tbody = document.createElement('tbody');
+//   // Crear los elementos del lobby
+//   const lobbyElement = document.createElement('div');
+//   const welcomeText = document.createElement('p');
+//   welcomeText.textContent = `Welcome, ${lobby.state.playerName}`;
+//   lobbyElement.appendChild(welcomeText);
 
-  // Renderizar las partidas disponibles
-  lobby.connection?.matches.forEach((match) => {
-    const row = document.createElement('tr');
-    const cell = document.createElement('td');
-    cell.textContent = `Match ID: ${match.matchID}`;
-    row.appendChild(cell);
-    tbody.appendChild(row);
-    if (this.onUpdate) {
-      console.log('Llamando a onUpdate después de crear y refrescar.');
-      this.onUpdate();
-    }
-  });
+//   // Tabla para las partidas
+//   const table = document.createElement('table');
+//   const tbody = document.createElement('tbody');
 
-  table.appendChild(tbody);
-  lobbyElement.appendChild(table);
+//   // Renderizar las partidas disponibles
+//   lobby.connection?.matches.forEach((match) => {
+//     const row = document.createElement('tr');
+//     const cell = document.createElement('td');
+//     cell.textContent = `Match ID: ${match.matchID}`;
+//     row.appendChild(cell);
+//     tbody.appendChild(row);
+//     if (this.onUpdate) {
+//       console.log('Llamando a onUpdate después de crear y refrescar.');
+//       this.onUpdate();
+//     }
+//   });
 
-  // Agregar el lobby al DOM
-  appElement.appendChild(lobbyElement);
-}
+//   table.appendChild(tbody);
+//   lobbyElement.appendChild(table);
 
-main();
+//   // Agregar el lobby al DOM
+//   appElement.appendChild(lobbyElement);
+// }
+
+// main();
