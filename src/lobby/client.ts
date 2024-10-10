@@ -131,7 +131,6 @@ export class LobbyClient {
       const responseText = await response.text();
 
       if (!response.ok) {
-        console.error('Error response:', responseText);
         throw new LobbyClientError(
           `HTTP status ${response.status}`,
           responseText
@@ -140,7 +139,6 @@ export class LobbyClient {
 
       return JSON.parse(responseText);
     } catch (error) {
-      console.error('Request error:', error);
       if (error instanceof LobbyClientError) {
         throw error;
       }
@@ -169,14 +167,7 @@ export class LobbyClient {
         headers: { ...init.headers, ...opts.init.headers },
       };
     }
-
-    try {
-      const result = await this.request(route, init);
-      return result;
-    } catch (error) {
-      console.error('Error in POST request:', error);
-      throw error;
-    }
+    return this.request(route, init);
   }
 
   /**
@@ -218,16 +209,7 @@ export class LobbyClient {
       if (updatedAfter) queries.push(`updatedAfter=${updatedAfter}`);
       if (queries.length > 0) query = '?' + queries.join('&');
     }
-
-    const fullUrl = `/games/${gameName}${query}`;
-
-    try {
-      const response = await this.request(fullUrl, init);
-      return response;
-    } catch (error) {
-      console.error('listMatches error: in client.ts', error);
-      throw error;
-    }
+    return this.request(`/games/${gameName}${query}`, init);
   }
 
   /**
@@ -271,16 +253,7 @@ export class LobbyClient {
   ): Promise<LobbyAPI.CreatedMatch> {
     assertGameName(gameName);
     validateBody(body, { numPlayers: 'number' });
-    try {
-      const result = await this.post(`/games/${gameName}/create`, {
-        body,
-        init,
-      });
-      return result;
-    } catch (error) {
-      console.error('Error creating match:', error);
-      throw error;
-    }
+    return this.post(`/games/${gameName}/create`, { body, init });
   }
 
   /**

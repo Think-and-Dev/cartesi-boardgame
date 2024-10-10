@@ -188,7 +188,6 @@ class _LobbyConnectionImpl {
       const result = await this.client.createMatch(gameName, { numPlayers });
       return result;
     } catch (error) {
-      console.error('Error in create method:', error);
       throw new Error(
         'failed to create match for ' + gameName + ' (' + error + ')'
       );

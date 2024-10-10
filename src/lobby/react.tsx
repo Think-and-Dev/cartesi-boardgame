@@ -205,19 +205,14 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
    */
   _initializeEthereum = async () => {
     if (window.ethereum) {
-      try {
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         this.setState({ signer }, () => {
           this._createConnection(this.props);
         });
-      } catch (error) {
-        console.error("Failed to initialize Ethereum signer:", error);
         this.setState({ errorMsg: "Failed to connect to Ethereum wallet" });
-      }
     } else {
-      console.error("Ethereum object not found, do you have MetaMask installed?");
       this.setState({ errorMsg: "Ethereum wallet not detected" });
     }
   }
@@ -285,7 +280,6 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
       // rerender
       this.setState({});
     } catch (error) {
-      console.error('Error in _createMatch:', error); // Add
       this.setState({ errorMsg: error.message });
     }
   };
@@ -353,7 +347,6 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
           signer: signer,
         });
       } catch (error) {
-        console.error('Error creating Cartesify multiplayer:', error);
         this.setState({ errorMsg: error.message });
         return;
       }
