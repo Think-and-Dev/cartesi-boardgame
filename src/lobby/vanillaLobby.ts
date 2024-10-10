@@ -26,14 +26,14 @@ export enum LobbyPhases {
 }
 
 type RunningMatch = {
-  app: VanillaClient<any>; // de Client a VanillaClient
+  app: ReturnType<typeof Client>;
   matchID: string;
   playerID: string;
   credentials?: string;
 };
 
 type LobbyConfig = {
-  gameComponents: any;
+  gameComponents: GameComponent[];
   lobbyServer?: string;
   gameServer?: string;
   debug?: boolean;
@@ -304,30 +304,21 @@ export class Lobby {
       multiplayer = Local({ bots });
     }
 
-    console.log('clientFactory en typescriptLobby:', this.config.clientFactory);
-
-    const app = new VanillaClient({
+    const app = this.config.clientFactory?.({
       game: gameCode.game,
-      board: gameCode.board as unknown as
-        | ((opts: any) => HTMLElement)
-        | HTMLElement,
+      board: gameCode.board,
       debug: this.config.debug,
       multiplayer,
-      rootElement: document.getElementById('game-container')!, // Asegúrate de tener un elemento root adecuado en tu HTML
-      matchID: matchOpts.matchID,
-      playerID: matchOpts.playerID,
-      credentials: this.connection?.playerCredentials,
     });
 
     console.log('app in startMatch in typescriptLobby:', app); //! app esta llegnado undefined.
 
     const match = {
-      app: app!, //! undefined
-      matchID: matchOpts.matchID, //* OK
-      playerID: matchOpts.numPlayers > 1 ? matchOpts.playerID : '0', //* OK
-      credentials: this.connection?.playerCredentials, //* OK
+      app: app!,
+      matchID: matchOpts.matchID,
+      playerID: matchOpts.numPlayers > 1 ? matchOpts.playerID : '0',
+      credentials: this.connection?.playerCredentials,
     };
-    console.log('match in startMatch in typescriptLobby:', match);
 
     this._clearRefreshInterval();
     this.state.phase = LobbyPhases.PLAY;
