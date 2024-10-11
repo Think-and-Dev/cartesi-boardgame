@@ -4,6 +4,7 @@ import { Lobby } from '../../../src/lobby/vanillaLobby'; // Importar Lobby
 import { ethers, BrowserProvider } from 'ethers';
 import { renderLobby } from '../../../src/lobby/vanillaLobbyRender'; // Importar el renderizado del lobby
 import { renderLoginForm } from '../../../src/lobby/vanillaLoginForm'; // Importar el renderizado del formulario de login
+import { Client } from '../../../src/client/client'; // Importar el cliente
 
 declare global {
   interface Window {
@@ -27,8 +28,6 @@ const importedGames: GameComponent[] = [{ game: TicTacToe, board: Board }];
 
 // Función principal
 async function main() {
-  console.log('sale App.ts');
-
   const appElement = document.getElementById('app');
   if (!appElement) return;
 
@@ -57,17 +56,18 @@ async function main() {
     nodeUrl: NODE_URL,
     dappAddress: DAPP_ADDRESS,
     signer: signer,
+    clientFactory: Client,
     onUpdate: () => renderLobby(appElement, lobby), //
   };
 
   // Crear una instancia del lobby
   const lobby = new Lobby(lobbyConfig);
+  console.log('lobby:', lobby);
 
   // Inicializa y renderiza el lobby
   await lobby.initialize();
   await lobby._updateConnection();
 
-  // Verificar el estado del lobby y mostrar el login o la lista de partidas
   if (lobby.state.phase === 'enter') {
     renderLoginForm(appElement, lobby);
   } else {

@@ -2,7 +2,7 @@
 
 import Cookies from 'js-cookie'; // Cambiado de 'react-cookies' a 'js-cookie'
 import { ethers } from 'ethers';
-import { Client } from '../client/react';
+// import { Client } from '../client/react';
 import { VanillaClient } from '../client/vanillaClient';
 import { MCTSBot } from '../ai/mcts-bot';
 import { Local } from '../client/transport/local';
@@ -11,7 +11,6 @@ import { LobbyConnection } from './connection';
 import type { MatchOpts } from './match-instance';
 import type { LobbyAPI } from '../types';
 import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
-import { renderLobby } from './vanillaLobbyRender';
 
 declare global {
   interface Window {
@@ -26,7 +25,8 @@ export enum LobbyPhases {
 }
 
 type RunningMatch = {
-  app: ReturnType<typeof Client>;
+  // app: ReturnType<typeof Client>;
+  app: typeof VanillaClient;
   matchID: string;
   playerID: string;
   credentials?: string;
@@ -37,7 +37,8 @@ type LobbyConfig = {
   lobbyServer?: string;
   gameServer?: string;
   debug?: boolean;
-  clientFactory?: typeof Client;
+  // clientFactory?: typeof Client;
+  clientFactory?: typeof VanillaClient;
   refreshInterval?: number;
   nodeUrl: string;
   dappAddress: string;
@@ -59,8 +60,8 @@ export class Lobby {
   public connection?: ReturnType<typeof LobbyConnection>;
   public config: LobbyConfig;
   public state: LobbyState;
-  private _currentInterval?: NodeJS.Timeout;
-  private onUpdate?: () => void; //
+  public _currentInterval?: NodeJS.Timeout;
+  public onUpdate?: () => void; //
 
   constructor(config: LobbyConfig) {
     this.config = config;
@@ -244,6 +245,9 @@ export class Lobby {
 
   async leaveMatch(gameName: string, matchID: string) {
     try {
+      console.log('gameName en leaveMatch in typescriptLobby:', gameName);
+      console.log('matchID en leaveMatch in typescriptLobby:', matchID);
+
       await this.connection?.leave(gameName, matchID);
       await this._updateConnection();
     } catch (error) {
@@ -254,14 +258,11 @@ export class Lobby {
   //* ACA trabajo actualmente.
 
   async startMatch(gameName: string, matchOpts: MatchOpts) {
-    //* gameName in startMatch in typescriptLobby: tic-tac-toe OK
-    //* Object { matchID: "TgdlFiykNK9", playerID: "1", numPlayers: 2 } OK
+    //* gameName: "tic-tac-toe"
+    //* matchOpts: Object { matchID: "TgdlFiykNK9", playerID: "1", numPlayers: 2 }
 
     const gameCode = this.connection?._getGameComponents(gameName);
-    //*  Object { game: {…}, board: class Board}
-    //* board: class Board { constructor(rootElement, signer, playerID, matchID, backToLobby) }​
-    //* game: Object { name: "tic-tac-toe", minPlayers: 1, maxPlayers: 2, … }
-    //* <prototype>: Object { … }
+    //* gameCode: Object { game: {…}, board: class Board }
 
     if (!gameCode) {
       this.state.errorMsg = `Game ${gameName} not supported`;
@@ -270,8 +271,6 @@ export class Lobby {
 
     let multiplayer = undefined;
     if (matchOpts.numPlayers > 1) {
-      //* llega 2
-
       try {
         let signer: ethers.Signer;
         if (window.ethereum) {
@@ -304,20 +303,26 @@ export class Lobby {
       multiplayer = Local({ bots });
     }
 
-    const app = this.config.clientFactory?.({
-      game: gameCode.game,
-      board: gameCode.board,
-      debug: this.config.debug,
-      multiplayer,
+    console.log(
+      'clientFactory en startMatch in typescriptLobby:',
+      this.config.clientFactory
+    );
+
+    const app = new this.config.clientFactory({
+      game: gameCode.game, //* OK
+      board: gameCode.board, //* OK
+      debug: this.config.debug, //* Undefined
+      multiplayer, //* OK
     });
 
-    console.log('app in startMatch in typescriptLobby:', app); //! app esta llegnado undefined.
+    console.log('app in startMatch in typescriptLobby:', app);
+    //! app esta llegnado undefined.
 
     const match = {
       app: app!,
-      matchID: matchOpts.matchID,
-      playerID: matchOpts.numPlayers > 1 ? matchOpts.playerID : '0',
-      credentials: this.connection?.playerCredentials,
+      matchID: matchOpts.matchID, //* OK
+      playerID: matchOpts.numPlayers > 1 ? matchOpts.playerID : '0', //* OK
+      credentials: this.connection?.playerCredentials, //* OK
     };
 
     this._clearRefreshInterval();

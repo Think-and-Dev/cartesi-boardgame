@@ -142,6 +142,8 @@ class _LobbyConnectionImpl {
   async leave(gameName: string, matchID: string) {
     try {
       const inst = this._getMatchInstance(matchID);
+      console.log('inst in leave:', inst);
+
       if (!inst) throw new Error('match instance not found');
       for (const player of inst.players) {
         if (player.name === this.playerName) {
@@ -149,6 +151,12 @@ class _LobbyConnectionImpl {
             playerID: player.id.toString(),
             credentials: this.playerCredentials,
           });
+          console.log('player in leave:', player);
+          console.log(
+            'this.playerCredentials in leave:',
+            this.playerCredentials
+          );
+
           delete player.name;
           delete this.playerCredentials;
           return;
