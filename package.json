@@ -166,6 +166,7 @@
     "flatted": "^3.2.1",
     "http": "^0.0.1-security",
     "immer": "^9.0.5",
+    "js-cookie": "^3.0.5",
     "koa": "^2.13.3",
     "koa-body": "^5.0.0",
     "koa-socket-2": "^2.0.0",
