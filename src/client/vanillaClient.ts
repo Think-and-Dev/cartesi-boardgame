@@ -1,18 +1,18 @@
 import { Client as RawClient } from './client';
 import type { ClientOpts, ClientState, _ClientImpl } from './client';
+import { Board } from '../../examples/typescript/src/Board2';
 import Debug from './debug/Debug.svelte';
 
 interface VanillaClientOpts<G> extends ClientOpts<G> {
   rootElement: HTMLElement;
-  board?: ((opts: any) => HTMLElement) | HTMLElement;
+  board?: (opts: any) => HTMLElement | Board;
 }
 
 export class VanillaClient<G> {
-  private client: _ClientImpl<G>; // Instancia del cliente de boardgame.io
-  private rootElement: HTMLElement; // Elemento raíz donde se monta el contenido
-  private boardElement?: HTMLElement; // Contenedor para el tablero
-  private debugPanel: Debug | null = null; // Contenedor para el panel de depuración
-
+  private client: _ClientImpl<G>;
+  private rootElement: HTMLElement;
+  private boardElement?: HTMLElement | Board;
+  private debug: Debug | null = null;
   constructor(opts: VanillaClientOpts<G>) {
     const {
       game,
@@ -28,7 +28,6 @@ export class VanillaClient<G> {
     } = opts;
     this.rootElement = rootElement;
 
-    // Instanciar el cliente de boardgame.io con las opciones proporcionadas
     this.client = RawClient({
       game,
       numPlayers,
@@ -40,7 +39,6 @@ export class VanillaClient<G> {
       credentials,
     });
 
-    // Verificar si board es una función o un HTMLElement
     if (board) {
       if (typeof board === 'function') {
         this.boardElement = board({
@@ -55,59 +53,75 @@ export class VanillaClient<G> {
           matchData: this.client.matchData,
           sendChatMessage: this.client.sendChatMessage,
           chatMessages: this.client.chatMessages,
-          isMultiplayer: !!multiplayer,
+          isMultiplayer: !!this.client.multiplayer,
         });
       } else {
         this.boardElement = board;
       }
-      this.rootElement.appendChild(this.boardElement);
+      this.rootElement.appendChild(this.boardElement as HTMLElement);
     }
 
-    // Renderizar el panel de depuración `Debug` en un contenedor si `debug` está habilitado
     if (debug !== false) {
-      // Crear un contenedor `div` para el panel de depuración
       const debugContainer = document.createElement('div');
       this.rootElement.appendChild(debugContainer);
-      // Instanciar `Debug` y montarlo en el contenedor `debugContainer`
-      this.debugPanel = new Debug({
+      this.debug = new Debug({
         target: debugContainer,
         props: { clientManager: this },
       });
     }
 
-    // Suscribirse al cliente para actualizar el DOM cuando cambie el estado
     this.client.subscribe(() => this.update());
   }
 
-  // Método de limpieza para detener el cliente
   public destroy() {
     this.client.stop();
   }
 
-  // Método de actualización para gestionar cambios de estado
   private update() {
     const state = this.client.getState();
-    if (state && this.boardElement) {
-      // Si hay un estado y un elemento de tablero, renderizar el tablero
-      this.renderBoard(state);
+    if (state && this.boardElement instanceof Board) {
+      this.boardElement.update(state);
     } else {
-      // Si no hay estado, renderizar un mensaje de carga
-      this.renderLoading();
+      this.renderBoard(state);
     }
   }
 
-  // Renderiza el tablero de juego basado en el estado actual
   private renderBoard(state: ClientState<G>) {
-    if (!this.boardElement) return;
+    if (!this.boardElement || !(this.boardElement instanceof HTMLElement))
+      return;
 
-    // Aquí puedes añadir lógica específica de renderizado
-    this.boardElement.innerHTML = ''; // Limpia el contenido del tablero antes de renderizar
-    // Reemplazar esto por la lógica real de renderizado según el estado
-    // this.boardElement.appendChild(...);
+    this.boardElement.innerHTML = '';
+
+    const table = document.createElement('table');
+    for (let row = 0; row < 3; row++) {
+      const tr = document.createElement('tr');
+      for (let col = 0; col < 3; col++) {
+        const cell = document.createElement('td');
+        const cellIndex = row * 3 + col;
+        const cellValue = state.G.cells[cellIndex]; // 'X', 'O' o null
+
+        cell.textContent = cellValue ? cellValue : '';
+
+        if (state.isActive) {
+          cell.addEventListener('click', () => {
+            this.client.moves.clickCell(cellIndex);
+          });
+        }
+
+        tr.appendChild(cell);
+      }
+      table.appendChild(tr);
+    }
+
+    // Añadir el tablero actualizado al boardElement
+    this.boardElement.appendChild(table);
   }
 
-  // Renderizar un mensaje de carga mientras el cliente se conecta
-  private renderLoading() {
-    this.rootElement.innerHTML = '<div class="loading">Connecting...</div>';
+  public start() {
+    this.client.start();
+  }
+
+  public stop() {
+    this.client.stop();
   }
 }
