@@ -58,6 +58,7 @@ async function main() {
     signer: signer,
     clientFactory: Client,
     onUpdate: () => renderLobby(appElement, lobby), //
+    debug: false, // Añadir debug aquí
   };
 
   // Crear una instancia del lobby

@@ -1,5 +1,6 @@
 import { Client as RawClient } from './client';
 import type { ClientOpts, ClientState, _ClientImpl } from './client';
+import Debug from './debug/Debug.svelte';
 
 interface VanillaClientOpts<G> extends ClientOpts<G> {
   rootElement: HTMLElement;
@@ -7,9 +8,10 @@ interface VanillaClientOpts<G> extends ClientOpts<G> {
 }
 
 export class VanillaClient<G> {
-  private client: _ClientImpl<G>;
-  private rootElement: HTMLElement;
-  private boardElement?: HTMLElement;
+  private client: _ClientImpl<G>; // Instancia del cliente de boardgame.io
+  private rootElement: HTMLElement; // Elemento raíz donde se monta el contenido
+  private boardElement?: HTMLElement; // Contenedor para el tablero
+  private debugPanel: Debug | null = null; // Contenedor para el panel de depuración
 
   constructor(opts: VanillaClientOpts<G>) {
     const {
@@ -61,6 +63,18 @@ export class VanillaClient<G> {
       this.rootElement.appendChild(this.boardElement);
     }
 
+    // Renderizar el panel de depuración `Debug` en un contenedor si `debug` está habilitado
+    if (debug !== false) {
+      // Crear un contenedor `div` para el panel de depuración
+      const debugContainer = document.createElement('div');
+      this.rootElement.appendChild(debugContainer);
+      // Instanciar `Debug` y montarlo en el contenedor `debugContainer`
+      this.debugPanel = new Debug({
+        target: debugContainer,
+        props: { clientManager: this },
+      });
+    }
+
     // Suscribirse al cliente para actualizar el DOM cuando cambie el estado
     this.client.subscribe(() => this.update());
   }
@@ -72,11 +86,12 @@ export class VanillaClient<G> {
 
   // Método de actualización para gestionar cambios de estado
   private update() {
-    const state: ClientState<G> = this.client.getState();
+    const state = this.client.getState();
     if (state && this.boardElement) {
-      // Actualizar el contenido basado en el estado
+      // Si hay un estado y un elemento de tablero, renderizar el tablero
       this.renderBoard(state);
     } else {
+      // Si no hay estado, renderizar un mensaje de carga
       this.renderLoading();
     }
   }

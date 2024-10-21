@@ -11,6 +11,7 @@ import { LobbyConnection } from './connection';
 import type { MatchOpts } from './match-instance';
 import type { LobbyAPI } from '../types';
 import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
+import type { DebugOpt } from '../client/client';
 
 declare global {
   interface Window {
@@ -36,7 +37,7 @@ type LobbyConfig = {
   gameComponents: GameComponent[];
   lobbyServer?: string;
   gameServer?: string;
-  debug?: boolean;
+  debug?: DebugOpt | boolean;
   // clientFactory?: typeof Client;
   clientFactory?: typeof VanillaClient;
   refreshInterval?: number;
