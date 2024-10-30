@@ -1,35 +1,71 @@
+/**
+ * !note Frontend implementation of the game with secret state visualization.
+ *
+ * !warning This implementation handles secret states in the frontend only.
+ * Backend security needs to be implemented separately for full security.
+ */
 import { Client } from '@think-and-dev/cartesi-boardgame/client'; // Still workaround on this
 import { TicTacToe } from './Game';
 import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
 import { ethers, BrowserProvider } from 'ethers';
-import { SecretState } from '../../backend/secret-state';
+// import { SecretState } from '../../backend/secret-state';
 
 // We let the TypesScript compiler that the ethereum object might be available in the window object, as it added by the MetaMask extension
+/**
+ * !note Global type declaration for MetaMask ethereum object.
+ */
 declare global {
   interface Window {
     ethereum?: any;
   }
 }
 
+/**
+ * !note Interface for secret state structure.
+ */
+interface SecretState {
+  values: (number | null)[];
+  hash: string;
+}
+
+/**
+ * !note Interface for the complete game state.
+ */
 interface State {
   G: {
     cells: Array<string | null>;
     secret?: {
-      [key: string]: (number | null)[];
+      [key: string]: SecretState;
     };
+    revealedSecrets?: {
+      [key: string]: SecretState;
+    };
+    gameOver?: boolean;
   };
   ctx: {
+    currentPlayer: string;
     gameover?: {
       winner?: string;
+      draw?: boolean;
     };
   };
 }
 
+/**
+ * !note Main client class handling game state and UI updates.
+ * Manages the visualization of secret states and their revelation.
+ */
 class TicTacToeClient {
   private client: any;
   private rootElement: HTMLElement;
   private playerID: string;
 
+  /**
+   * !note Initializes the game client and sets up the UI.
+   * @param rootElement - Root DOM element for the game
+   * @param signer - Ethereum signer for game actions
+   * @param playerID - Player identifier ('0' or '1')
+   */
   constructor(
     rootElement: HTMLElement,
     signer: ethers.Signer,
@@ -54,6 +90,9 @@ class TicTacToeClient {
     this.createSecretCards();
   }
 
+  /**
+   * !note Creates the game board UI.
+   */
   private createBoard() {
     const rows: string[] = [];
     for (let i = 0; i < 3; i++) {
@@ -71,6 +110,9 @@ class TicTacToeClient {
     `;
   }
 
+  /**
+   * !note Attaches click event listeners to game cells.
+   */
   private attachListeners() {
     const handleCellClick = (event: Event) => {
       const target = event.target as HTMLElement;
@@ -84,63 +126,137 @@ class TicTacToeClient {
     });
   }
 
+  /**
+   * !note Updates the game UI based on current state.
+   * @param state - Current game state
+   */
   private update(state: State | null) {
-    if (!state || !state.G || !state.G.cells) {
+    if (!state || !state.G) {
       console.error('Invalid game state:', state);
       return;
     }
 
+    // Update board
     const cells = this.rootElement.querySelectorAll('.cell');
-    cells.forEach((cell) => {
-      const cellId = parseInt((cell as HTMLElement).dataset.id!);
-      const cellValue = state.G.cells[cellId];
-      (cell as HTMLElement).textContent = cellValue !== null ? cellValue : '';
+    cells.forEach((cell, index) => {
+      const value = state.G.cells[index];
+      (cell as HTMLElement).textContent = value !== null ? value : '';
     });
 
+    // Update game status message
     const messageEl = this.rootElement.querySelector('.winner') as HTMLElement;
     if (messageEl) {
-      if (state.ctx?.gameover) {
-        messageEl.textContent =
-          state.ctx.gameover.winner !== undefined
-            ? 'Winner: ' + state.ctx.gameover.winner
-            : 'Draw!';
+      if (state.G.gameOver) {
+        if (state.ctx.gameover?.winner !== undefined) {
+          messageEl.textContent = `¡Winner: Player ${state.ctx.gameover.winner}!`;
+        } else if (state.ctx.gameover?.draw) {
+          messageEl.textContent = 'Draw!';
+        }
       } else {
-        messageEl.textContent = '';
+        messageEl.textContent = `Player's Turn ${state.ctx.currentPlayer}`;
       }
     }
-    this.updateSecretCards(state.G.secret);
+
+    this.updateSecretCards(state);
   }
 
+  /**
+   * !note Creates the UI elements for displaying secret numbers.
+   */
   private createSecretCards() {
     const secretCardsContainer = document.createElement('div');
     secretCardsContainer.className = 'secret-cards';
-    secretCardsContainer.innerHTML = `
+
+    // Player's secret numbers container
+    const yourSecretsContainer = document.createElement('div');
+    yourSecretsContainer.className = 'player-secrets';
+    yourSecretsContainer.innerHTML = `
       <h3>Your Secret Numbers:</h3>
-      <div class="secret-cards-container"></div>
+      <div class="secret-numbers"></div>
+      <div class="secret-hash"></div>
     `;
+
+    // Opponent's information container
+    const opponentSecretsContainer = document.createElement('div');
+    opponentSecretsContainer.className = 'opponent-secrets';
+    opponentSecretsContainer.innerHTML = `
+      <h3>Opponent Information:</h3>
+      <div class="opponent-numbers"></div>
+      <div class="opponent-hash"></div>
+    `;
+
+    secretCardsContainer.appendChild(yourSecretsContainer);
+    secretCardsContainer.appendChild(opponentSecretsContainer);
     this.rootElement.appendChild(secretCardsContainer);
   }
 
-  private updateSecretCards(secret?: SecretState) {
-    const container = this.rootElement.querySelector('.secret-cards-container');
-    if (!container) return;
+  /**
+   * !note Updates the secret cards display with current game state.
+   * Handles both player's own secrets and opponent's hidden values.
+   * @param state - Current game state
+   */
+  private updateSecretCards(state: State | null) {
+    if (!state?.G?.secret) return;
 
-    container.innerHTML = '';
+    const secretCardsContainer =
+      this.rootElement.querySelector('.secret-cards');
+    if (!secretCardsContainer) return;
 
-    if (secret && this.playerID in secret) {
-      const playerSecret = secret[this.playerID];
-      playerSecret.forEach((value) => {
-        const card = document.createElement('div');
-        card.className = 'secret-card';
-        card.textContent = value !== null ? value.toString() : '?';
-        container.appendChild(card);
-      });
+    const currentPlayerSecret = state.G.secret[this.playerID];
+    const opponentID = this.playerID === '0' ? '1' : '0';
+    const opponentSecret = state.G.secret[opponentID];
+
+    let html = `
+      <div class="player-secrets">
+        <h3>Your Secret Numbers:</h3>
+        <div class="secret-numbers">
+          ${currentPlayerSecret.values
+            .map(
+              (value) =>
+                `<div class="secret-card">${value !== null ? value : '?'}</div>`
+            )
+            .join('')}
+        </div>
+        <div class="secret-hash">
+          Tu Hash: ${currentPlayerSecret.hash.slice(0, 10)}...
+        </div>
+      </div>
+
+      <div class="opponent-secrets">
+        <h3>Opponent Information:</h3>
+    `;
+
+    if (state.G.gameOver && state.G.revealedSecrets?.[opponentID]) {
+      html += `
+        <div class="secret-numbers">
+          ${state.G.revealedSecrets[opponentID].values
+            .map(
+              (value) =>
+                `<div class="secret-card">${value !== null ? value : '?'}</div>`
+            )
+            .join('')}
+        </div>
+      `;
     } else {
-      container.innerHTML = '<p>No secret numbers available</p>';
+      html +=
+        '<div class="secret-numbers">Numbers hidden until the end of the game</div>';
     }
+
+    html += `
+        <div class="opponent-hash">
+          Hash del Oponente: ${opponentSecret.hash.slice(0, 10)}...
+        </div>
+      </div>
+    `;
+
+    secretCardsContainer.innerHTML = html;
   }
 }
 
+/**
+ * !note Main function to initialize the game.
+ * Handles MetaMask connection and player setup.
+ */
 async function main() {
   const appElement = document.getElementById('app');
   if (!window.ethereum) {
