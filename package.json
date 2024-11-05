@@ -46,6 +46,18 @@
     "./client": {
       "import": "./dist/esm/client.js",
       "require": "./dist/cjs/client.js"
+    },
+    "./multiplayer": {
+      "import": "./dist/esm/multiplayer.js",
+      "require": "./dist/cjs/multiplayer.js"
+    },
+    "./core": {
+      "import": "./dist/esm/core.js",
+      "require": "./dist/cjs/core.js"
+    },
+    "./react": {
+      "import": "./dist/esm/react.js",
+      "require": "./dist/cjs/react.js"
     }
   },
   "sideEffects": false,
