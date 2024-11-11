@@ -26,8 +26,7 @@ export enum LobbyPhases {
 }
 
 type RunningMatch = {
-  // app: ReturnType<typeof Client>;
-  app: typeof VanillaClient;
+  app: InstanceType<typeof VanillaClient>;
   matchID: string;
   playerID: string;
   credentials?: string;
@@ -312,6 +311,7 @@ export class Lobby {
     const app = new this.config.clientFactory({
       game: gameCode.game, //* OK
       board: gameCode.board, //* OK
+      //* OK
       debug: this.config.debug, //* Undefined
       multiplayer, //* OK
     });
