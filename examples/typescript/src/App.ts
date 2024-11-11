@@ -1,9 +1,9 @@
 import { TicTacToe } from './Game';
 import { Board } from './Board2';
-import { Lobby } from '../../../src/lobby/vanillaLobby'; // Importar Lobby
+import { Lobby } from '../../../src/lobby/vanilla-lobby'; // Importar Lobby
 import { ethers, BrowserProvider } from 'ethers';
-import { renderLobby } from '../../../src/lobby/vanillaLobbyRender'; // Importar el renderizado del lobby
-import { renderLoginForm } from '../../../src/lobby/vanillaLoginForm'; // Importar el renderizado del formulario de login
+import { renderLobby } from '../../../src/lobby/vanilla-lobby-render'; // Importar el renderizado del lobby
+import { renderLoginForm } from '../../../src/lobby/vanilla-login-form'; // Importar el renderizado del formulario de login
 import { Client } from '../../../src/client/client'; // Importar el cliente
 
 declare global {
