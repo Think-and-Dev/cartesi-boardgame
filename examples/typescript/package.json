@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "rm -rf .parcel-cache && parcel examples/typescript/index.html --open --port 1235"
+    "start": "rm -rf .parcel-cache && parcel index.html --open --port 1235"
   },
-  "browserslist": "defaults and supports async-functions",
+  "browserslist": [
+    "last 1 Chrome versions",
+    "last 1 Safari versions",
+    "last 1 Firefox versions"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -13,7 +17,6 @@
     "@babel/core": "^7.16.0",
     "ethers": "^6.13.4",
     "js-cookie": "^3.0.5",
-    "node-releases": "^2.0.18",
     "react": "^18.3.1",
     "svelte": "^3.59.2"
   },
@@ -23,12 +26,13 @@
   "devDependencies": {
     "@tsconfig/svelte": "^5.0.4",
     "@types/js-cookie": "^3.0.6",
+    "browserslist": "^4.24.2",
     "buffer": "^5.5.0||^6.0.0",
     "crypto-browserify": "^3.12.0",
     "events": "^3.3.0",
+    "node-releases": "^2.0.18",
     "os-browserify": "^0.3.0",
-    "parcel": "^2.0.0",
-    "parcel-plugin-svelte": "^4.0.2",
+    "parcel": "^2.12.0",
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
