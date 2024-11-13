@@ -1,11 +1,6 @@
-import sveltePreprocess from 'svelte-preprocess';
+// svelte.config.js
+const sveltePreprocess = require('svelte-ts-preprocess');
 
-export default {
-  preprocess: sveltePreprocess({
-    typescript: true,
-    sourceMap: true,
-  }),
-  compilerOptions: {
-    dev: process.env.NODE_ENV !== 'production',
-  },
+module.exports = {
+  preprocess: sveltePreprocess(),
 };
