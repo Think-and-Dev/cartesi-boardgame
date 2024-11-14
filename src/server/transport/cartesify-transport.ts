@@ -150,20 +150,16 @@ export default class CartesifyTransport {
     db: StorageAPI.Sync | StorageAPI.Async;
   }) {
     appRouter.get('/test', (ctx) => {
-      console.log('Accessing test route');
       ctx.body = { message: 'Transport is working correctly' };
     });
     games.forEach((game) => {
       const gameName = game.name;
-      console.log('Adding routes for game:', gameName);
       const filterPlayerView = getFilterPlayerView(game);
 
       appRouter.get(`/${gameName}/data`, async (ctx) => {
         const { matchID, playerID, index } = ctx.request.query;
-        console.log('Received data request for:', matchID, playerID, index);
         if (typeof playerID !== 'string' || typeof index !== 'string') {
           ctx.status = 400;
-          console.log('Invalid query parameters');
           return;
         }
         const transport = this.getTransportAPI(matchID, filterPlayerView);
@@ -173,7 +169,6 @@ export default class CartesifyTransport {
       });
 
       appRouter.post(`/${gameName}/update`, koaBody(), async (ctx) => {
-        console.log('Received update request');
         const { action, stateID, matchID, playerID } = ctx.request.body;
         const transport = this.getTransportAPI(matchID, filterPlayerView);
         const master = new Master(game, db, transport, auth);
@@ -183,7 +178,7 @@ export default class CartesifyTransport {
       });
 
       appRouter.post(`/${gameName}/sync`, koaBody(), async (ctx) => {
-        console.log('Received sync request');
+        //* sync te lleva a onSync
         const { matchID, playerID, credentials } = ctx.request.body;
         this.removeClient(playerID);
         const transport = this.getTransportAPI(matchID, filterPlayerView);
@@ -195,7 +190,6 @@ export default class CartesifyTransport {
           playerID,
           credentials
         );
-        console.log('syncResponse:', syncResponse);
         if (syncResponse && syncResponse.error === 'unauthorized') {
           ctx.status = 401;
           return;
@@ -206,7 +200,6 @@ export default class CartesifyTransport {
       });
 
       appRouter.post(`/${gameName}/chat`, koaBody(), async (ctx) => {
-        console.log('Received chat request');
         const { matchID, message, credentials } = ctx.request.body;
         const transport = this.getTransportAPI(matchID, filterPlayerView);
         const master = new Master(game, db, transport, auth);
@@ -216,7 +209,6 @@ export default class CartesifyTransport {
       });
 
       appRouter.post(`/${gameName}/disconnect`, koaBody(), async (ctx) => {
-        console.log('Received disconnect request');
         //TODO: Should we trust the playerID from the request body here? Maybe we should use the player address instead
         const { playerID } = ctx.request.body;
         const client = this.clientInfo.get(playerID);

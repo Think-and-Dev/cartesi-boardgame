@@ -7,7 +7,6 @@
  */
 
 import tic_tac_toe from './tic-tac-toe';
-import chess from './chess';
 import secret_state from './secret-state';
 import random from './random';
 import threejs from './threejs';
@@ -20,10 +19,6 @@ const routes = [
   {
     name: 'Tic-Tac-Toe',
     routes: tic_tac_toe.routes,
-  },
-  {
-    name: 'Chess',
-    routes: chess.routes,
   },
   {
     name: 'Turn Orders',
