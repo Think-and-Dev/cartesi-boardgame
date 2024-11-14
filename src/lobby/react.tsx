@@ -62,7 +62,7 @@ type LobbyProps = {
     handleStartMatch: (gameName: string, matchOpts: MatchOpts) => void;
   }) => JSX.Element;
   nodeUrl: string;
-  dappAddress: string
+  dappAddress: string;
   signer: ethers.Signer;
 };
 
@@ -77,14 +77,14 @@ type LobbyState = {
 
 /**
  * Lobby Component
- * 
+ *
  * This React component serves as the main interface for the game lobby.
  * It manages the lobby's state, including user authentication, game creation,
  * joining matches, and transitioning between different lobby phases.
- * 
+ *
  * The component integrates with the LobbyConnection to communicate with the server
  * and uses various sub-components to render different parts of the lobby interface.
- * 
+ *
  * @param {Array}  gameComponents - An array of Board and Game objects for the supported games.
  * @param {string} lobbyServer - Address of the lobby server (for example 'localhost:8000').
  *                               If not set, defaults to the server that served the page.
@@ -205,17 +205,17 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
    */
   _initializeEthereum = async () => {
     if (window.ethereum) {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        this.setState({ signer }, () => {
-          this._createConnection(this.props);
-        });
-        this.setState({ errorMsg: "Failed to connect to Ethereum wallet" });
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      this.setState({ signer }, () => {
+        this._createConnection(this.props);
+      });
+      this.setState({ errorMsg: 'Failed to connect to Ethereum wallet' });
     } else {
-      this.setState({ errorMsg: "Ethereum wallet not detected" });
+      this.setState({ errorMsg: 'Ethereum wallet not detected' });
     }
-  }
+  };
 
   /**
    * Creates or updates the LobbyConnection based on current props and state.
@@ -337,7 +337,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
           const provider = new ethers.BrowserProvider(window.ethereum);
           signer = await provider.getSigner();
         } else {
-          throw new Error("Ethereum object not found, do you have MetaMask installed?");
+          throw new Error(
+            'Ethereum object not found, do you have MetaMask installed?'
+          );
         }
 
         multiplayer = CartesiMultiplayer({
