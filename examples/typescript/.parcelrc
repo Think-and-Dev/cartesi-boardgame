@@ -1,6 +1,7 @@
 {
   "extends": "@parcel/config-default",
   "transformers": {
-    "*.svelte": ["@parcel/transformer-svelte"]
+    "*.svelte": ["@parcel/transformer-svelte"],
+    "*.js": ["@parcel/transformer-babel"]
   }
 }

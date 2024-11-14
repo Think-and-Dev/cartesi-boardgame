@@ -6,24 +6,28 @@
     "start": "rm -rf .parcel-cache && parcel index.html --open --port 1235"
   },
   "browserslist": [
-    "last 1 Chrome versions",
-    "last 1 Safari versions",
-    "last 1 Firefox versions"
+    "> 0.5%",
+    "last 2 versions",
+    "not dead"
   ],
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@babel/core": "^7.16.0",
     "ethers": "^6.13.4",
     "js-cookie": "^3.0.5",
     "react": "^18.3.1",
-    "svelte": "^3.59.2"
+    "svelte": "^5.1.16"
   },
   "alias": {
     "@think-and-dev/cartesi-boardgame": "../../dist/esm"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-env": "^7.26.0",
+    "@parcel/reporter-dev-server": "^2.13.0",
+    "@parcel/transformer-babel": "^2.13.0",
+    "@parcel/types": "^2.13.0",
     "@tsconfig/svelte": "^5.0.4",
     "@types/js-cookie": "^3.0.6",
     "browserslist": "^4.24.2",
@@ -32,13 +36,13 @@
     "events": "^3.3.0",
     "node-releases": "^2.0.18",
     "os-browserify": "^0.3.0",
-    "parcel": "^2.12.0",
+    "parcel": "^2.13.0",
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
     "string_decoder": "^1.3.0",
     "svelte-ts-preprocess": "^1.1.3",
-    "typescript": "^3.5.3",
+    "typescript": "^3.9.10",
     "vm-browserify": "^1.1.2"
   },
   "description": ""
