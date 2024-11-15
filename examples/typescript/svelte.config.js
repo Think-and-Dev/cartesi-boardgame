@@ -1,5 +1,5 @@
 // svelte.config.js
-const sveltePreprocess = require('svelte-ts-preprocess');
+const sveltePreprocess = require('svelte-preprocess');
 
 module.exports = {
   preprocess: sveltePreprocess(),
