@@ -3,13 +3,12 @@
 import Cookies from 'js-cookie'; // Cambiado de 'react-cookies' a 'js-cookie'
 import { ethers } from 'ethers';
 // import { Client } from '../client/react';
-import { VanillaClient } from '../client/vanilla-client';
+import type { VanillaClient } from '../client/vanilla-client';
 import { MCTSBot } from '../ai/mcts-bot';
 import { Local } from '../client/transport/local';
 import type { GameComponent } from './connection';
 import { LobbyConnection } from './connection';
 import type { MatchOpts } from './match-instance';
-import type { LobbyAPI } from '../types';
 import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
 import type { DebugOpt } from '../client/client';
 
@@ -26,7 +25,7 @@ export enum LobbyPhases {
 }
 
 type RunningMatch = {
-  app: InstanceType<typeof VanillaClient>;
+  app: ReturnType<typeof VanillaClient>;
   matchID: string;
   playerID: string;
   credentials?: string;
@@ -308,19 +307,19 @@ export class Lobby {
       this.config.clientFactory
     );
 
-    const app = new this.config.clientFactory({
-      game: gameCode.game, //* OK
-      board: gameCode.board, //* OK
-      //* OK
-      debug: this.config.debug, //* Undefined
-      multiplayer, //* OK
+    const app = this.config.clientFactory({
+      game: gameCode.game as any,
+      board: gameCode.board as any,
+      debug: this.config.debug,
     });
 
-    console.log('app in startMatch in typescriptLobby:', app);
-    //! app esta llegnado undefined.
+    // Check if app is defined before creating the match
+    if (!app) {
+      throw new Error('Failed to create the app instance.');
+    }
 
     const match = {
-      app: app!,
+      app: app,
       matchID: matchOpts.matchID, //* OK
       playerID: matchOpts.numPlayers > 1 ? matchOpts.playerID : '0', //* OK
       credentials: this.connection?.playerCredentials, //* OK

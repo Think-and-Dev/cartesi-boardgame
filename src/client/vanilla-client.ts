@@ -135,3 +135,5 @@ export function Client<
     }
   };
 }
+
+export { Client as VanillaClient };
