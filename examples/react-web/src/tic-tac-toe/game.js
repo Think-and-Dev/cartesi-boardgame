@@ -27,7 +27,7 @@ function IsVictory(cells) {
 }
 
 const TicTacToe = {
-  name: 'tic-tac-toe',
+  name: 'TicTacToe',
 
   setup: () => ({
     cells: new Array(9).fill(null),

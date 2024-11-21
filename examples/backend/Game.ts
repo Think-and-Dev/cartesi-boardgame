@@ -38,6 +38,7 @@ function IsDraw(cells: Array<string | null>): boolean {
 }
 
 export const TicTacToe: Game<G> = {
+  name: 'TicTacToe',
   setup: (): G => ({ cells: Array(9).fill(null) }),
   turn: {
     minMoves: 1,
