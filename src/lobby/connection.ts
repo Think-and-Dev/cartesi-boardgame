@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import { LobbyClient } from './client';
 import type { Game, LobbyAPI } from '../types';
-import { ethers } from 'ethers';
+import type { ethers } from 'ethers';
 
 /**
  * Represents a game component, combining the game logic and its React component.
