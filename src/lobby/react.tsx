@@ -97,7 +97,7 @@ type LobbyState = {
  * Returns:
  *   A React component that provides a UI to create, list, join, leave, play or
  *   spectate matches (game instances).
-*/
+.*/
 class Lobby extends React.Component<LobbyProps, LobbyState> {
   static propTypes = {
     gameComponents: PropTypes.array.isRequired,
@@ -344,6 +344,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
 
         multiplayer = CartesiMultiplayer({
           server: 'http://localhost:8000',
+          lobbyServer: 'http://localhost:9000', // Lobby
           dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
           nodeUrl: 'http://localhost:8080',
           signer: signer,
