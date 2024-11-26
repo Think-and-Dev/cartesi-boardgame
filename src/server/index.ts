@@ -68,6 +68,10 @@ interface ServerOpts {
   uuid?: () => string;
   authenticateCredentials?: ServerTypes.AuthenticateCredentials;
   generateCredentials?: ServerTypes.GenerateCredentials;
+  lobbyConfig?: {
+    apiPort: number;
+    apiCallback?: () => void;
+  };
 }
 
 /**
