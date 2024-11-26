@@ -11,6 +11,7 @@ import type { ethers } from 'ethers';
 
 interface CartesifyOpts {
   server?: string;
+  lobbyServer?: string;
   dappAddress: string;
   nodeUrl?: string;
   signer?: ethers.Signer;
@@ -28,6 +29,7 @@ export class CartesifyTransport extends Transport {
   constructor(opts: CartesifyTransportOpts) {
     super(opts);
     this.url = opts.server || 'https://127.0.0.1:8000';
+    this.url = opts.lobbyServer || 'https://127.0.0.1:9000';
 
     if (this.url.slice(-1) != '/') {
       // add trailing slash if not already present

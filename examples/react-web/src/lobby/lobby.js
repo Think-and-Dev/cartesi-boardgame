@@ -7,7 +7,8 @@ import './lobby.css';
 GameTicTacToe.minPlayers = 1;
 GameTicTacToe.maxPlayers = 2;
 
-const serverURL = 'http://localhost:8000';
+const serverGameURL = 'http://localhost:8000';
+const serverLobbyURL = 'http://localhost:9000';
 const nodeURL = 'http://localhost:8080';
 const dappAddress = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
 
@@ -18,8 +19,8 @@ const LobbyView = () => (
     <h1>Lobby</h1>
 
     <Lobby
-      gameServer={serverURL}
-      lobbyServer={serverURL}
+      gameServer={serverGameURL}
+      lobbyServer={serverLobbyURL}
       gameComponents={importedGames}
       nodeUrl={nodeURL}
       dappAddress={dappAddress}
