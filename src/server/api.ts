@@ -371,7 +371,9 @@ export const configureRouter = ({
     // The number of players for this game instance.
     const numPlayers =
       Number.parseInt(ctx.request.body.numPlayers) ||
-      Object.keys(metadata.players).length;
+      (Object.keys(metadata.players).length > 0
+        ? Object.keys(metadata.players).length
+        : 0);
 
     const game = games.find((g) => g.name === gameName);
     const nextMatchID = await CreateMatch({
