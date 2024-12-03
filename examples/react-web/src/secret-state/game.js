@@ -6,7 +6,7 @@
  * https://opensource.org/licenses/MIT.
  */
 
-import { PlayerView } from 'boardgame.io/core';
+import { PlayerView } from 'cartesi-boardgame/core';
 
 const SecretState = {
   name: 'secret-state',

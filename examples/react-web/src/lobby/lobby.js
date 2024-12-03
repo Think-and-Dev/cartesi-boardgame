@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lobby } from 'boardgame.io/react';
+import { Lobby } from 'cartesi-boardgame/react';
 import { default as BoardTicTacToe } from '../tic-tac-toe/board';
 import { default as GameTicTacToe } from '../tic-tac-toe/game';
 import './lobby.css';

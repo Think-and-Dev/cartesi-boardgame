@@ -1,18 +1,15 @@
-/*
- * Copyright 2017 The boardgame.io Authors
- *
- * Use of this source code is governed by a MIT-style
- * license that can be found in the LICENSE file or at
- * https://opensource.org/licenses/MIT.
- */
+import { Server, Sqlite } from '../../dist/cjs/server.js';
+import TicTacToe from './src/tic-tac-toe/game.js';
+import cors from '@koa/cors';
 
-import { Server, Origins } from 'boardgame.io/server';
-import TicTacToe from './src/tic-tac-toe/game';
-import Chess from './src/chess/game';
+const database = new Sqlite();
+async function main() {
+  const server = Server({
+    games: [TicTacToe],
+    db: database,
+    origins: ['http://localhost:1234', 'http://localhost:3000'],
+  });
 
-const PORT = process.env.PORT || 8000;
-const server = Server({
-  games: [TicTacToe, Chess],
-  origins: [Origins.LOCALHOST],
-});
-server.run(PORT, () => {});
+  server.run(8000);
+}
+main().catch(console.error);

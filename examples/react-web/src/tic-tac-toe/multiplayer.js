@@ -1,12 +1,25 @@
-import React from 'react';
-import { Client } from 'boardgame.io/react';
-import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
+import React, { useState, useEffect } from 'react';
+import { Client } from 'cartesi-boardgame/react';
+import { CartesiMultiplayer } from 'cartesi-boardgame/multiplayer';
 import TicTacToe from './game';
 import Board from './board';
-import { useMetaMask } from '../metamaskSigner';
+import { BrowserProvider } from 'ethers';
 
 const Multiplayer = () => {
-  const signer = useMetaMask();
+  const [signer, setSigner] = useState(null);
+
+  useEffect(() => {
+    async function fetchSigner() {
+      if (!window.ethereum) {
+        alert('Please install MetaMask to play this game');
+        return;
+      }
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      setSigner(signer);
+    }
+    fetchSigner();
+  }, []);
 
   if (!signer) {
     return <div>Loading...</div>;
