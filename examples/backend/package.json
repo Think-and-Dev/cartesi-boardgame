@@ -14,7 +14,7 @@
   "dependencies": {
     "@calindra/cartesify-backend": "1.0.1",
     "@koa/cors": "^3.4.3",
-    "@think-and-dev/cartesi-boardgame": "0.0.32-beta-rc",
+    "@think-and-dev/cartesi-boardgame": "0.0.33-beta",
     "sqlite3": "^5.1.7",
     "ts-node": "^10.9.2",
     "tsc": "^2.0.4",
