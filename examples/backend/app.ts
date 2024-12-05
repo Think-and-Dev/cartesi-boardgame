@@ -9,7 +9,6 @@ async function main() {
     db: database,
     origins: ['http://localhost:1234', 'http://localhost:3000'],
   });
-  console.log('Server running on port 8000');
 
   server.app.use(
     cors({
@@ -20,7 +19,5 @@ async function main() {
   );
 
   server.run(8000);
-
-  console.log('confirmadisimo');
 }
 main().catch(console.error);
