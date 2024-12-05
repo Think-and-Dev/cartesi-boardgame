@@ -9,7 +9,7 @@
     "parcel-bundler": "^1.11.0"
   },
   "alias": {
-    "boardgame.io": "../../dist/esm"
+    "boardgame.io": "@think-and-dev/cartesi-boardgame"
   },
   "browserslist": [
     "last 1 Chrome versions",
@@ -20,7 +20,7 @@
     "@babel/core": "^7.13.14",
     "@babel/preset-env": "^7.13.12",
     "@babel/preset-react": "^7.13.13",
-    "@think-and-dev/cartesi-boardgame": "^0.0.12-beta",
+    "@think-and-dev/cartesi-boardgame": "0.0.32-beta-rc",
     "cors": "^2.8.5",
     "parcel-plugin-svelte": "^4.0.6",
     "react": "^16.14.0",

@@ -205,13 +205,16 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
    */
   _initializeEthereum = async () => {
     if (window.ethereum) {
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      this.setState({ signer }, () => {
-        this._createConnection(this.props);
-      });
-      this.setState({ errorMsg: 'Failed to connect to Ethereum wallet' });
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        this.setState({ signer }, () => {
+          this._createConnection(this.props);
+        });
+      } catch {
+        this.setState({ errorMsg: 'Failed to connect to Ethereum wallet' });
+      }
     } else {
       this.setState({ errorMsg: 'Ethereum wallet not detected' });
     }

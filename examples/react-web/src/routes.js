@@ -17,6 +17,10 @@ import undo from './undo';
 
 const routes = [
   {
+    name: 'Lobby',
+    routes: lobby.routes,
+  },
+  {
     name: 'Tic-Tac-Toe',
     routes: tic_tac_toe.routes,
   },
@@ -43,10 +47,6 @@ const routes = [
   {
     name: 'Other Frameworks',
     routes: threejs.routes,
-  },
-  {
-    name: 'Lobby',
-    routes: lobby.routes,
   },
 ];
 
