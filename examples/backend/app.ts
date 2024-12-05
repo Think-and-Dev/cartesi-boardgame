@@ -10,6 +10,8 @@ async function main() {
     origins: ['http://localhost:1234', 'http://localhost:3000'],
   });
 
+  console.log('Server running on port 8000');
+
   server.app.use(
     cors({
       origin: '*',
