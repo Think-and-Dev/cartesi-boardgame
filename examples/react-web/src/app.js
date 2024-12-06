@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { HashRouter as Router, Route } from 'react-router-dom';
+import { HashRouter as Router, Route, Redirect } from 'react-router-dom';
 import _ from 'lodash';
 import LiNavLink from './li-navlink';
 
@@ -42,6 +42,9 @@ export const App = () => (
         </div>
       </aside>
       <section className="content">
+        <Route exact path="/">
+          <Redirect to="/lobby/main" />
+        </Route>
         {_.flattenDeep(routes.map((route) => route.routes)).map(
           (route, idx) => (
             <Route

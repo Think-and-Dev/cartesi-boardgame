@@ -1,6 +1,6 @@
 {
   "name": "@think-and-dev/cartesi-boardgame",
-  "version": "0.0.29-beta",
+  "version": "0.0.33-beta",
   "description": "library for turn-based games",
   "repository": "https://github.com/think-and-dev/cartesi-boardgame",
   "scripts": {
@@ -46,6 +46,18 @@
     "./client": {
       "import": "./dist/esm/client.js",
       "require": "./dist/cjs/client.js"
+    },
+    "./multiplayer": {
+      "import": "./dist/esm/multiplayer.js",
+      "require": "./dist/cjs/multiplayer.js"
+    },
+    "./core": {
+      "import": "./dist/esm/core.js",
+      "require": "./dist/cjs/core.js"
+    },
+    "./react": {
+      "import": "./dist/esm/react.js",
+      "require": "./dist/cjs/react.js"
     }
   },
   "sideEffects": false,
@@ -128,6 +140,7 @@
     "node-persist": "^3.1.0",
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
+    "postcss": "^8.4.41",
     "prettier": "^2.3.2",
     "raf": "^3.4.1",
     "react": "^16.14.0",
@@ -138,6 +151,7 @@
     "rollup-plugin-filesize": "^6.0.0",
     "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-replace": "^2.1.0",
     "rollup-plugin-svelte": "^6.1.1",
     "rollup-plugin-terser": "^5.3.0",
@@ -158,6 +172,7 @@
     "@koa/router": "^10.1.1",
     "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.8",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.1",
     "flatted": "^3.2.1",
