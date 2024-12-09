@@ -13,18 +13,20 @@ const dappAddress = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
 
 const importedGames = [{ game: GameTicTacToe, board: BoardTicTacToe }];
 
-const LobbyView = () => (
-  <div style={{ padding: 50 }}>
-    <h1>Lobby</h1>
+const LobbyView = () => {
+  return (
+    <div style={{ padding: 50 }}>
+      <h1>Lobby</h1>
 
-    <Lobby
-      gameServer={serverURL}
-      lobbyServer={serverURL}
-      gameComponents={importedGames}
-      nodeUrl={nodeURL}
-      dappAddress={dappAddress}
-    />
-  </div>
-);
+      <Lobby
+        gameServer={serverURL}
+        lobbyServer={serverURL}
+        gameComponents={importedGames}
+        nodeUrl={nodeURL}
+        dappAddress={dappAddress}
+      />
+    </div>
+  );
+};
 
 export default LobbyView;

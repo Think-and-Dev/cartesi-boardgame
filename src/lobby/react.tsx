@@ -97,7 +97,7 @@ type LobbyState = {
  * Returns:
  *   A React component that provides a UI to create, list, join, leave, play or
  *   spectate matches (game instances).
-*/
+ */
 class Lobby extends React.Component<LobbyProps, LobbyState> {
   static propTypes = {
     gameComponents: PropTypes.array.isRequired,

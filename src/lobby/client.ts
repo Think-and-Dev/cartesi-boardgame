@@ -209,7 +209,9 @@ export class LobbyClient {
       if (updatedAfter) queries.push(`updatedAfter=${updatedAfter}`);
       if (queries.length > 0) query = '?' + queries.join('&');
     }
-    return this.request(`/games/${gameName}${query}`, init);
+
+    const matchList = await this.request(`/games/${gameName}${query}`, init);
+    return matchList;
   }
 
   /**
@@ -253,6 +255,7 @@ export class LobbyClient {
   ): Promise<LobbyAPI.CreatedMatch> {
     assertGameName(gameName);
     validateBody(body, { numPlayers: 'number' });
+    console.log(`Creating match for game: ${gameName} with body:`, body);
     return this.post(`/games/${gameName}/create`, { body, init });
   }
 
