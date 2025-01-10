@@ -13,13 +13,15 @@ interface CartesifyOpts {
   signer?: ethers.Signer;
 }
 
-interface XMTPTransportConfig {
+export interface XMTPTransportConfig {
   chainId: string;
   dappAddress: string;
   env?: 'production' | 'dev';
 }
 
-type XMTPTransportOpts = TransportOpts & CartesifyOpts & XMTPTransportConfig;
+export type XMTPTransportOpts = TransportOpts &
+  CartesifyOpts &
+  XMTPTransportConfig;
 
 export class XMTPTransport extends CartesifyTransport {
   private xmtp: Client | null = null;
