@@ -1,0 +1,39 @@
+[package]
+name = "cartesi-drand"
+version = "0.2.5"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4"
+hyper = { version = "0.14", features = [
+    "http1",
+    "runtime",
+    "client",
+    "backports",
+    "deprecated",
+] }
+tokio = { version = "1.18", features = ["macros", "rt-multi-thread", "fs"] }
+dotenvy_macro = "0.15.7"
+dotenvy = "0.15.7"
+hex = { version = "0.4.3", features = ["serde"] }
+drand-verify = { version = "0.6.1", features = ["hex"] }
+serde = { version = "1.0.171", features = ["derive"] }
+hex-literal = "0.4.1"
+serde_json = "1.0.102"
+sha3 = "0.10.8"
+log = { version = "0.4.20", features = ["std", "serde"] }
+env_logger = "0.10.1"
+derive_more = { version = "0.99.17", no-default-features = true, features = [
+    "error",
+    "display",
+] }
+ethnum = { version = "1.5.0", features = ["serde"] }
+slog = "2.7.0"
+slog-term = "2.9.0"
+slog-async = "2.7.0"
+actix-slog = "0.2.1"
+
+[dev-dependencies]
+httptest = "0.15.4"
