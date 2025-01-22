@@ -194,6 +194,7 @@
     "sqlite3": "^5.1.7",
     "svelte": "^3.41.0",
     "svelte-json-tree-auto": "^0.1.0",
+    "sync-request": "^6.1.0",
     "ts-toolbelt": "^6.3.6"
   },
   "jest": {

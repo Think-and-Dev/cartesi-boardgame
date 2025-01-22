@@ -14,10 +14,12 @@ import CartesifyTransport from './transport/cartesify-transport';
 export type KoaServer = ReturnType<Koa['listen']>;
 
 // let dapp;
-CartesifyBackend.createDapp().then((initDapp) => {
+console.info('Cartesify Dapp starting. Rollup URL:', process.env.ROLLUP_HTTP_SERVER_URL);
+CartesifyBackend.createDapp({ url: process.env.ROLLUP_HTTP_SERVER_URL }).then((initDapp) => {
   initDapp
     .start()
     .then(() => {
+      console.info('Cartesify Dapp started. Connected to Cartesi Rollup on', process.env.ROLLUP_HTTP_SERVER_URL);
       // TODO: Should we check if the dapp is running when executing the server?
       // isDappRunning = true;
     })
@@ -45,9 +47,9 @@ export const createServerRunConfig = (
 ): ServerConfig =>
   portOrConfig && typeof portOrConfig === 'object'
     ? {
-        ...portOrConfig,
-        callback: portOrConfig.callback || callback,
-      }
+      ...portOrConfig,
+      callback: portOrConfig.callback || callback,
+    }
     : { port: portOrConfig as number, callback };
 
 export const getPortFromServer = (
@@ -117,6 +119,7 @@ export function Server({
     transport,
 
     run: async (portOrConfig: number | ServerConfig, callback?: () => void) => {
+      console.info('Running server. Cartesify will connect to Cartesi Rollup on', process.env.ROLLUP_HTTP_SERVER_URL);
       const serverRunConfig = createServerRunConfig(portOrConfig, callback);
       transport.init({ appRouter: router, db, games, auth });
       configureRouter({ router, db, games, uuid, auth });

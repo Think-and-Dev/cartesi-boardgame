@@ -8,6 +8,7 @@
 
 import type { AleaState } from './random.alea';
 import { alea } from './random.alea';
+import syncRequest from 'sync-request';
 
 export interface RandomState {
   seed: string | number;
@@ -49,6 +50,16 @@ export class Random {
   state: RandomState;
   used: boolean;
 
+
+  private fetchSync(url: string) {
+    const res = syncRequest('GET', url);
+    return {
+      ok: res.statusCode >= 200 && res.statusCode < 300,
+      status: res.statusCode,
+      text: () => res.getBody('utf8')
+    };
+  }
+
   /**
    * Generates a new seed from the current date / time.
    */
@@ -80,13 +91,13 @@ export class Random {
   /**
    * Generate a random number.
    */
-  _random() {
+  _random(seed?: string) {
     this.used = true;
 
     const R = this.state;
+    const fullSeed = seed + (R.prngstate ? '' : R.seed);
 
-    const seed = R.prngstate ? '' : R.seed;
-    const rand = alea(seed, R.prngstate);
+    const rand = alea(fullSeed);
 
     const number = rand();
 
@@ -96,6 +107,48 @@ export class Random {
     };
 
     return number;
+  }
+  getDrandRandom() {
+    if (this.state.seed === '0') {
+      // If we are on the client, the seed is not present.
+      // Just use a temporary seed to execute the move without
+      // crashing it. The move state itself is discarded,
+      // so the actual value doesn't matter.
+      return '0';
+    }
+    let response;
+    try {
+      const timestamp = Math.floor(Date.now() / 1000) - 60;
+      const url = new URL("http://127.0.0.1:3000/random");
+      url.searchParams.append("timestamp", timestamp.toString());
+
+      // as this is running as an atomic operation inside the cartesi machine,
+      // we can have it as a sync request
+      response = this.fetchSync(url.toString());
+      let errorText;
+
+      try {
+        const text = response.text();
+        if (!response.ok) {
+          throw new Error(
+            `Server Error: ${text || "Unknown error"}`
+          );
+        }
+        if (!text) {
+          throw new Error("Response is not a valid randomness");
+        }
+        console.log('Got a new random number from drand', text);
+        return text;
+      } catch (parseError) {
+        errorText = response.text();
+        throw new Error(
+          `Response Error: ${response.status} - ${errorText}`
+        );
+      }
+    } catch (error) {
+      console.error("Error getting randomness from drand:", error);
+      throw error;
+    }
   }
 
   api(): RandomAPI & PrivateRandomAPI {
@@ -120,22 +173,24 @@ export class Random {
     for (const key in SpotValue) {
       const spotvalue = SpotValue[key];
       predefined[key] = (diceCount?: number) => {
+        const seed = this.getDrandRandom();
         return diceCount === undefined
-          ? Math.floor(random() * spotvalue) + 1
+          ? Math.floor(random(seed) * spotvalue) + 1
           : Array.from({ length: diceCount }).map(
-              () => Math.floor(random() * spotvalue) + 1
-            );
+            () => Math.floor(random(seed) * spotvalue) + 1
+          );
       };
     }
 
     function Die(spotValue?: number): number;
     function Die(spotValue: number, diceCount: number): number[];
     function Die(spotvalue = 6, diceCount?: number) {
+      const seed = this.getDrandRandom();
       return diceCount === undefined
-        ? Math.floor(random() * spotvalue) + 1
+        ? Math.floor(random(seed) * spotvalue) + 1
         : Array.from({ length: diceCount }).map(
-            () => Math.floor(random() * spotvalue) + 1
-          );
+          () => Math.floor(random(seed) * spotvalue) + 1
+        );
     }
 
     return {
@@ -168,7 +223,8 @@ export class Random {
        * Generate a random number between 0 and 1.
        */
       Number: () => {
-        return random();
+        const seed = this.getDrandRandom();
+        return random(seed);
       },
 
       /**
@@ -182,9 +238,10 @@ export class Random {
         let sourceIndex = deck.length;
         let destinationIndex = 0;
         const shuffled = Array.from<T>({ length: sourceIndex });
+        const seed = this.getDrandRandom();
 
         while (sourceIndex) {
-          const randomIndex = Math.trunc(sourceIndex * random());
+          const randomIndex = Math.trunc(sourceIndex * random(seed));
           shuffled[destinationIndex++] = clone[randomIndex];
           clone[randomIndex] = clone[--sourceIndex];
         }
