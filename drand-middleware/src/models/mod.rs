@@ -1,18 +1,16 @@
 pub mod structs {
     use std::{borrow::BorrowMut, cell::Cell, collections::VecDeque, error::Error, sync::Arc};
 
+    use crate::rollup::input::RollupInput;
+    use crate::utils::util;
     use dotenvy::var;
-    use log::info;
     use serde::{Deserialize, Serialize};
     #[cfg(test)]
     use serde_json::json;
     use sha3::{Digest, Sha3_256};
-    use tokio::sync::Mutex;
     use slog;
-    use slog::{info, o, Drain, Logger};
-    use slog_async;
-    use slog_term;
-    use crate::rollup::input::RollupInput;
+    use slog::{info, Logger};
+    use tokio::sync::Mutex;
 
     #[derive(serde::Deserialize, serde::Serialize)]
     #[allow(non_snake_case)]
@@ -149,6 +147,7 @@ pub mod structs {
         pub pending_beacon_timestamp: Cell<u64>,
         pub randomness_salt: Cell<u64>,
         pub is_inspecting: bool,
+        pub logger: Logger,
     }
 
     pub struct AppState {
@@ -158,20 +157,6 @@ pub mod structs {
         pub safe_seconds: u64,
         pub version: String,
         pub logger: Logger,
-    }
-
-
-    fn configure_log() -> Logger {
-        // Formatting the output https://docs.rs/slog-term/2.9.0/slog_term/index.html#
-        let decorator = slog_term::TermDecorator::new().build();
-    
-        // Drain for outputting https://docs.rs/slog-term/2.9.0/slog_term/index.html#structs
-        // fuse is used for panicking if something went wrong. It is necessary to call fuse as the root logger must take a Drain which is error free.
-        let console_drain = slog_term::FullFormat::new(decorator).build().fuse();
-    
-        // It is used for Synchronization https://docs.rs/slog-term/2.9.0/slog_term/index.html#structs
-        let console_drain = slog_async::Async::new(console_drain).build().fuse();
-        slog::Logger::root(console_drain, o!("v"=>env!("CARGO_PKG_VERSION")))
     }
 
     impl AppState {
@@ -191,7 +176,7 @@ pub mod structs {
                 .unwrap();
             let version: Option<&str> = option_env!("CARGO_PKG_VERSION");
             let version = version.unwrap_or("unknown").to_string();
-            let logger = configure_log();
+            let logger = util::configure_log();
             AppState {
                 input_buffer_manager: Arc::new(Mutex::new(manager)),
                 drand_period,
@@ -210,8 +195,8 @@ pub mod structs {
             match manager.last_beacon.take() {
                 Some(beacon) => {
                     info!(
-                        "beacon time {} vs {} request time",
-                        beacon.timestamp, query_timestamp
+                        self.logger,
+                        "beacon time {} vs {} request time", beacon.timestamp, query_timestamp
                     );
                     // Check the beacon timestamp against the safe query timestamp
                     if safe_query_timestamp < beacon.timestamp {
@@ -239,13 +224,13 @@ pub mod structs {
         pub fn keep_newest_beacon(&self, drand_beacon: DrandBeacon) {
             let beacon_time = (drand_beacon.round * self.drand_period) + self.drand_genesis_time;
             info!(
-                "Calculated beacon time {} for round {}",
-                beacon_time, drand_beacon.round
+                self.logger,
+                "Calculated beacon time {} for round {}", beacon_time, drand_beacon.round
             );
             let manager = self.input_buffer_manager.try_lock().unwrap();
             if let Some(current_beacon) = manager.last_beacon.take() {
                 if current_beacon.round < drand_beacon.round {
-                    info!("Set new beacon");
+                    info!(self.logger, "Set new beacon");
 
                     let beacon = Beacon::builder()
                         .with_drand_beacon(&drand_beacon)
@@ -254,11 +239,11 @@ pub mod structs {
 
                     manager.last_beacon.set(Some(beacon));
                 } else {
-                    info!("Keep current beacon");
+                    info!(self.logger, "Keep current beacon");
                     manager.last_beacon.set(Some(current_beacon));
                 }
             } else {
-                info!("No beacon, initializing");
+                info!(self.logger, "No beacon, initializing");
 
                 let beacon = Beacon::builder()
                     .with_drand_beacon(&drand_beacon)
@@ -322,6 +307,7 @@ pub mod structs {
 
     impl Default for InputBufferManager {
         fn default() -> Self {
+            let logger = util::configure_log();
             InputBufferManager {
                 messages: VecDeque::new(),
                 flag_to_hold: Flag::new(),
@@ -330,6 +316,7 @@ pub mod structs {
                 pending_beacon_timestamp: Cell::new(0),
                 randomness_salt: Cell::new(0),
                 is_inspecting: false,
+                logger: logger,
             }
         }
     }
@@ -339,20 +326,26 @@ pub mod structs {
             let current = self.pending_beacon_timestamp.take();
             // mantendo o mais recente para economizar transacoes
             if current == 0 || current < timestamp {
-                info!("pending beacon timestamp {} changed", timestamp);
+                info!(
+                    self.logger,
+                    "pending beacon timestamp {} changed", timestamp
+                );
                 self.pending_beacon_timestamp.set(timestamp);
             } else {
-                info!("pending beacon timestamp {} still the same", current);
+                info!(
+                    self.logger,
+                    "pending beacon timestamp {} still the same", current
+                );
                 self.pending_beacon_timestamp.set(current);
             }
         }
 
         pub fn consume_input(&mut self) -> Option<Item> {
-            info!("Consuming input");
+            info!(self.logger, "Consuming input");
             let buffer = self.messages.borrow_mut();
 
             if buffer.is_empty() || self.flag_to_hold.is_holding {
-                info!("Buffer is empty or flag is holding");
+                info!(self.logger, "Buffer is empty or flag is holding");
                 return None;
             }
 
@@ -369,6 +362,8 @@ mod test {
 
     use tokio::sync::Mutex;
 
+    use crate::utils::util;
+
     use super::structs::{AppState, Beacon, DrandBeacon, InputBufferManager};
 
     fn create_app_state() -> AppState {
@@ -379,6 +374,7 @@ mod test {
             drand_genesis_time: 1677685200,
             safe_seconds: 5,
             version: version.unwrap_or("unknown").to_string(),
+            logger: util::configure_log(),
         }
     }
 

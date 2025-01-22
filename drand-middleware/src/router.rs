@@ -1,6 +1,6 @@
 pub mod routes {
     use actix_web::{get, post, put, web, HttpResponse, Responder, ResponseError};
-    use log::{error, info};
+    use slog::{debug, error, info};
     // use serde_json::json;
 
     use crate::{
@@ -17,8 +17,8 @@ pub mod routes {
         body: web::Json<DrandEnv>,
     ) -> Result<impl Responder, impl ResponseError> {
         info!(
-            "Received update_drand_config request from DApp version={}",
-            ctx.version
+            ctx.logger,
+            "Received update_drand_config request from DApp version={}", ctx.version
         );
 
         let _ = ctx.input_buffer_manager.lock().await;
@@ -28,7 +28,7 @@ pub mod routes {
         let result = write_env_to_json().await;
 
         if let Err(e) = result {
-            error!("Error updating drand config: {}", e);
+            error!(ctx.logger, "Error updating drand config: {}", e);
             return Err(CheckerError::InvalidDrandConfig {
                 cause: e.to_string(),
             });
@@ -45,13 +45,13 @@ pub mod routes {
         body: web::Json<RequestRollups>,
     ) -> impl Responder {
         info!(
-            "Received finish request from DApp {:?} version={}",
-            body, ctx.version
+            ctx.logger,
+            "Received finish request from DApp {:?} version={}", body, ctx.version
         );
 
         // the DApp consume from the buffer first
         if let Some(item) = ctx.consume_input().await {
-            info!("Found input on buffer, using it");
+            debug!(ctx.logger, "Found input on buffer, using it");
             let request = item.request.clone();
             return HttpResponse::Ok().body(request);
             // match RollupInput::try_from(item) {
@@ -70,18 +70,18 @@ pub mod routes {
             Ok(input) => input,
             Err(_) => return HttpResponse::Accepted().finish(),
         };
-        info!("Rollup input received: {:?}", rollup_input);
+        debug!(ctx.logger, "Rollup input received: {:?}", rollup_input);
         match rollup_input.request_type.as_str() {
             "advance_state" => {
-                info!("Rollup input request type: advance_state");
+                debug!(ctx.logger, "Rollup input request type: advance_state");
                 ctx.set_inspecting(false).await;
                 if let Ok(beacon) = get_drand_beacon(&rollup_input.data.payload) {
-                    info!("Is Drand!!! {:?}", beacon);
+                    info!(ctx.logger, "Is Drand!!! {:?}", beacon);
                     ctx.keep_newest_beacon(beacon);
                 }
             }
             "inspect_state" => {
-                info!("Rollup input request type: inspect_state");
+                debug!(ctx.logger, "Rollup input request type: inspect_state");
                 ctx.set_inspecting(true).await;
                 if is_querying_pending_beacon(&rollup_input).unwrap() {
                     send_pending_beacon_report(&ctx).await;
@@ -91,13 +91,19 @@ pub mod routes {
                 }
             }
             &_ => {
-                info!("Rollup input request type: {:?}", rollup_input.request_type);
-                error!("Unknown request type");
+                debug!(
+                    ctx.logger,
+                    "Rollup input request type: {:?}", rollup_input.request_type
+                );
+                error!(ctx.logger, "Unknown request type");
             }
         };
-        info!("Rollup input request type: {:?}", rollup_input.request_type);
+        debug!(
+            ctx.logger,
+            "Rollup input request type: {:?}", rollup_input.request_type
+        );
         // Dispatch the input to the DApp
-        info!("Sending input to DApp: {:?}", rollup_input);
+        debug!(ctx.logger, "Sending input to DApp: {:?}", rollup_input);
         HttpResponse::Ok().json(rollup_input)
         // if has_input_inside_input(&rollup_input) {
         //     info!("Has input inside input, sending to DApp");
@@ -114,44 +120,49 @@ pub mod routes {
         query: web::Query<Timestamp>,
     ) -> Result<impl Responder, impl ResponseError> {
         info!(
+            ctx.logger,
             "Received random request from DApp timestamp={} version={}",
-            query.timestamp, ctx.version
+            query.timestamp,
+            ctx.version
         );
         let randomness: Option<String> = ctx.get_randomness_for_timestamp(query.timestamp);
         if let Some(randomness) = randomness {
-            info!("Randomness already found: {:?}", randomness);
+            info!(ctx.logger, "Randomness already found: {:?}", randomness);
             // we already have the randomness to continue the process
             return Ok(HttpResponse::Ok().body(randomness));
         }
         if ctx.is_inspecting() {
-            info!("When inspecting we do not call finish from /random endpoint.");
+            debug!(
+                ctx.logger,
+                "When inspecting we do not call finish from /random endpoint."
+            );
             return Err(CheckerError::AlreadyInspecting);
         }
         // call finish to halt and wait the beacon
-        info!("Calling finish to halt and wait the beacon");
+        debug!(ctx.logger, "Calling finish to halt and wait the beacon");
         let rollup_input = match send_finish_and_retrieve_input("accept").await {
             Ok(input) => input,
             Err(e) => {
-                error!("Error sending finish request: {}", e);
+                error!(ctx.logger, "Error sending finish request: {}", e);
                 return Err(CheckerError::SendRollupAndRetrieveInputError);
             }
         };
-        info!("Rollup input received: {:?}", rollup_input);
+        debug!(ctx.logger, "Rollup input received: {:?}", rollup_input);
         match rollup_input.request_type.as_str() {
             "advance_state" => {
-                info!("Rollup input request type: advance_state");
+                debug!(ctx.logger, "Rollup input request type: advance_state");
                 ctx.set_inspecting(false).await;
                 // Store the input in the buffer, so that it can be accessed from the /finish endpoint.
                 let err = ctx.store_input(&rollup_input).await;
 
                 if let Err(e) = err {
-                    error!("Error storing input: {}", e);
+                    error!(ctx.logger, "Error storing input: {}", e);
                     return Err(CheckerError::StoreInputError);
                 }
-                info!("Getting Drand beacon");
+                debug!(ctx.logger, "Getting Drand beacon");
                 match get_drand_beacon(&rollup_input.data.payload) {
                     Ok(beacon) => {
-                        info!("Is Drand!!! {:?}", beacon);
+                        info!(ctx.logger, "Is Drand!!! {:?}", beacon);
                         ctx.keep_newest_beacon(beacon);
                         let randomness = ctx.get_randomness_for_timestamp(query.timestamp);
                         if let Some(randomness) = randomness {
@@ -160,29 +171,29 @@ pub mod routes {
                         Err(CheckerError::RandomnessError)
                     }
                     Err(e) => {
-                        error!("Error getting randomness: {}", e);
+                        error!(ctx.logger, "Error getting randomness: {}", e);
                         Err(CheckerError::SignatureErrorBeacon)
                     }
                 }
             }
             "inspect_state" => {
-                info!("Rollup input request type: inspect_state");
+                debug!(ctx.logger, "Rollup input request type: inspect_state");
                 ctx.set_inspecting(true).await;
                 if is_querying_pending_beacon(&rollup_input).unwrap() {
-                    info!("Is querying pending beacon");
+                    debug!(ctx.logger, "Is querying pending beacon");
                     send_pending_beacon_report(&ctx).await;
 
                     // This is a specific inspect, so we omit it from the DApp
                     Err(CheckerError::ByPassInspect)
                 } else {
                     // Store the input in the buffer, so that it can be accessed from the /finish endpoint.
-                    info!("Storing input in the buffer");
+                    debug!(ctx.logger, "Storing input in the buffer");
                     ctx.store_input(&rollup_input).await;
                     Err(CheckerError::StoreInputByPass)
                 }
             }
             &_ => {
-                error!("Unknown request type");
+                error!(ctx.logger, "Unknown request type");
                 Err(CheckerError::UnknownRequestType)
             }
         }
@@ -191,12 +202,11 @@ pub mod routes {
     // forward report requests to the rollup server
     #[post("/report")]
     async fn forward_report_to_rollup(
-        _ctx: web::Data<AppState>,
+        ctx: web::Data<AppState>,
         body: web::Json<serde_json::Value>,
     ) -> impl Responder {
-        info!("Received report request from DApp");
+        info!(ctx.logger, "Received report request from DApp");
         let report = body.into_inner();
-        info!("Report: {:?}", report);
         let rollup_response = send_report(report).await.unwrap();
         let body_bytes = hyper::body::to_bytes(rollup_response.into_body())
             .await

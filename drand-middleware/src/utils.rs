@@ -2,11 +2,42 @@ pub mod util {
     use std::{error::Error, path::Path};
 
     use dotenvy::var;
-    use log::info;
+    use lazy_static::lazy_static;
     use serde_json::Value;
+    use slog;
+    use slog::Level;
+    use slog::LevelFilter;
+    use slog::{info, o, Drain, Logger};
+    use slog_term;
     use tokio::fs::read_to_string;
 
+    lazy_static! {
+        pub static ref LOGGER: Logger = utils::util::configure_log();
+    }
+
     use crate::models::structs::DrandEnv;
+    use crate::utils;
+
+    pub fn configure_log() -> Logger {
+        let log_level = match var("SLOG_LEVEL")
+            .unwrap_or_else(|_| "info".to_string())
+            .to_lowercase()
+            .as_str()
+        {
+            "critical" => Level::Critical,
+            "error" => Level::Error,
+            "warning" => Level::Warning,
+            "debug" => Level::Debug,
+            "trace" => Level::Trace,
+            _ => Level::Info,
+        };
+
+        let decorator = slog_term::TermDecorator::new().build();
+        let drain = std::sync::Mutex::new(slog_term::FullFormat::new(decorator).build().fuse());
+        let drain = LevelFilter::new(drain, log_level).fuse();
+
+        slog::Logger::root(drain, o!("v" => env!("CARGO_PKG_VERSION")))
+    }
 
     pub fn generate_payload_hex<T>(json: T) -> Result<String, Box<dyn Error>>
     where
@@ -50,7 +81,7 @@ pub mod util {
     }
 
     pub async fn load_env_from_memory(drand: DrandEnv) {
-        info!("DRAND_PUBLIC_KEY={}", &drand.DRAND_PUBLIC_KEY);
+        info!(LOGGER, "DRAND_PUBLIC_KEY={}", &drand.DRAND_PUBLIC_KEY);
         std::env::set_var("DRAND_PUBLIC_KEY", drand.DRAND_PUBLIC_KEY);
         if let Some(period) = drand.DRAND_PERIOD {
             std::env::set_var("DRAND_PERIOD", period.to_string());
@@ -66,7 +97,7 @@ pub mod util {
     }
 
     pub async fn load_env_from_json() -> Result<(), Box<dyn Error>> {
-        info!("Loading env from json");
+        info!(LOGGER, "Loading env from json");
 
         let path = Path::new("drand.config.json");
         if !path.exists() {

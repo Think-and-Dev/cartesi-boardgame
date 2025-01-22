@@ -3,9 +3,15 @@ use std::{borrow::BorrowMut, error::Error};
 use actix_web::web::Data;
 use dotenvy::var;
 use drand_verify::{derive_randomness, G2PubkeyRfc, Pubkey};
-use log::{error, info, warn};
 use serde_json::json;
 
+use crate::utils;
+use lazy_static::lazy_static;
+use slog::{error, warn, Logger};
+
+lazy_static! {
+    pub static ref LOGGER: Logger = utils::util::configure_log();
+}
 use crate::{
     models::structs::{AppState, DrandBeacon, PayloadWithBeacon},
     rollup::{input::RollupInput, server::send_report},
@@ -17,11 +23,9 @@ pub fn is_querying_pending_beacon(rollup_input: &RollupInput) -> Result<bool, Bo
 }
 
 pub async fn send_pending_beacon_report(app_state: &Data<AppState>) {
-    info!("Paso por aca send_pending_beacon_report");
     let manager = app_state.input_buffer_manager.lock().await;
     let x = manager.pending_beacon_timestamp.get();
     let report = json!({ "payload": format!("{x:#x}") });
-    info!("report: {:?}", report);
     let _ = send_report(report).await.unwrap();
 }
 
@@ -57,7 +61,7 @@ pub fn get_drand_beacon(payload: &str) -> Result<DrandBeacon, Box<dyn std::error
                     round, &payload.beacon.signature, key
                 );
 
-                warn!("{msg}");
+                warn!(LOGGER, "{msg}");
                 return Err(msg.into());
             }
             let mut beacon = payload.beacon.to_owned();
@@ -67,7 +71,7 @@ pub fn get_drand_beacon(payload: &str) -> Result<DrandBeacon, Box<dyn std::error
             Ok(beacon)
         }
         Err(e) => {
-            error!("Drand VerificationError: {}", e.to_string());
+            error!(LOGGER, "Drand VerificationError: {}", e.to_string());
             Err(Box::new(e))
         }
     }

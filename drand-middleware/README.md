@@ -15,5 +15,5 @@ cargo watch -x 'test with_input -- --nocapture --test-threads=1'
 
 ## Run with debug logs enabled
 ```shell
-RUST_LOG=warn,actix_web::middleware::Logger=debug cargo run
+SLOG_LEVEL=debug cargo run
 ```
