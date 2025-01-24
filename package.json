@@ -8,6 +8,7 @@
         "build:main": "turbo run build --filter=./packages/main",
         "build:examples": "turbo run build --filter=./examples/*",
         "build:chinchon": "turbo run build --filter=chinchon...",
+        "cartesi:chinchon": "turbo run build-cartesi-image --filter=chinchon...",
         "build:tictactoe": "turbo run build --filter=tic-tac-toe..."
     },
     "devDependencies": {

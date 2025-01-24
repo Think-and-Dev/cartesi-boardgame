@@ -24,6 +24,10 @@
         "dev": {
             "cache": false,
             "persistent": true
+        },
+        "build-cartesi-image": {
+            "cache": false,
+            "persistent": true
         }
     }
 }
