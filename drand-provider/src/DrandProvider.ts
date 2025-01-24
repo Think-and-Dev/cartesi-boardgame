@@ -8,7 +8,7 @@ interface PendingDrandBeacon {
     reports?: Array<{
         payload?: string
     }>
- }
+}
 
 export class DrandProvider {
 
@@ -95,12 +95,20 @@ export class DrandProvider {
         this.configureInputSender()
         while (this.desiredState === 'RUNNING') {
             try {
-                const pending = await this.pendingDrandBeacon()
+                const pending: { inputTime: number } | null = await this.pendingDrandBeacon()
                 if (this.canSendBeacon(pending)) {
+                    console.log('able to send beacon')
                     const beacon = await fetchBeacon(this.drandClient)
                     console.log('sending beacon', beacon.round)
                     this.inputSender.sendInput({ payload: JSON.stringify({ beacon }) })
                     this.lastPendingTime = pending.inputTime
+                }
+                else if (!pending) {
+                    console.log('No pending beacon')
+                } else if (this.lastPendingTime === (pending as { inputTime: number }).inputTime) {
+                    console.log('Beacon is the same as the last one', pending)
+                } else if ((pending as { inputTime: number }).inputTime < Date.now() / 1000 - this.secondsToWait) {
+                    console.log('Can not send beacon, it\'s too far in the future', pending)
                 }
                 await this.someTime()
             } catch (e) {

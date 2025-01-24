@@ -4,9 +4,7 @@ use derive_more::{Display, Error};
 #[derive(Debug, Display, Error)]
 pub enum CheckerError {
     #[display(fmt = "Error updating drand config: {}", cause)]
-    InvalidDrandConfig {
-        cause: String,
-    },
+    InvalidDrandConfig { cause: String },
 
     #[display(fmt = "Already inspecting")]
     AlreadyInspecting,
@@ -14,13 +12,13 @@ pub enum CheckerError {
     #[display(fmt = "Error sending finish request to rollup")]
     SendRollupAndRetrieveInputError,
 
-    #[display(fmt = "Error sending finish request to rollup")]
+    #[display(fmt = "Bypassing, inspect")]
     ByPassInspect,
 
     #[display(fmt = "Unknown request type")]
     UnknownRequestType,
 
-    #[display(fmt = "Store input to consume later")]
+    #[display(fmt = "Stored input to consume later")]
     StoreInputByPass,
 
     #[display(fmt = "Error getting beacon signature")]
@@ -30,7 +28,7 @@ pub enum CheckerError {
     RandomnessError,
 
     #[display(fmt = "Error storing input")]
-    StoreInputError
+    StoreInputError,
 }
 
 impl serde::Serialize for CheckerError {

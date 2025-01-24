@@ -51,14 +51,19 @@ export class Random {
   used: boolean;
 
 
-  private fetchSync(url: string) {
-    const res = syncRequest('GET', url);
+  private fetchSync(url: string, method: "GET" | "POST" = "GET", body: string = "") {
+    const res = syncRequest(method, url, { json: true, body: body });
     return {
       ok: res.statusCode >= 200 && res.statusCode < 300,
       status: res.statusCode,
       text: () => res.getBody('utf8')
     };
   }
+
+  private sleep(ms: number) {
+    const end = Date.now() + ms;
+    while (Date.now() < end) { }
+  };
 
   /**
    * Generates a new seed from the current date / time.
@@ -116,35 +121,49 @@ export class Random {
       // so the actual value doesn't matter.
       return '0';
     }
+    console.log('Getting randomness from drand');
     let response;
     try {
-      const timestamp = Math.floor(Date.now() / 1000) - 60;
-      const url = new URL("http://127.0.0.1:3000/random");
-      url.searchParams.append("timestamp", timestamp.toString());
+      let randomness: string | undefined;
+      while (!randomness) {
 
-      // as this is running as an atomic operation inside the cartesi machine,
-      // we can have it as a sync request
-      response = this.fetchSync(url.toString());
-      let errorText;
+        const timestamp = Math.floor(Date.now() / 1000) - 60;
+        const url = new URL("http://127.0.0.1:3000/random");
+        url.searchParams.append("timestamp", timestamp.toString());
 
-      try {
-        const text = response.text();
+        // as this is running as an atomic operation inside the cartesi machine,
+        // we can have it as a sync request
+        response = this.fetchSync(url.toString());
+
         if (!response.ok) {
-          throw new Error(
-            `Server Error: ${text || "Unknown error"}`
-          );
+          console.log("attemp failed")
+          let errorJson;
+          try {
+            response.text(); // We force getBody to be executed and throw the error
+          }
+          catch (error) {
+            errorJson = JSON.parse(JSON.parse(error.body.toString()));
+          }
+          if (response.status === 400) {
+            console.log("it was a 400");
+            if (["Stored input to consume later", "Bypassing, inspect"].includes(errorJson.error)) {
+              console.log("we need to wait for the randomness to be ready");
+              // No valid randomeness available, try again with next input
+              // this.fetchSync("http://127.0.0.1:3000/finish", "POST", JSON.stringify({ status: "accept" }));
+              this.sleep(500);
+              continue;
+            }
+          }
+          throw new Error(`Server Error: ${errorJson || "Unknown error"}`);
         }
+        const text = response.text();
         if (!text) {
           throw new Error("Response is not a valid randomness");
         }
         console.log('Got a new random number from drand', text);
-        return text;
-      } catch (parseError) {
-        errorText = response.text();
-        throw new Error(
-          `Response Error: ${response.status} - ${errorText}`
-        );
+        randomness = text;
       }
+      return randomness;
     } catch (error) {
       console.error("Error getting randomness from drand:", error);
       throw error;

@@ -7,15 +7,15 @@ pub mod server {
     use super::input::RollupInput;
     use crate::utils;
     use lazy_static::lazy_static;
-    use slog::{info, Logger};
+    use slog::{debug, info, Logger};
 
     lazy_static! {
-        pub static ref LOGGER: Logger = utils::util::configure_log();
+        pub static ref LOGGER: Logger = utils::util::configure_log(None);
     }
 
     pub async fn send_finish(status: &str) -> Result<Response<Body>, Box<dyn Error>> {
         let server_str = var("ROLLUP_HTTP_SERVER_URL").expect("Env is not set");
-        info!(LOGGER, "Sending finish to {}", &server_str);
+        debug!(LOGGER, "Sending finish to {}", &server_str);
         let client = hyper::Client::new();
         let response = json!({"status" : status});
         let request = hyper::Request::builder()
@@ -26,7 +26,7 @@ pub mod server {
 
         let response = client.request(request).await?;
 
-        info!(
+        debug!(
             LOGGER,
             "Received finish status {} from RollupServer",
             response.status()
@@ -38,12 +38,11 @@ pub mod server {
         status: &str,
     ) -> Result<RollupInput, Box<dyn Error>> {
         let response = send_finish(status).await?;
-        info!(LOGGER, "Response status: {}", response.status());
         if response.status() == hyper::StatusCode::ACCEPTED {
-            info!(LOGGER, "Response status is ACCEPTED, skipping");
+            debug!(LOGGER, "Response status is ACCEPTED, skipping");
             return Err("Skip".into());
         }
-        info!(LOGGER, "Response status is not ACCEPTED, retrieving input");
+        debug!(LOGGER, "Response status is not ACCEPTED, retrieving input");
         let result = RollupInput::try_from_async(response).await?;
 
         Ok(result)

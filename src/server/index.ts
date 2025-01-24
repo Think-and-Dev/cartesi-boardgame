@@ -25,6 +25,7 @@ CartesifyBackend.createDapp({ url: process.env.ROLLUP_HTTP_SERVER_URL }).then((i
     })
     .catch((error) => {
       console.error(`Dapp initialization failed: ${error}`);
+      console.log(error);
     });
   //   dapp = initDapp;
 });

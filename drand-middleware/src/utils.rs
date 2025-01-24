@@ -12,23 +12,29 @@ pub mod util {
     use tokio::fs::read_to_string;
 
     lazy_static! {
-        pub static ref LOGGER: Logger = utils::util::configure_log();
+        pub static ref LOGGER: Logger = utils::util::configure_log(None);
     }
 
     use crate::models::structs::DrandEnv;
     use crate::utils;
 
-    pub fn configure_log() -> Logger {
-        let log_level = match var("SLOG_LEVEL")
-            .unwrap_or_else(|_| "info".to_string())
-            .to_lowercase()
-            .as_str()
-        {
-            "critical" => Level::Critical,
-            "error" => Level::Error,
-            "warning" => Level::Warning,
-            "debug" => Level::Debug,
-            "trace" => Level::Trace,
+    /*  Use this function to configure the logger.
+        The received parameter is the optional log_level,
+        if not provided, it will be set to what's defined in the env variable SLOG_LEVEL
+    */
+    pub fn configure_log(log_level: Option<String>) -> Logger {
+        let log_level = match log_level.unwrap_or(
+            var("SLOG_LEVEL")
+                .unwrap_or_else(|_| "info".to_string())
+                .to_lowercase()
+                .as_str()
+                .to_string(),
+        ) {
+            s if s == "critical" => Level::Critical,
+            s if s == "error" => Level::Error,
+            s if s == "warning" => Level::Warning,
+            s if s == "debug" => Level::Debug,
+            s if s == "trace" => Level::Trace,
             _ => Level::Info,
         };
 

@@ -77,9 +77,11 @@ pub mod slog_middleware {
                         logger = logger.new(o!("header" => format!("{}: {}", key, value)));
                     }
                 }
-                info!(logger, "http request"; "latency" => elapsed.as_millis(),
-                    "method" => res.request().method().as_str(), "path" => res.request().path(),
-                    "status" => res.status().as_u16());
+                if var("SLOG_LOG_HTTP_REQUESTS").unwrap_or("true".to_string()) == "true" {
+                    info!(logger, "http request"; "latency" => elapsed.as_millis(),
+                        "method" => res.request().method().as_str(), "path" => res.request().path(),
+                        "status" => res.status().as_u16());
+                }
 
                 Ok(res)
             })

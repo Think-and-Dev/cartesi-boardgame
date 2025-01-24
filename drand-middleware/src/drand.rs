@@ -7,10 +7,10 @@ use serde_json::json;
 
 use crate::utils;
 use lazy_static::lazy_static;
-use slog::{error, warn, Logger};
+use slog::{error, info, warn, Logger};
 
 lazy_static! {
-    pub static ref LOGGER: Logger = utils::util::configure_log();
+    pub static ref LOGGER: Logger = utils::util::configure_log(None);
 }
 use crate::{
     models::structs::{AppState, DrandBeacon, PayloadWithBeacon},
@@ -24,9 +24,13 @@ pub fn is_querying_pending_beacon(rollup_input: &RollupInput) -> Result<bool, Bo
 
 pub async fn send_pending_beacon_report(app_state: &Data<AppState>) {
     let manager = app_state.input_buffer_manager.lock().await;
+    info!(LOGGER, "Sending pending beacon report");
     let x = manager.pending_beacon_timestamp.get();
+    info!(LOGGER, "Pending beacon timestamp: {:?}", x);
     let report = json!({ "payload": format!("{x:#x}") });
+    info!(LOGGER, "Report: {:?}", report);
     let _ = send_report(report).await.unwrap();
+    info!(LOGGER, "Report sent");
 }
 
 /**

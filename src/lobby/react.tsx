@@ -111,7 +111,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   static defaultProps = {
     debug: false,
     clientFactory: Client,
-    refreshInterval: 2000,
+    refreshInterval: 4000,
   };
 
   // state = {

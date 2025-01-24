@@ -9,7 +9,7 @@ pub mod structs {
     use serde_json::json;
     use sha3::{Digest, Sha3_256};
     use slog;
-    use slog::{info, Logger};
+    use slog::{debug, info, Logger};
     use tokio::sync::Mutex;
 
     #[derive(serde::Deserialize, serde::Serialize)]
@@ -176,7 +176,7 @@ pub mod structs {
                 .unwrap();
             let version: Option<&str> = option_env!("CARGO_PKG_VERSION");
             let version = version.unwrap_or("unknown").to_string();
-            let logger = util::configure_log();
+            let logger = util::configure_log(None);
             AppState {
                 input_buffer_manager: Arc::new(Mutex::new(manager)),
                 drand_period,
@@ -259,6 +259,7 @@ pub mod structs {
             match item {
                 Ok(item) => {
                     manager.messages.push_back(item);
+                    manager.request_count.set(manager.request_count.get() + 1);
                     Ok(())
                 }
                 Err(err) => Err(err),
@@ -307,7 +308,7 @@ pub mod structs {
 
     impl Default for InputBufferManager {
         fn default() -> Self {
-            let logger = util::configure_log();
+            let logger = util::configure_log(None);
             InputBufferManager {
                 messages: VecDeque::new(),
                 flag_to_hold: Flag::new(),
@@ -341,11 +342,11 @@ pub mod structs {
         }
 
         pub fn consume_input(&mut self) -> Option<Item> {
-            info!(self.logger, "Consuming input");
+            debug!(self.logger, "Consuming input");
             let buffer = self.messages.borrow_mut();
 
             if buffer.is_empty() || self.flag_to_hold.is_holding {
-                info!(self.logger, "Buffer is empty or flag is holding");
+                debug!(self.logger, "Buffer is empty or flag is holding");
                 return None;
             }
 
@@ -374,7 +375,7 @@ mod test {
             drand_genesis_time: 1677685200,
             safe_seconds: 5,
             version: version.unwrap_or("unknown").to_string(),
-            logger: util::configure_log(),
+            logger: util::configure_log(None),
         }
     }
 
