@@ -21,6 +21,7 @@ import type { Game, Server } from '../../types';
 import type { GenericPubSub } from './pubsub/generic-pub-sub';
 import type { IntermediateTransportData } from '../../master/master';
 import { InMemoryPubSub } from './pubsub/in-memory-pub-sub';
+import { Server as SocketIOServer } from 'socket.io';
 
 const PING_TIMEOUT = 20 * 1e3;
 const PING_INTERVAL = 10 * 1e3;
@@ -33,6 +34,11 @@ function getPubSubChannelId(matchID: string): string {
   return `MATCH-${matchID}`;
 }
 
+declare module 'koa' {
+  interface DefaultContext {
+    io: SocketIOServer;
+  }
+}
 /**
  * API that's exposed by SocketIO for the Master to send
  * information to the clients.
