@@ -39,10 +39,9 @@
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
-    "./server": {
-      "import": "./dist/esm/server.js",
-      "require": "./dist/cjs/server.js"
-    },
+    "./server": "./dist/server.js",
+    "./game": "./dist/game.js",
+    "./secret-provider/*": "./secret-provider/dist/*",
     "./client": {
       "import": "./dist/esm/client.js",
       "require": "./dist/cjs/client.js"
