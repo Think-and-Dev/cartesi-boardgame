@@ -1,8 +1,15 @@
+/**
+ * Main Server Application
+ * - Configures and starts the Koa server
+ * - Connects middlewares and routes
+ * - Handles graceful server shutdown
+ * - Manages database connection lifecycle
+ */
+
 // Import the tools we need
 import Koa from 'koa'; // Our web server framework
 import bodyParser from 'koa-bodyparser'; // To read JSON from requests
 import secretsRouter from './routes/secrets'; // Our routes for handling secrets
-import { closeDatabase } from './database/sqlite-service'; // Function to close database
 
 // Step 1: Create a new web server
 const app = new Koa();
@@ -34,10 +41,6 @@ process.on('SIGTERM', () => {
   // Close the server properly
   server.close(() => {
     console.log('Closing server connections...');
-
-    // Make sure to close the database connection
-    closeDatabase();
-
     console.log('Server shutdown complete!');
   });
 });

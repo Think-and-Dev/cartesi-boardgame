@@ -3,11 +3,19 @@ import Router from '@koa/router';
 import {
   createHash,
   isValidEthereumAddress,
-  shuffleSecretArray,
+  shuffledSecret,
 } from '../utils/secret-utils';
-import { secretsDatabase } from '../database/sqlite-service';
+import { secretsDatabase } from '../database/memory-service';
 
 const router = new Router();
+
+/**
+ * API Routes for Secret Management
+ * Endpoints:
+ * - POST /hash: Generates hashes for secret values
+ * - GET /reveal/:hash/:address: Reveals original value for a hash
+ * Includes request validation and error handling
+ */
 
 // Make sure we got a valid object in the request
 async function checkRequestBody(ctx: Koa.Context, next: Koa.Next) {
@@ -50,8 +58,7 @@ router.post('/hash', checkRequestBody, async (ctx) => {
     });
   }
 
-  // Shuffle the array before sending it
-  ctx.body = { hashes: shuffleSecretArray(hashedSecrets) };
+  ctx.body = { hashes: shuffledSecret(hashedSecrets) };
 });
 
 // Route to reveal a secret value
