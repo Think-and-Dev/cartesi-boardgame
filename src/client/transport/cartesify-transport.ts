@@ -231,36 +231,6 @@ export class CartesifyTransport extends Transport {
     this.credentials = credentials;
     this.requestSync();
   }
-
-  /**
-   * Sends shuffled deck hashes to the Cartesi Machine
-   *
-   * @description
-   * This method sends the shuffled deck state to be stored in the Cartesi Machine.
-   * It uses the advance state endpoint to ensure the deck state is recorded on-chain.
-   *
-   * @param shuffledHashes - Array of card hashes with their corresponding keys
-   * @param shuffledHashes.key - Identifier for each card (e.g., "card1", "card2")
-   * @param shuffledHashes.hash - Cryptographic hash representing the card value
-   *
-   * @returns Promise<Response> - Response from the Cartesi advance endpoint
-   *
-   * @example
-   * await transport.sendShuffledDeck([
-   *   { key: "card1", hash: "0x123..." },
-   *   { key: "card2", hash: "0x456..." }
-   * ]);
-   */
-  async sendShuffledDeck(shuffledHashes: Array<{ key: string; hash: string }>) {
-    return this.cartesifyFetch(`${this.url}/advance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'STORE_SHUFFLED_DECK',
-        payload: { hashes: shuffledHashes },
-      }),
-    });
-  }
 }
 
 export function CartesiMultiplayer(cartesifyOpts: CartesifyOpts) {
