@@ -43,6 +43,7 @@ router.post('/hash', checkRequestBody, async (ctx) => {
   const inputData = ctx.request.body as Record<string, unknown>;
   const hashedSecrets = [];
 
+  // Generate hashes
   for (const [key, value] of Object.entries(inputData)) {
     const valueAsString = JSON.stringify(value);
     const { hashedValue, randomSalt } = createHash(valueAsString);
@@ -58,6 +59,7 @@ router.post('/hash', checkRequestBody, async (ctx) => {
     });
   }
 
+  // Return shuffled hashes
   ctx.body = { hashes: shuffledSecret(hashedSecrets) };
 });
 
