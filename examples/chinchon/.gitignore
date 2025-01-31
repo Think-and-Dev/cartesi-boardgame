@@ -1,0 +1,7 @@
+sqlite.db
+.cartesi
+.parcel-cache
+node_modules
+.turbo
+build
+server-build
