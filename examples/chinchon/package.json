@@ -2,13 +2,28 @@
   "name": "chinchon",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "build": "react-app-rewired build && npm run build-server && npm run gzip-bundle && npm run brotli-bundle",
+    "start": "node server-build/server.js",
+    "start-server-drand": "ROLLUP_HTTP_SERVER_URL=http://127.0.0.1:3000 node --max-old-space-size=8192 server-build/server.js",
+    "start-with-middleware": "sh ./scripts/start-with-middleware.sh",
+    "dev": "PORT=8081 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:5004\" react-app-rewired start",
+    "local": "PORT=8000 REACT_APP_PORT=8000 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:3000\" npm run build && PORT=8000 REACT_APP_PORT=8000 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:3000\" npm start",
+    "dev-local": "PORT=8000 REACT_APP_PORT=8000 NONODO_HTTP_SERVER_URL=\"http://127.0.0.1:8080\" react-app-rewired start",
+    "build-server": "tsc src/server.ts --outDir server-build --esModuleInterop --module commonjs --skipLibCheck true --downlevelIteration",
+    "gzip-bundle": "npx gzipper compress --gzip build/static/js/main.*.js",
+    "brotli-bundle": "npx gzipper compress --brotli build/static/js/main.*.js",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+    "build-cartesi-image": "./scripts/build-cartesi-image.sh"
+  },
   "dependencies": {
     "@koa/cors": "^5.0.0",
     "@koa/router": "^13.1.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.1.1",
     "@testing-library/user-event": "^13.5.0",
-    "@think-and-dev/cartesi-boardgame": "workspace:*",
+    "@think-and-dev/cartesi-boardgame": "workspace:0.0.36-beta",
     "@types/jest": "^27.4.1",
     "@types/koa-compress": "^4.0.3",
     "@types/node": "^16.11.31",
@@ -18,6 +33,7 @@
     "autoprefixer": "^10.4.5",
     "ethers": "^6.13.1",
     "jest": "^28.0.3",
+    "koa": "2.13.3",
     "koa-bodyparser": "^4.4.1",
     "koa-static": "^5.0.0",
     "postcss": "^8.4.12",
@@ -29,21 +45,6 @@
     "tailwindcss": "^3.0.24",
     "typescript": "^4.6.4",
     "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "build": "react-app-rewired build && npm run build-server && npm run gzip-bundle && npm run brotli-bundle",
-    "start": "node server-build/server.js",
-    "start-server-drand": "ROLLUP_HTTP_SERVER_URL=\"http://localhost:3000\" node server-build/server.js",
-    "start-with-middleware": "ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:5004\" ./cartesi-drand & && ROLLUP_HTTP_SERVER_URL=\"http://localhost:3000\" node server-build/server.js",
-    "dev": "PORT=8081 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:5004\" react-app-rewired start",
-    "local": "PORT=8000 REACT_APP_PORT=8000 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:3000\" npm run build && PORT=8000 REACT_APP_PORT=8000 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:3000\" npm start",
-    "dev-local": "PORT=8000 REACT_APP_PORT=8000 NONODO_HTTP_SERVER_URL=\"http://127.0.0.1:8080\" react-app-rewired start",
-    "build-server": "tsc src/server.ts --outDir server-build --esModuleInterop --module commonjs --skipLibCheck true --downlevelIteration",
-    "gzip-bundle": "npx gzipper compress --gzip build/static/js/main.*.js",
-    "brotli-bundle": "npx gzipper compress --brotli build/static/js/main.*.js",
-    "test": "react-app-rewired test",
-    "eject": "react-scripts eject",
-    "build-cartesi-image": "./scripts/build-cartesi-image.sh"
   },
   "eslintConfig": {
     "extends": [
@@ -67,8 +68,8 @@
     ]
   },
   "devDependencies": {
-    "@types/koa__cors": "^5.0.0",
     "@types/koa-bodyparser": "^4.3.12",
+    "@types/koa__cors": "^5.0.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
     "gzipper": "^7.1.0",
