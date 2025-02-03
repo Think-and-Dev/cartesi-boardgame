@@ -16,3 +16,4 @@ npm
 debug/*
 .turbo
 .parcel-cache
+.cartesi

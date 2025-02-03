@@ -21,8 +21,8 @@ interface State {
 }
 
 const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
-const SERVER = 'http://localhost:8000';
-const NODE_URL = 'http://localhost:8080';
+const SERVER = 'http://127.0.0.1:8000';
+const NODE_URL = 'http://127.0.0.1:8080';
 
 export async function initLobbyClient(
   SERVER,
@@ -79,11 +79,10 @@ export async function listMatchesForGame(
 
       const winner = match.gameover?.winner ?? 'N/A';
 
-      listItem.textContent = `Match ID: ${
-        match.matchID
-      }, Created At: ${new Date(
-        match.createdAt
-      ).toLocaleString()}, Status: ${isGameOver}, Winner: ${winner}`;
+      listItem.textContent = `Match ID: ${match.matchID
+        }, Created At: ${new Date(
+          match.createdAt
+        ).toLocaleString()}, Status: ${isGameOver}, Winner: ${winner}`;
 
       matchesListElement.appendChild(listItem);
     });

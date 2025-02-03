@@ -1,6 +1,6 @@
 {
   "name": "@think-and-dev/cartesi-boardgame",
-  "version": "0.0.34-beta",
+  "version": "0.0.36-beta",
   "description": "library for turn-based games",
   "repository": "https://github.com/think-and-dev/cartesi-boardgame",
   "scripts": {
@@ -28,11 +28,12 @@
     "lint:fix": "eslint --fix .",
     "prepublishOnly": "npm run clean",
     "proxydirs": "node scripts/proxy-dirs.js",
-    "prepack": "run-s build proxydirs",
+    "prepack": "pnpm build && pnpm proxydirs",
     "postpack": "npm run clean",
     "prettier": "prettier --write \"{examples,src,benchmark}/**/*.{ts,tsx,js,jsx,css,md}\"",
     "changelog": "node ./scripts/changelog.js",
-    "clean": "node ./scripts/clean.js"
+    "clean": "node ./scripts/clean.js",
+    "export-bundle": "node ./scripts/export-bundle.js"
   },
   "exports": {
     ".": {
@@ -123,11 +124,11 @@
     "enzyme-adapter-react-16": "^1.15.6",
     "eslint": "^7.31.0",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-config-react-app": "7.0.1",
     "eslint-plugin-jest": "^24.4.0",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-unicorn": "^30.0.0",
-    "eslint-config-react-app": "7.0.1",
     "husky": "^4.3.8",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^27.1.0",
@@ -177,6 +178,7 @@
     "immer": "^9.0.5",
     "koa": "^2.13.3",
     "koa-body": "^5.0.0",
+    "koa-logger": "^3.2.1",
     "koa-socket-2": "^2.0.0",
     "lodash.isplainobject": "^4.0.6",
     "nanoid": "^3.1.30",
