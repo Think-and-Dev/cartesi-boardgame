@@ -1,21 +1,21 @@
 {
-    "name": "cartesi-boardgame-monorepo",
-    "private": true,
-    "scripts": {
-        "dev": "turbo run dev",
-        "build": "turbo run build",
-        "test": "turbo run test",
-        "build:main": "turbo run build --filter=./packages/main",
-        "build:examples": "turbo run build --filter=./examples/*",
-        "build:chinchon": "turbo run build --filter=chinchon...",
-        "cartesi:chinchon": "turbo run build-cartesi-image --filter=chinchon...",
-        "build:tictactoe": "turbo run build --filter=tic-tac-toe..."
-    },
-    "devDependencies": {
-        "turbo": "^2.3.4"
-    },
-    "packageManager": "pnpm@9.0.0",
-    "engines": {
-        "node": ">=18"
-    }
+  "name": "cartesi-boardgame-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "build:main": "turbo run build --filter=./packages/main",
+    "build:examples": "turbo run build --filter=./examples/*",
+    "build:chinchon": "turbo run build --filter=chinchon...",
+    "cartesi:chinchon": "turbo run build-cartesi-image --filter=chinchon...",
+    "build:tictactoe": "turbo run build --filter=tic-tac-toe..."
+  },
+  "devDependencies": {
+    "turbo": "^2.3.4"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  }
 }

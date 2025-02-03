@@ -192,7 +192,8 @@
     "svelte": "^3.41.0",
     "svelte-json-tree-auto": "^0.1.0",
     "sync-request": "^6.1.0",
-    "ts-toolbelt": "^6.3.6"
+    "ts-toolbelt": "^6.3.6",
+    "@xmtp/xmtp-js": "13.0.4"
   },
   "jest": {
     "preset": "ts-jest/presets/js-with-babel",
