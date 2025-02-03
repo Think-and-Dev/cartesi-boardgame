@@ -1,7 +1,8 @@
 import Koa from 'koa';
 import Router from '@koa/router';
 import type { CorsOptions } from 'cors';
-import { CartesifyBackend } from '@calindra/cartesify-backend';
+import { Worker } from 'worker_threads';
+import path from 'path';
 
 import { configureRouter, configureApp } from './api';
 import { DBFromEnv } from './db';
@@ -13,22 +14,23 @@ import CartesifyTransport from './transport/cartesify-transport';
 
 export type KoaServer = ReturnType<Koa['listen']>;
 
-// let dapp;
-console.info('Cartesify Dapp starting. Rollup URL:', process.env.ROLLUP_HTTP_SERVER_URL);
-CartesifyBackend.createDapp({ url: process.env.ROLLUP_HTTP_SERVER_URL }).then((initDapp) => {
-  initDapp
-    .start()
-    .then(() => {
-      console.info('Cartesify Dapp started. Connected to Cartesi Rollup on', process.env.ROLLUP_HTTP_SERVER_URL);
-      // TODO: Should we check if the dapp is running when executing the server?
-      // isDappRunning = true;
-    })
-    .catch((error) => {
-      console.error(`Dapp initialization failed: ${error}`);
-      console.log(error);
-    });
-  //   dapp = initDapp;
-});
+const startCartesifyDapp = () => {
+  const worker = new Worker(path.join(__dirname, 'cartesify-worker.js'));
+
+  worker.on('error', (error) => {
+    console.error('Worker error:', error);
+    process.exit(1);
+  });
+
+  worker.on('exit', (code) => {
+    if (code !== 0) {
+      console.error(`Worker stopped with exit code ${code}`);
+      process.exit(1);
+    }
+  });
+};
+
+startCartesifyDapp();
 
 interface ServerConfig {
   port?: number;
@@ -80,7 +82,7 @@ interface ServerOpts {
  * @param db - The interface with the database.
  * @param transport - The interface with the clients.
  * @param authenticateCredentials - Function to test player credentials.
- * @param origins - Allowed origins to use this server, e.g. `['http://localhost:3000']`.
+ * @param origins - Allowed origins to use this server, e.g. `['http://127.0.0.1:3000']`.
  * @param apiOrigins - Allowed origins to use the Lobby API, defaults to `origins`.
  * @param generateCredentials - Method for API to generate player credentials.
  * @param lobbyConfig - Configuration options for the Lobby API server.
@@ -120,7 +122,7 @@ export function Server({
     transport,
 
     run: async (portOrConfig: number | ServerConfig, callback?: () => void) => {
-      console.info('Running server. Cartesify will connect to Cartesi Rollup on', process.env.ROLLUP_HTTP_SERVER_URL);
+      console.info('Starting app server');
       const serverRunConfig = createServerRunConfig(portOrConfig, callback);
       transport.init({ appRouter: router, db, games, auth });
       configureRouter({ router, db, games, uuid, auth });
@@ -136,6 +138,9 @@ export function Server({
       } else {
         // Run API in a separate Koa app.
         const api: ServerTypes.App = new Koa();
+        if (logRequests) {
+          api.use(koaLogger());
+        }
         api.context.db = db;
         api.context.auth = auth;
         configureApp(api, router, apiOrigins);
