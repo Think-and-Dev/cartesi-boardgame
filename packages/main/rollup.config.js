@@ -141,4 +141,16 @@ export default [
   //   ],
   //   plugins: minifiedPlugins,
   // },
+
+  // Agregar configuración para el worker
+  {
+    input: 'src/server/cartesify-worker.ts',
+    output: {
+      dir: 'dist/cjs',
+      format: 'cjs',
+      entryFileNames: '[name].js'
+    },
+    external,
+    plugins: serverPlugins,
+  },
 ];

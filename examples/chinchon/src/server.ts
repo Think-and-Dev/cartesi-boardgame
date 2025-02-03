@@ -10,8 +10,8 @@ const database = new Sqlite();
 async function main() {
   const server = Server({
     games: [Chinchon],
-    // db: database,
-    origins: ['http://localhost:8081', 'http://localhost:8082', 'http://localhost:1234', 'http://localhost:3000', 'http://localhost:5004', '*'],
+    db: database,
+    origins: ['http://127.0.0.1:8081', 'http://127.0.0.1:8082', 'http://127.0.0.1:1234', 'http://127.0.0.1:3000', 'http://127.0.0.1:5004', '*'],
   });
 
   server.app.use(cors({

@@ -21,7 +21,7 @@ export interface Args {
 const HARDHAT_DEFAULT_MNEMONIC =
     "test test test test test test test test test test test junk";
 
-const HARDHAT_DEFAULT_RPC_URL = "http://localhost:8545";
+const HARDHAT_DEFAULT_RPC_URL = "http://127.0.0.1:8545";
 
 
 /**

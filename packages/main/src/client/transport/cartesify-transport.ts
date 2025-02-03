@@ -34,7 +34,7 @@ export class CartesifyTransport extends Transport {
       this.url = this.url + '/';
     }
     this.url += this.gameName;
-    opts.nodeUrl = opts.nodeUrl || 'http://localhost:8080';
+    opts.nodeUrl = opts.nodeUrl || 'http://127.0.0.1:8080';
     this.matchID = opts.matchID || 'default';
     this.playerID = opts.playerID || null;
     this.credentials = opts.credentials;
@@ -91,11 +91,11 @@ export class CartesifyTransport extends Transport {
     try {
       const response = await this.cartesifyFetch(
         `${this.url}/data?` +
-          new URLSearchParams({
-            matchID: this.matchID,
-            playerID: this.playerID,
-            index: this.nextDataIndex.toString(),
-          }).toString(),
+        new URLSearchParams({
+          matchID: this.matchID,
+          playerID: this.playerID,
+          index: this.nextDataIndex.toString(),
+        }).toString(),
         {
           method: 'GET',
           headers: {

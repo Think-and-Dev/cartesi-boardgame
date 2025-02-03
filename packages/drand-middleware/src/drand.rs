@@ -27,7 +27,8 @@ pub async fn send_pending_beacon_report(app_state: &Data<AppState>) {
     info!(LOGGER, "Sending pending beacon report");
     let x = manager.pending_beacon_timestamp.get();
     info!(LOGGER, "Pending beacon timestamp: {:?}", x);
-    let report = json!({ "payload": format!("{x:#x}") });
+    let hex_value = format!("{:064x}", x); // Padding with zeros to the left until 64 characters
+    let report = json!({ "payload": format!("0x{}", hex_value) });
     info!(LOGGER, "Report: {:?}", report);
     let _ = send_report(report).await.unwrap();
     info!(LOGGER, "Report sent");

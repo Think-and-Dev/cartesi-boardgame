@@ -16,7 +16,7 @@ export class DrandProvider {
     inspectAxiosInstance: AxiosInstance;
 
     cartesiConfig: CartesiConfig = {
-        inspectEndpoint: new URL("/inspect", process.env.INSPECT_ENDPOINT ?? "http://localhost:8080").href,
+        inspectEndpoint: new URL("/inspect", process.env.INSPECT_ENDPOINT ?? "http://127.0.0.1:8080").href,
     }
 
     /**
@@ -33,7 +33,7 @@ export class DrandProvider {
         /** @todo change to dotenv */
         dappAddress: "0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e",
         mnemonic: 'test test test test test test test test test test test junk',
-        rpc: new URL(process.env.RPC_ENDPOINT ?? 'http://localhost:8545').href,
+        rpc: new URL(process.env.RPC_ENDPOINT ?? 'http://127.0.0.1:8545').href,
         accountIndex: 0,
     }
 
@@ -51,7 +51,7 @@ export class DrandProvider {
 
     async pendingDrandBeacon() {
         try {
-            // url = "http://localhost:5005/inspect/pendingdrandbeacon"
+            // url = "http://127.0.0.1:5005/inspect/pendingdrandbeacon"
             console.log(`${new Date().toISOString()}: Fetching pending drand beacon`)
             const res = await this.inspectAxiosInstance.get<PendingDrandBeacon>('/pendingdrandbeacon')
 
@@ -95,7 +95,9 @@ export class DrandProvider {
         this.configureInputSender()
         while (this.desiredState === 'RUNNING') {
             try {
+                console.log('checking pending beacon')
                 const pending: { inputTime: number } | null = await this.pendingDrandBeacon()
+                console.log('pending beacon', pending)
                 if (this.canSendBeacon(pending)) {
                     console.log('able to send beacon')
                     const beacon = await fetchBeacon(this.drandClient)
@@ -109,6 +111,9 @@ export class DrandProvider {
                     console.log('Beacon is the same as the last one', pending)
                 } else if ((pending as { inputTime: number }).inputTime < Date.now() / 1000 - this.secondsToWait) {
                     console.log('Can not send beacon, it\'s too far in the future', pending)
+                }
+                else {
+                    console.log('Can not send beacon, unknown error', pending)
                 }
                 await this.someTime()
             } catch (e) {

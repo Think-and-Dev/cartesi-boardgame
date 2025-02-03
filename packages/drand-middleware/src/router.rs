@@ -44,8 +44,8 @@ pub mod routes {
         ctx: web::Data<AppState>,
         body: web::Json<RequestRollups>,
     ) -> impl Responder {
-        // let logger = ctx.logger.clone();
-        let logger = utils::util::configure_log(Some("debug".to_string()));
+        let logger = ctx.logger.clone();
+        //let logger = utils::util::configure_log(Some("debug".to_string()));
         debug!(logger, "Received finish request from DApp {:?}", body);
 
         // the DApp consume from the buffer first

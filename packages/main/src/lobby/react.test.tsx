@@ -60,7 +60,7 @@ describe('lobby', () => {
         <Lobby
           gameComponents={components}
           clientFactory={spy.mockReturnValue(NullComponent)}
-          gameServer="localhost:9000"
+          gameServer="127.0.0.1:9000"
         />
       );
       lobby.instance()._startMatch('GameName1', { numPlayers: 2 });

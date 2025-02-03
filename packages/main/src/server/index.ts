@@ -1,7 +1,8 @@
 import Koa from 'koa';
 import Router from '@koa/router';
 import type { CorsOptions } from 'cors';
-import { CartesifyBackend } from '@calindra/cartesify-backend';
+import { Worker } from 'worker_threads';
+import path from 'path';
 
 import { configureRouter, configureApp } from './api';
 import { DBFromEnv } from './db';
@@ -10,25 +11,27 @@ import * as logger from '../core/logger';
 import { Auth } from './auth';
 import type { Server as ServerTypes, Game, StorageAPI } from '../types';
 import CartesifyTransport from './transport/cartesify-transport';
+import koaLogger from 'koa-logger';
 
 export type KoaServer = ReturnType<Koa['listen']>;
 
-// let dapp;
-console.info('Cartesify Dapp starting. Rollup URL:', process.env.ROLLUP_HTTP_SERVER_URL);
-CartesifyBackend.createDapp({ url: process.env.ROLLUP_HTTP_SERVER_URL }).then((initDapp) => {
-  initDapp
-    .start()
-    .then(() => {
-      console.info('Cartesify Dapp started. Connected to Cartesi Rollup on', process.env.ROLLUP_HTTP_SERVER_URL);
-      // TODO: Should we check if the dapp is running when executing the server?
-      // isDappRunning = true;
-    })
-    .catch((error) => {
-      console.error(`Dapp initialization failed: ${error}`);
-      console.log(error);
-    });
-  //   dapp = initDapp;
-});
+const startCartesifyDapp = () => {
+  const worker = new Worker(path.join(__dirname, 'cartesify-worker.js'));
+
+  worker.on('error', (error) => {
+    console.error('Worker error:', error);
+    process.exit(1);
+  });
+
+  worker.on('exit', (code) => {
+    if (code !== 0) {
+      console.error(`Worker stopped with exit code ${code}`);
+      process.exit(1);
+    }
+  });
+};
+
+startCartesifyDapp();
 
 interface ServerConfig {
   port?: number;
@@ -71,6 +74,7 @@ interface ServerOpts {
   uuid?: () => string;
   authenticateCredentials?: ServerTypes.AuthenticateCredentials;
   generateCredentials?: ServerTypes.GenerateCredentials;
+  logRequests?: boolean;
 }
 
 /**
@@ -80,7 +84,7 @@ interface ServerOpts {
  * @param db - The interface with the database.
  * @param transport - The interface with the clients.
  * @param authenticateCredentials - Function to test player credentials.
- * @param origins - Allowed origins to use this server, e.g. `['http://localhost:3000']`.
+ * @param origins - Allowed origins to use this server, e.g. `['http://127.0.0.1:3000']`.
  * @param apiOrigins - Allowed origins to use the Lobby API, defaults to `origins`.
  * @param generateCredentials - Method for API to generate player credentials.
  * @param lobbyConfig - Configuration options for the Lobby API server.
@@ -94,8 +98,26 @@ export function Server({
   apiOrigins = origins,
   generateCredentials = uuid,
   authenticateCredentials,
+  logRequests = true,
 }: ServerOpts) {
   const app: ServerTypes.App = new Koa();
+  if (logRequests) {
+    app.use(koaLogger());
+  }
+  // We add a middleware that overrides the Date.now function to add the timestamp present on the x-timestamp header
+  app.use(async (ctx, next) => {
+    const timestamp = ctx.headers['x-timestamp'];
+    if (timestamp) {
+      const msTimestamp = Number(timestamp) * 1000;
+      console.debug("overriding Date.now");
+      const originalDateNow = Date.now;
+      Date.now = () => originalDateNow() + msTimestamp;
+      await next();
+      Date.now = originalDateNow;
+    } else {
+      await next();
+    }
+  });
   games = games.map((game) => ProcessGameConfig(game));
 
   if (db === undefined) {
@@ -120,7 +142,7 @@ export function Server({
     transport,
 
     run: async (portOrConfig: number | ServerConfig, callback?: () => void) => {
-      console.info('Running server. Cartesify will connect to Cartesi Rollup on', process.env.ROLLUP_HTTP_SERVER_URL);
+      console.info('Starting app server');
       const serverRunConfig = createServerRunConfig(portOrConfig, callback);
       transport.init({ appRouter: router, db, games, auth });
       configureRouter({ router, db, games, uuid, auth });
@@ -136,6 +158,9 @@ export function Server({
       } else {
         // Run API in a separate Koa app.
         const api: ServerTypes.App = new Koa();
+        if (logRequests) {
+          api.use(koaLogger());
+        }
         api.context.db = db;
         api.context.auth = auth;
         configureApp(api, router, apiOrigins);

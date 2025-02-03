@@ -3,7 +3,7 @@ import nock from "nock";
 
 export default class Helper {
 
-    static nockUrl = new URL("/inspect", process.env.INSPECT_ENDPOINT ?? "http://localhost:8080");
+    static nockUrl = new URL("/inspect", process.env.INSPECT_ENDPOINT ?? "http://127.0.0.1:8080");
 
     static nockInspectEndpointRandomIsNeeded() {
         return nock(Helper.nockUrl)

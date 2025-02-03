@@ -9,7 +9,6 @@
 import type { AleaState } from './random.alea';
 import { alea } from './random.alea';
 import syncRequest from 'sync-request';
-
 export interface RandomState {
   seed: string | number;
   prngstate?: AleaState;
@@ -59,11 +58,10 @@ export class Random {
       text: () => res.getBody('utf8')
     };
   }
-
   private sleep(ms: number) {
-    const end = Date.now() + ms;
-    while (Date.now() < end) { }
-  };
+    const { execSync } = require('child_process');
+    execSync(`sleep ${ms / 1000}`);
+  }
 
   /**
    * Generates a new seed from the current date / time.
@@ -121,15 +119,14 @@ export class Random {
       // so the actual value doesn't matter.
       return '0';
     }
-    console.log('Getting randomness from drand');
     let response;
     try {
       let randomness: string | undefined;
+      const timestamp = Math.floor(Date.now() / 1000) - 60;
+      console.log('Getting randomness from drand for timestamp', timestamp);
+      const url = new URL("http://127.0.0.1:3000/random");
+      url.searchParams.append("timestamp", timestamp.toString());
       while (!randomness) {
-
-        const timestamp = Math.floor(Date.now() / 1000) - 60;
-        const url = new URL("http://127.0.0.1:3000/random");
-        url.searchParams.append("timestamp", timestamp.toString());
 
         // as this is running as an atomic operation inside the cartesi machine,
         // we can have it as a sync request
@@ -146,15 +143,17 @@ export class Random {
           }
           if (response.status === 400) {
             console.log("it was a 400");
-            if (["Stored input to consume later", "Bypassing, inspect"].includes(errorJson.error)) {
+            if (["Stored input to consume later", "Bypassing, inspect", "Already inspecting"].includes(errorJson.error)) {
               console.log("we need to wait for the randomness to be ready");
               // No valid randomeness available, try again with next input
+              // we call finish to keep the rollup flow running, and the inspect calls being responded
               // this.fetchSync("http://127.0.0.1:3000/finish", "POST", JSON.stringify({ status: "accept" }));
-              this.sleep(500);
+              this.sleep(2000);
               continue;
             }
           }
-          throw new Error(`Server Error: ${errorJson || "Unknown error"}`);
+          console.log("errorJson: ", errorJson);
+          throw new Error(`Server Error: ${errorJson?.error || errorJson?.message || errorJson || "Unknown error"}`);
         }
         const text = response.text();
         if (!text) {

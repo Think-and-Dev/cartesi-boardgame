@@ -75,8 +75,8 @@ export class LobbyClient {
   /**
    * Creates a new LobbyClient instance.
    *
-   * @param server - The URL of the lobby server. Defaults to 'http://localhost:8000'.
-   * @param nodeUrl - The URL of the node. Defaults to 'http://localhost:8080'.
+   * @param server - The URL of the lobby server. Defaults to 'http://127.0.0.1:8000'.
+   * @param nodeUrl - The URL of the node. Defaults to 'http://127.0.0.1:8080'.
    * @param dappAddress - The Ethereum address of the dapp.
    * @param signer - An ethers.js Signer object for authentication.
    */
@@ -91,8 +91,8 @@ export class LobbyClient {
     dappAddress?: string;
     signer?: ethers.Signer;
   } = {}) {
-    this.nodeUrl = nodeUrl || 'http://localhost:8080';
-    this.server = server || 'http://localhost:8000';
+    this.nodeUrl = nodeUrl || 'http://127.0.0.1:8080';
+    this.server = server || 'http://127.0.0.1:8000';
 
     if (this.nodeUrl.slice(-1) !== '/') {
       this.nodeUrl += '/';

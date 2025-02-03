@@ -15,7 +15,7 @@ describe('lobby', () => {
   test('is rendered', () => {
     const components: any[] = [{ board: 'Board', game: { name: 'GameName' } }];
     const ssrRender = ReactDOMServer.renderToString(
-      <Lobby gameServer="localhost" gameComponents={components} />
+      <Lobby gameServer="127.0.0.1" gameComponents={components} />
     );
     expect(ssrRender).toContain('lobby-view');
   });

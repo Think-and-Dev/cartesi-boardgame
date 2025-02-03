@@ -39,9 +39,9 @@ const App: React.FC = () => {
           numPlayers: 4,
           debug: isDebug,
           multiplayer: CartesiMultiplayer({
-            server: `http://localhost:8000`,
+            server: `http://127.0.0.1:8000`,
             dappAddress: "0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e",
-            nodeUrl: "http://localhost:8080",
+            nodeUrl: "http://127.0.0.1:8080",
             signer: Signer,
           }),
         });
