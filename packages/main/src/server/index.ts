@@ -11,6 +11,7 @@ import * as logger from '../core/logger';
 import { Auth } from './auth';
 import type { Server as ServerTypes, Game, StorageAPI } from '../types';
 import CartesifyTransport from './transport/cartesify-transport';
+import koaLogger from 'koa-logger';
 
 export type KoaServer = ReturnType<Koa['listen']>;
 
@@ -73,6 +74,7 @@ interface ServerOpts {
   uuid?: () => string;
   authenticateCredentials?: ServerTypes.AuthenticateCredentials;
   generateCredentials?: ServerTypes.GenerateCredentials;
+  logRequests?: boolean;
 }
 
 /**
@@ -96,8 +98,12 @@ export function Server({
   apiOrigins = origins,
   generateCredentials = uuid,
   authenticateCredentials,
+  logRequests = true,
 }: ServerOpts) {
   const app: ServerTypes.App = new Koa();
+  if (logRequests) {
+    app.use(koaLogger());
+  }
   games = games.map((game) => ProcessGameConfig(game));
 
   if (db === undefined) {
