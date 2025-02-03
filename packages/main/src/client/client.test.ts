@@ -163,7 +163,7 @@ describe('multiplayer transports', () => {
       },
       multiplayer: () =>
         new CartesifyTransport({
-          url: 'http://localhost:5004',
+          url: 'http://127.0.0.1:5004',
         } as unknown as TransportOpts),
     });
     expect((client as any).transport).toBeInstanceOf(CartesifyTransport);
@@ -204,7 +204,7 @@ describe('multiplayer', () => {
 
     beforeAll(() => {
       client = Client({
-        game: { moves: { A: () => {}, Invalid: () => INVALID_MOVE } },
+        game: { moves: { A: () => { }, Invalid: () => INVALID_MOVE } },
         multiplayer: SocketIO({ server: host + ':' + port }),
       });
       client.start();
@@ -350,14 +350,14 @@ describe('multiplayer', () => {
 
   describe('custom transport', () => {
     class CustomTransport extends Transport {
-      connect() {}
-      disconnect() {}
-      sendAction() {}
-      sendChatMessage() {}
-      requestSync() {}
-      updateMatchID() {}
-      updatePlayerID() {}
-      updateCredentials() {}
+      connect() { }
+      disconnect() { }
+      sendAction() { }
+      sendChatMessage() { }
+      requestSync() { }
+      updateMatchID() { }
+      updatePlayerID() { }
+      updateCredentials() { }
       setMetadata(metadata) {
         this.notifyClient({ type: 'matchData', args: ['default', metadata] });
       }
@@ -368,7 +368,7 @@ describe('multiplayer', () => {
 
     beforeAll(() => {
       client = Client({
-        game: { moves: { A: () => {} } },
+        game: { moves: { A: () => { } } },
         multiplayer: customTransport,
       });
     });
@@ -401,9 +401,9 @@ describe('receiveTransportData', () => {
       multiplayer: ({ transportDataCallback }) => {
         sendToClient = transportDataCallback;
         return {
-          connect() {},
-          disconnect() {},
-          subscribe() {},
+          connect() { },
+          disconnect() { },
+          subscribe() { },
           requestSync,
         } as unknown as Transport;
       },
@@ -539,13 +539,13 @@ test('accepts enhancer for store', () => {
   let spyDispatcher;
   const spyEnhancer =
     (vanillaCreateStore) =>
-    (...args) => {
-      const vanillaStore = vanillaCreateStore(...args);
-      return {
-        ...vanillaStore,
-        dispatch: (spyDispatcher = jest.fn(vanillaStore.dispatch)),
+      (...args) => {
+        const vanillaStore = vanillaCreateStore(...args);
+        return {
+          ...vanillaStore,
+          dispatch: (spyDispatcher = jest.fn(vanillaStore.dispatch)),
+        };
       };
-    };
   const client = Client({
     game: {
       moves: {

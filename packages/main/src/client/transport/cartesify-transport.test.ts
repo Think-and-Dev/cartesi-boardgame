@@ -63,7 +63,7 @@ describe('CartesifyTransport', () => {
     };
 
     transportOpts = {
-      server: 'http://localhost:5004',
+      server: 'http://127.0.0.1:5004',
       transportDataCallback: jest.fn(),
       gameKey: mockGame,
       game: mockGame,
@@ -76,7 +76,7 @@ describe('CartesifyTransport', () => {
   it('should initialize correctly', () => {
     const transport = new CartesifyTransport(transportOpts);
     expect(transport).toBeTruthy();
-    expect(transport).toHaveProperty('url', 'http://localhost:5004');
+    expect(transport).toHaveProperty('url', 'http://127.0.0.1:5004');
   });
 
   it('should use default server URL if none is provided', () => {
@@ -85,14 +85,14 @@ describe('CartesifyTransport', () => {
       gameKey: transportOpts.gameKey,
       game: transportOpts.game,
     });
-    expect((transport as any).url).toBe('https//localhost:5004');
+    expect((transport as any).url).toBe('https//127.0.0.1:5004');
   });
 
   it('should call connect endpoint on connect', async () => {
     const transport = new CartesifyTransport(transportOpts);
     await transport.connect();
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5004/connect',
+      'http://127.0.0.1:5004/connect',
       expect.any(Object)
     );
   });
@@ -107,7 +107,7 @@ describe('CartesifyTransport', () => {
     const transport = new CartesifyTransport(transportOpts);
     await transport.disconnect();
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5004/disconnect',
+      'http://127.0.0.1:5004/disconnect',
       expect.any(Object)
     );
   });
@@ -125,7 +125,7 @@ describe('CartesifyTransport', () => {
       {} as CredentialedActionShape.Any;
     await transport.sendAction(state, action);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5004/actions',
+      'http://127.0.0.1:5004/actions',
       expect.any(Object)
     );
   });
@@ -144,7 +144,7 @@ describe('CartesifyTransport', () => {
     const chatMessage: ChatMessage = {} as ChatMessage;
     await transport.sendChatMessage('matchID', chatMessage);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5004/chat',
+      'http://127.0.0.1:5004/chat',
       expect.any(Object)
     );
   });
@@ -162,7 +162,7 @@ describe('CartesifyTransport', () => {
     const transport = new CartesifyTransport(transportOpts);
     await transport.requestSync();
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5004/sync',
+      'http://127.0.0.1:5004/sync',
       expect.any(Object)
     );
   });

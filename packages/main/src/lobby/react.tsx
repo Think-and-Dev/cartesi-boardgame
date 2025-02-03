@@ -86,9 +86,9 @@ type LobbyState = {
  * and uses various sub-components to render different parts of the lobby interface.
  *
  * @param {Array}  gameComponents - An array of Board and Game objects for the supported games.
- * @param {string} lobbyServer - Address of the lobby server (for example 'localhost:8000').
+ * @param {string} lobbyServer - Address of the lobby server (for example '127.0.0.1:8000').
  *                               If not set, defaults to the server that served the page.
- * @param {string} gameServer - Address of the game server (for example 'localhost:8001').
+ * @param {string} gameServer - Address of the game server (for example '127.0.0.1:8001').
  *                              If not set, defaults to the server that served the page.
  * @param {function} clientFactory - Function that is used to create the game clients.
  * @param {number} refreshInterval - Interval between server updates (default: 2000ms).
@@ -111,7 +111,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   static defaultProps = {
     debug: false,
     clientFactory: Client,
-    refreshInterval: 4000,
+    refreshInterval: 10000,
   };
 
   // state = {
@@ -346,9 +346,9 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
         }
 
         multiplayer = CartesiMultiplayer({
-          server: 'http://localhost:8000',
+          server: 'http://127.0.0.1:8000',
           dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
-          nodeUrl: 'http://localhost:8080',
+          nodeUrl: 'http://127.0.0.1:8080',
           signer: signer,
         });
       } catch (error) {
