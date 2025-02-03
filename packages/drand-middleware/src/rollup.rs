@@ -18,13 +18,29 @@ pub mod server {
         debug!(LOGGER, "Sending finish to {}", &server_str);
         let client = hyper::Client::new();
         let response = json!({"status" : status});
-        let request = hyper::Request::builder()
+        let request = match hyper::Request::builder()
             .method(hyper::Method::POST)
             .header(hyper::header::CONTENT_TYPE, "application/json")
             .uri(format!("{}/finish", &server_str))
-            .body(hyper::Body::from(response.to_string()))?;
+            .body(hyper::Body::from(response.to_string()))
+            {
+                Ok(req) => req,
+                Err(e) => {
+                    debug!(LOGGER, "Error building request: {}", e);
+                    return Err(Box::new(e));
+                }
+            };
 
-        let response = client.request(request).await?;
+        debug!(LOGGER, "Request details: {:?}", request);
+      
+        let response = match client.request(request).await
+        {
+            Ok(res) => res,
+            Err(e) => {
+                debug!(LOGGER, "Error sending request: {}", e);
+                return Err(Box::new(e));
+            }
+        };
 
         debug!(
             LOGGER,
