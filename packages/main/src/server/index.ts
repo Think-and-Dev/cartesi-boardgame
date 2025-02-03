@@ -104,6 +104,20 @@ export function Server({
   if (logRequests) {
     app.use(koaLogger());
   }
+  // We add a middleware that overrides the Date.now function to add the timestamp present on the x-timestamp header
+  app.use(async (ctx, next) => {
+    const timestamp = ctx.headers['x-timestamp'];
+    if (timestamp) {
+      const msTimestamp = Number(timestamp) * 1000;
+      console.debug("overriding Date.now");
+      const originalDateNow = Date.now;
+      Date.now = () => originalDateNow() + msTimestamp;
+      await next();
+      Date.now = originalDateNow;
+    } else {
+      await next();
+    }
+  });
   games = games.map((game) => ProcessGameConfig(game));
 
   if (db === undefined) {
