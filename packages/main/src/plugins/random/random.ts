@@ -59,7 +59,18 @@ export class Random {
     };
   }
   private sleep(ms: number) {
-    const { execSync } = require('child_process');
+    let execSync: any = undefined;
+    if (typeof window === 'undefined') {
+      // Importación dinámica solo en el servidor
+      try {
+        execSync = require('child_process').execSync;
+      } catch (error) {
+        console.warn('child_process is not available in this environment');
+      }
+    }
+    if (!execSync) {
+      throw new Error('This function is not available in the browser');
+    }
     execSync(`sleep ${ms / 1000}`);
   }
 

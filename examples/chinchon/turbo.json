@@ -19,6 +19,12 @@
             "outputs": [
                 "server-build/**"
             ]
+        },
+        "dev": {
+            "dependsOn": [
+                "@think-and-dev/cartesi-boardgame#build"
+            ],
+            "persistent": true
         }
     }
 }
