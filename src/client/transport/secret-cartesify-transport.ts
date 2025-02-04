@@ -12,7 +12,16 @@ interface CartesifyOpts {
 
 type CartesifyTransportOpts = SecretTransportOpts & CartesifyOpts;
 
+/**
+ * Secret Cartesi Transport
+ * Handles communication between the secret-ßprovider and Cartesi Machine
+ * specifically for secret management (hashed deck)
+ */
 export class SecretCartesifyTransport extends Transport {
+  /**
+   * Creates a new instance of SecretCartesifyTransport
+   * @param opts - Configuration options for the transport
+   */
   protected url: string;
   public cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
   protected pollingInterval = 1000; // 5 seconds
@@ -43,6 +52,10 @@ export class SecretCartesifyTransport extends Transport {
     });
   }
 
+  /**
+   * Establishes connection with the secret provider
+   * Initializes polling and sync mechanisms
+   */
   async connect(): Promise<void> {
     try {
       await this.requestSync();
@@ -53,6 +66,10 @@ export class SecretCartesifyTransport extends Transport {
     }
   }
 
+  /**
+   * Polls the secret provider for updates
+   * Handles data retrieval and client notifications
+   */
   async doPoll() {
     try {
       const response = await this.cartesifyFetch(
@@ -89,15 +106,27 @@ export class SecretCartesifyTransport extends Transport {
     }
   }
 
+  /**
+   * Starts the polling mechanism
+   * Used to keep the connection alive and receive updates
+   */
   startPolling(): void {
     this.pollingEnabled = true;
     this.doPoll();
   }
 
+  /**
+   * Stops the polling mechanism
+   * Called during disconnect or cleanup
+   */
   stopPolling(): void {
     this.pollingEnabled = false;
   }
 
+  /**
+   * Requests synchronization with the secret provider
+   * Ensures the client has the latest state
+   */
   async requestSync(): Promise<void> {
     try {
       const response = await this.cartesifyFetch(`${this.url}/sync`, {
@@ -119,6 +148,11 @@ export class SecretCartesifyTransport extends Transport {
     }
   }
 
+  /**
+   * Updates the match identifier
+   * Triggers a sync to ensure consistency
+   * @param id - New match ID
+   */
   updateMatchID(id: string): void {
     this.matchID = id;
     this.requestSync();
@@ -126,22 +160,8 @@ export class SecretCartesifyTransport extends Transport {
 
   /**
    * Sends shuffled deck hashes to the Cartesi Machine
-   *
-   * @description
-   * This method sends the shuffled deck state to be stored in the Cartesi Machine.
-   * It uses the advance state endpoint to ensure the deck state is recorded on-chain.
-   *
-   * @param shuffledHashes - Array of card hashes with their corresponding keys
-   * @param shuffledHashes.key - Identifier for each card (e.g., "card1", "card2")
-   * @param shuffledHashes.hash - Cryptographic hash representing the card value
-   *
-   * @returns Promise<Response> - Response from the Cartesi advance endpoint
-   *
-   * @example
-   * await transport.sendShuffledDeck([
-   *   { key: "card1", hash: "0x123..." },
-   *   { key: "card2", hash: "0x456..." }
-   * ]);
+   * Uses the advance endpoint to record the deck state on-chain
+   * @param shuffledHashes - Array of card hashes with their keys
    */
   async sendShuffledDeck(shuffledHashes: Array<{ key: string; hash: string }>) {
     return this.cartesifyFetch(`${this.url}/advance`, {
@@ -154,12 +174,20 @@ export class SecretCartesifyTransport extends Transport {
     });
   }
 
+  /**
+   * Disconnects from the secret provider
+   * Cleans up resources and stops polling
+   */
   async disconnect(): Promise<void> {
     this.setConnectionStatus(false);
     this.stopPolling();
   }
 }
 
+/**
+ * Factory function to create a SecretCartesifyTransport instance
+ * @param cartesifyOpts - Cartesi-specific configuration options
+ */
 export function SecretCartesiMultiplayer(cartesifyOpts: CartesifyOpts) {
   return (transportOpts: SecretTransportOpts) =>
     new SecretCartesifyTransport({
