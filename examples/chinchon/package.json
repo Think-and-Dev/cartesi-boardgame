@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "build": "react-app-rewired build && npm run build-server && npm run gzip-bundle && npm run brotli-bundle",
-    "start": "node server-build/server.js",
-    "start-server-drand": "ROLLUP_HTTP_SERVER_URL=http://127.0.0.1:3000 node --max-old-space-size=8192 server-build/server.js",
+    "start": "USE_DRAND_SEED=false node server-build/server.js",
+    "start-server-drand": "USE_DRAND_SEED=true ROLLUP_HTTP_SERVER_URL=http://127.0.0.1:3000 node --max-old-space-size=8192 server-build/server.js",
     "start-with-middleware": "sh ./scripts/start-with-middleware.sh",
     "dev": "PORT=8081 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:5004\" react-app-rewired start",
     "local": "PORT=8000 REACT_APP_PORT=8000 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:3000\" npm run build && PORT=8000 REACT_APP_PORT=8000 ROLLUP_HTTP_SERVER_URL=\"http://127.0.0.1:3000\" npm start",
