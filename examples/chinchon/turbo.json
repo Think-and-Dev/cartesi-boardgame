@@ -6,7 +6,7 @@
     "tasks": {
         "build": {
             "dependsOn": [
-                "@think-and-dev/cartesi-boardgame#build"
+                "^@think-and-dev/cartesi-boardgame#build"
             ],
             "outputs": [
                 "build/**"
@@ -14,11 +14,23 @@
         },
         "build-server": {
             "dependsOn": [
-                "@think-and-dev/cartesi-boardgame#build"
+                "^@think-and-dev/cartesi-boardgame#build"
             ],
             "outputs": [
                 "server-build/**"
             ]
+        },
+        "dev": {
+            "dependsOn": [
+                "^@think-and-dev/cartesi-boardgame#build"
+            ],
+            "persistent": true
+        },
+        "start": {
+            "dependsOn": [
+                "build-server"
+            ],
+            "persistent": true
         }
     }
 }
