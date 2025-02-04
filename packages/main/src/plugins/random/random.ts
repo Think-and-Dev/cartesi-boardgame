@@ -111,6 +111,11 @@ export class Random {
 
     return number;
   }
+
+  getDrandSeedIfConfigured() {
+    return process.env.USE_DRAND_SEED?.toLowerCase() === "true" ? this.getDrandRandom() : undefined;
+  }
+
   getDrandRandom() {
     if (this.state.seed === '0') {
       // If we are on the client, the seed is not present.
@@ -191,7 +196,7 @@ export class Random {
     for (const key in SpotValue) {
       const spotvalue = SpotValue[key];
       predefined[key] = (diceCount?: number) => {
-        const seed = this.getDrandRandom();
+        const seed = this.getDrandSeedIfConfigured();
         return diceCount === undefined
           ? Math.floor(random(seed) * spotvalue) + 1
           : Array.from({ length: diceCount }).map(
@@ -203,7 +208,7 @@ export class Random {
     function Die(spotValue?: number): number;
     function Die(spotValue: number, diceCount: number): number[];
     function Die(spotvalue = 6, diceCount?: number) {
-      const seed = this.getDrandRandom();
+      const seed = this.getDrandSeedIfConfigured();
       return diceCount === undefined
         ? Math.floor(random(seed) * spotvalue) + 1
         : Array.from({ length: diceCount }).map(
@@ -241,7 +246,7 @@ export class Random {
        * Generate a random number between 0 and 1.
        */
       Number: () => {
-        const seed = this.getDrandRandom();
+        const seed = this.getDrandSeedIfConfigured();
         return random(seed);
       },
 
@@ -256,7 +261,7 @@ export class Random {
         let sourceIndex = deck.length;
         let destinationIndex = 0;
         const shuffled = Array.from<T>({ length: sourceIndex });
-        const seed = this.getDrandRandom();
+        const seed = this.getDrandSeedIfConfigured();
 
         while (sourceIndex) {
           const randomIndex = Math.trunc(sourceIndex * random(seed));
