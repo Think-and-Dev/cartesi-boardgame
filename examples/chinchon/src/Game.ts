@@ -1,4 +1,10 @@
-import { Game, Ctx, Move, PlayerID, StageArg } from "@think-and-dev/cartesi-boardgame";
+import {
+  Game,
+  Ctx,
+  Move,
+  PlayerID,
+  StageArg,
+} from "@think-and-dev/cartesi-boardgame";
 import { INVALID_MOVE } from "@think-and-dev/cartesi-boardgame/core";
 import {
   calculatePointsForHand,
@@ -17,7 +23,12 @@ import {
 } from "./Model";
 import { RandomAPI } from "@think-and-dev/cartesi-boardgame/dist/types/src/plugins/random/random";
 
-const drawCardFromDrawPile: Move<ChinchonGameState> = ({ G, ctx, random, events }) => {
+const drawCardFromDrawPile: Move<ChinchonGameState> = ({
+  G,
+  ctx,
+  random,
+  events,
+}) => {
   const theCard = G.drawPile.pop();
   if (!theCard) {
     return INVALID_MOVE;
@@ -37,7 +48,11 @@ const drawCardFromDrawPile: Move<ChinchonGameState> = ({ G, ctx, random, events 
   events?.endStage();
 };
 
-const drawCardFromDiscardPile: Move<ChinchonGameState> = ({ G, ctx, events }) => {
+const drawCardFromDiscardPile: Move<ChinchonGameState> = ({
+  G,
+  ctx,
+  events,
+}) => {
   const theCard = G.discardPile.pop();
   if (!theCard) {
     return INVALID_MOVE;
@@ -50,11 +65,10 @@ const drawCardFromDiscardPile: Move<ChinchonGameState> = ({ G, ctx, events }) =>
   events?.endStage();
 };
 
-const discardCard: Move<ChinchonGameState> = ({
-  G,
-  ctx,
-  events
-}, theCard: ChinchonCard) => {
+const discardCard: Move<ChinchonGameState> = (
+  { G, ctx, events },
+  theCard: ChinchonCard
+) => {
   const p = G.players[ctx.currentPlayer];
   const hand = p.hand;
   const idx = hand.findIndex((c) => c.id === theCard.id);
@@ -68,11 +82,10 @@ const discardCard: Move<ChinchonGameState> = ({
   events?.endTurn();
 };
 
-const meldHandWithCard: Move<ChinchonGameState> = ({
-  G,
-  ctx,
-  events
-}, meldCard: ChinchonCard) => {
+const meldHandWithCard: Move<ChinchonGameState> = (
+  { G, ctx, events },
+  meldCard: ChinchonCard
+) => {
   const hand = G.players[ctx.currentPlayer].hand;
   const meldCardIdx = hand.findIndex((c) => c.id === meldCard.id);
   if (meldCardIdx < 0 || !canMeldWithCard(hand, meldCard)) {
@@ -152,23 +165,52 @@ export const Chinchon: Game<ChinchonGameState> = {
     meldHandWithCard,
     endReview,
   },
-  setup: ({ ctx, random }) => {
+  setup: ({
+    ctx,
+    random,
+    setupData = {},
+  }: {
+    ctx: ChinchonCtx;
+    random: RandomAPI;
+    setupData?: { matchID?: string };
+  }) => {
+    const matchID = setupData?.matchID || `match_${Date.now()}`;
     const deck = makeDeck();
     if (ctx.numPlayers <= 2) {
       removeJokersFromCards(deck);
     }
-    const drawPile = random!.Shuffle(deck);
+
+    console.log("[Game] Sending deck to secret-provider:", {
+      matchID,
+      deckSize: deck.length,
+    });
+
+    fetch("http://localhost:4001/hash", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        matchID,
+        deck: deck.map((card, index) => ({
+          key: `card${index}`,
+          value: card,
+        })),
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => console.log("[Game] Secret provider response:", data))
+      .catch((error) => console.error("[Game] Error sending deck:", error));
+
     const playerMap = makePlayers(ctx);
     let i = 0;
     for (let player of Object.values(playerMap)) {
-      player.hand.push(...drawPile.splice(0, 7));
+      player.hand.push(...deck.splice(0, 7));
       player.hand.sort(cardCompareFn);
       player.handLength = player.hand.length;
     }
-    const discardPile = [drawPile.pop()!];
+    const discardPile = [deck.pop()!];
     return {
-      drawPile,
-      drawPileLen: drawPile.length,
+      drawPile: deck,
+      drawPileLen: deck.length,
       discardPile,
       discardPileLen: discardPile.length,
       players: playerMap,
@@ -256,15 +298,16 @@ export const Chinchon: Game<ChinchonGameState> = {
         acc[pID] = {
           ...player,
           hand: new Array(player.handLength).fill(null),
-          handLength: player.handLength
+          handLength: player.handLength,
         };
       }
       return acc;
     }, {} as typeof G.players);
     return GG;
-  }
+  },
 };
 
+//De aca sale el deck
 export function makeDeck(): ChinchonCard[] {
   const symbols = [
     "A",
@@ -286,7 +329,7 @@ export function makeDeck(): ChinchonCard[] {
     [CardSuit.Heart]: "hearts",
     [CardSuit.Diamond]: "diamonds",
     [CardSuit.Club]: "clubs",
-    [CardSuit.Spade]: "spades"
+    [CardSuit.Spade]: "spades",
   };
   const cards: ChinchonCard[] = [];
   for (let i = 0; i < symbols.length; i++) {
