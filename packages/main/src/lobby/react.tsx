@@ -97,7 +97,7 @@ type LobbyState = {
  * Returns:
  *   A React component that provides a UI to create, list, join, leave, play or
  *   spectate matches (game instances).
-*/
+ */
 class Lobby extends React.Component<LobbyProps, LobbyState> {
   static propTypes = {
     gameComponents: PropTypes.array.isRequired,
@@ -278,7 +278,11 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
    */
   _createMatch = async (gameName: string, numPlayers: number) => {
     try {
-      await this.connection.create(gameName, numPlayers);
+      const { matchID } = await this.connection.create(gameName, numPlayers);
+      await this.connection.client.createMatch(gameName, {
+        numPlayers,
+        setupData: { matchID },
+      });
       await this.connection.refresh();
       // rerender
       this.setState({});
