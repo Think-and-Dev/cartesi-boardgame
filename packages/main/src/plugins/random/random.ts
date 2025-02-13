@@ -49,17 +49,31 @@ export class Random {
   state: RandomState;
   used: boolean;
 
-
-  private fetchSync(url: string, method: "GET" | "POST" = "GET", body: string = "") {
+  private fetchSync(
+    url: string,
+    method: 'GET' | 'POST' = 'GET',
+    body: string = ''
+  ) {
     const res = syncRequest(method, url, { json: true, body: body });
     return {
       ok: res.statusCode >= 200 && res.statusCode < 300,
       status: res.statusCode,
-      text: () => res.getBody('utf8')
+      text: () => res.getBody('utf8'),
     };
   }
   private sleep(ms: number) {
-    const { execSync } = require('child_process');
+    let execSync: any = undefined;
+    if (typeof window === 'undefined') {
+      // Importación dinámica solo en el servidor
+      try {
+        execSync = require('child_process').execSync;
+      } catch (error) {
+        console.warn('child_process is not available in this environment');
+      }
+    }
+    if (!execSync) {
+      throw new Error('This function is not available in the browser');
+    }
     execSync(`sleep ${ms / 1000}`);
   }
 
@@ -111,6 +125,13 @@ export class Random {
 
     return number;
   }
+
+  getDrandSeedIfConfigured() {
+    return process.env.USE_DRAND_SEED?.toLowerCase() === 'true'
+      ? this.getDrandRandom()
+      : undefined;
+  }
+
   getDrandRandom() {
     if (this.state.seed === '0') {
       // If we are on the client, the seed is not present.
@@ -124,27 +145,31 @@ export class Random {
       let randomness: string | undefined;
       const timestamp = Math.floor(Date.now() / 1000) - 60;
       console.log('Getting randomness from drand for timestamp', timestamp);
-      const url = new URL("http://127.0.0.1:3000/random");
-      url.searchParams.append("timestamp", timestamp.toString());
+      const url = new URL('http://127.0.0.1:3000/random');
+      url.searchParams.append('timestamp', timestamp.toString());
       while (!randomness) {
-
         // as this is running as an atomic operation inside the cartesi machine,
         // we can have it as a sync request
         response = this.fetchSync(url.toString());
 
         if (!response.ok) {
-          console.log("attemp failed")
+          console.log('attemp failed');
           let errorJson;
           try {
             response.text(); // We force getBody to be executed and throw the error
-          }
-          catch (error) {
+          } catch (error) {
             errorJson = JSON.parse(JSON.parse(error.body.toString()));
           }
           if (response.status === 400) {
-            console.log("it was a 400");
-            if (["Stored input to consume later", "Bypassing, inspect", "Already inspecting"].includes(errorJson.error)) {
-              console.log("we need to wait for the randomness to be ready");
+            console.log('it was a 400');
+            if (
+              [
+                'Stored input to consume later',
+                'Bypassing, inspect',
+                'Already inspecting',
+              ].includes(errorJson.error)
+            ) {
+              console.log('we need to wait for the randomness to be ready');
               // No valid randomeness available, try again with next input
               // we call finish to keep the rollup flow running, and the inspect calls being responded
               // this.fetchSync("http://127.0.0.1:3000/finish", "POST", JSON.stringify({ status: "accept" }));
@@ -152,19 +177,26 @@ export class Random {
               continue;
             }
           }
-          console.log("errorJson: ", errorJson);
-          throw new Error(`Server Error: ${errorJson?.error || errorJson?.message || errorJson || "Unknown error"}`);
+          console.log('errorJson: ', errorJson);
+          throw new Error(
+            `Server Error: ${
+              errorJson?.error ||
+              errorJson?.message ||
+              errorJson ||
+              'Unknown error'
+            }`
+          );
         }
         const text = response.text();
         if (!text) {
-          throw new Error("Response is not a valid randomness");
+          throw new Error('Response is not a valid randomness');
         }
         console.log('Got a new random number from drand', text);
         randomness = text;
       }
       return randomness;
     } catch (error) {
-      console.error("Error getting randomness from drand:", error);
+      console.error('Error getting randomness from drand:', error);
       throw error;
     }
   }
@@ -191,24 +223,24 @@ export class Random {
     for (const key in SpotValue) {
       const spotvalue = SpotValue[key];
       predefined[key] = (diceCount?: number) => {
-        const seed = this.getDrandRandom();
+        const seed = this.getDrandSeedIfConfigured();
         return diceCount === undefined
           ? Math.floor(random(seed) * spotvalue) + 1
           : Array.from({ length: diceCount }).map(
-            () => Math.floor(random(seed) * spotvalue) + 1
-          );
+              () => Math.floor(random(seed) * spotvalue) + 1
+            );
       };
     }
 
     function Die(spotValue?: number): number;
     function Die(spotValue: number, diceCount: number): number[];
     function Die(spotvalue = 6, diceCount?: number) {
-      const seed = this.getDrandRandom();
+      const seed = this.getDrandSeedIfConfigured();
       return diceCount === undefined
         ? Math.floor(random(seed) * spotvalue) + 1
         : Array.from({ length: diceCount }).map(
-          () => Math.floor(random(seed) * spotvalue) + 1
-        );
+            () => Math.floor(random(seed) * spotvalue) + 1
+          );
     }
 
     return {
@@ -241,7 +273,7 @@ export class Random {
        * Generate a random number between 0 and 1.
        */
       Number: () => {
-        const seed = this.getDrandRandom();
+        const seed = this.getDrandSeedIfConfigured();
         return random(seed);
       },
 
@@ -256,7 +288,7 @@ export class Random {
         let sourceIndex = deck.length;
         let destinationIndex = 0;
         const shuffled = Array.from<T>({ length: sourceIndex });
-        const seed = this.getDrandRandom();
+        const seed = this.getDrandSeedIfConfigured();
 
         while (sourceIndex) {
           const randomIndex = Math.trunc(sourceIndex * random(seed));

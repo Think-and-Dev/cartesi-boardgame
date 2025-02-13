@@ -91,11 +91,11 @@ export class CartesifyTransport extends Transport {
     try {
       const response = await this.cartesifyFetch(
         `${this.url}/data?` +
-        new URLSearchParams({
-          matchID: this.matchID,
-          playerID: this.playerID,
-          index: this.nextDataIndex.toString(),
-        }).toString(),
+          new URLSearchParams({
+            matchID: this.matchID,
+            playerID: this.playerID,
+            index: this.nextDataIndex.toString(),
+          }).toString(),
         {
           method: 'GET',
           headers: {

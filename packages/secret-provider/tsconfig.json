@@ -1,0 +1,36 @@
+{
+    "compilerOptions": {
+      // JavaScript version our TypeScript will compile to
+      "target": "ES2020",
+  
+      // How to handle imports/exports (commonjs is Node.js standard)
+      "module": "commonjs",
+  
+      // Where to put the compiled files
+      "outDir": "./dist",
+  
+      // Where our TypeScript files are located
+      "rootDir": "./src",
+  
+      // Enable all strict type-checking options
+      "strict": true,
+  
+      // Enables cleaner imports with ES modules
+      "esModuleInterop": true,
+  
+      // Avoid issues with type definitions in node_modules
+      "skipLibCheck": true,
+  
+      // Ensure consistent file naming across different OS
+      "forceConsistentCasingInFileNames": true,
+  
+      // How to resolve modules (node is for Node.js projects)
+      "moduleResolution": "node"
+    },
+  
+    // Which files to include in compilation
+    "include": ["src/**/*"],
+  
+    // Which files to ignore
+    "exclude": ["node_modules", "**/*.test.ts"]
+  } 

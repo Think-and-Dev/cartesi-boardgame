@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "outDir": "server-build",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "downlevelIteration": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
+} 
