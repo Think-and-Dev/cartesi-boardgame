@@ -17,7 +17,9 @@ const isDebug = false;
 
 const App: React.FC = () => {
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
-  const [GameClientComponent, setGameClientComponent] = useState<React.ComponentType<any> | null>(null);
+  const [matchId, setMatchId] = useState<string | null>(null);
+  const [GameClientComponent, setGameClientComponent] =
+    useState<React.ComponentType<any> | null>(null);
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,8 +32,8 @@ const App: React.FC = () => {
       }
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
-        const Signer = await provider.getSigner();
-        setSigner(Signer);
+        const signer = await provider.getSigner();
+        setSigner(signer);
 
         const GameComponent = Client({
           game: Chinchon,
@@ -42,7 +44,18 @@ const App: React.FC = () => {
             server: `http://127.0.0.1:8000`,
             dappAddress: "0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e",
             nodeUrl: "http://127.0.0.1:8080",
-            signer: Signer,
+            signer: signer,
+            chainId: "1",
+            matchData: [
+              {
+                id: 0,
+                name: await signer.getAddress(),
+                isConnected: true,
+                data: {
+                  playerEvmAddress: await signer.getAddress(),
+                },
+              },
+            ],
           }),
         });
         setGameClientComponent(() => GameComponent as React.ComponentType<any>);
@@ -62,6 +75,10 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const handleMatchJoin = (id: string) => {
+    setMatchId(id);
+  };
+
   if (error) {
     return <div className="text-red-600">{error}</div>;
   }
@@ -73,10 +90,7 @@ const App: React.FC = () => {
   const renderGame = (playerID: string) => {
     if (!GameClientComponent) return null;
     try {
-      return <GameClientComponent 
-        playerID={playerID}
-        debug={true}
-      />;
+      return <GameClientComponent playerID={playerID} debug={true} />;
     } catch (error) {
       console.error(`Error rendering game for player ${playerID}:`, error);
       return <div>Error loading game view</div>;

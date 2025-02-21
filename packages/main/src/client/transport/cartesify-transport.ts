@@ -9,11 +9,12 @@ import type {
 import { Cartesify } from '@calindra/cartesify';
 import type { ethers } from 'ethers';
 
-interface CartesifyOpts {
+export interface CartesifyOpts {
   server?: string;
   dappAddress: string;
   nodeUrl?: string;
   signer?: ethers.Signer;
+  chainId: string;
 }
 
 type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
@@ -91,11 +92,11 @@ export class CartesifyTransport extends Transport {
     try {
       const response = await this.cartesifyFetch(
         `${this.url}/data?` +
-        new URLSearchParams({
-          matchID: this.matchID,
-          playerID: this.playerID,
-          index: this.nextDataIndex.toString(),
-        }).toString(),
+          new URLSearchParams({
+            matchID: this.matchID,
+            playerID: this.playerID,
+            index: this.nextDataIndex.toString(),
+          }).toString(),
         {
           method: 'GET',
           headers: {
@@ -231,14 +232,6 @@ export class CartesifyTransport extends Transport {
     this.credentials = credentials;
     this.requestSync();
   }
-}
-
-export function CartesiMultiplayer(cartesifyOpts: CartesifyOpts) {
-  return (transportOpts: TransportOpts) =>
-    new CartesifyTransport({
-      ...cartesifyOpts,
-      ...transportOpts,
-    });
 }
 
 export default CartesifyTransport;

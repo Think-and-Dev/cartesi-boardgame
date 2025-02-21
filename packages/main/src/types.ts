@@ -386,6 +386,7 @@ export namespace Server {
     credentials?: string;
     data?: any;
     isConnected?: boolean;
+    playerEvmAddress?: string;
   };
 
   export interface MatchData {

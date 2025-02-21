@@ -70,11 +70,11 @@ const ChinchonLobby: React.FC<ChinchonLobbyProps> = () => {
       }
 
       try {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        await window.ethereum.request({ method: "eth_requestAccounts" });
         const provider = new ethers.BrowserProvider(window.ethereum);
         const newSigner = await provider.getSigner();
         setSigner(newSigner);
-        
+
         const address = await newSigner.getAddress();
         setWalletAddress(address);
       } catch (error) {
@@ -100,7 +100,9 @@ const ChinchonLobby: React.FC<ChinchonLobbyProps> = () => {
       renderer={(L) => {
         return (
           <div className="absolute w-full h-full bg-green-900">
-            {L.phase === LobbyPhases.ENTER && <EnterLobbyView L={L as any} walletAddress={walletAddress} />}
+            {L.phase === LobbyPhases.ENTER && (
+              <EnterLobbyView L={L as any} walletAddress={walletAddress} />
+            )}
             {L.phase === LobbyPhases.LIST && <ListGamesView L={L as any} />}
             {L.phase === LobbyPhases.PLAY && <RunningMatchView L={L as any} />}
           </div>
@@ -115,7 +117,10 @@ export type Match = Omit<Server.MatchData, "players"> & {
   players: Omit<Server.PlayerMetadata, "credentials">[];
 };
 
-const EnterLobbyView: React.FC<{ L: LobbyRendererProps; walletAddress: string }> = ({ L, walletAddress }) => {
+const EnterLobbyView: React.FC<{
+  L: LobbyRendererProps;
+  walletAddress: string;
+}> = ({ L, walletAddress }) => {
   const [playerName, setPlayerName] = useState("");
   const { image } = useCardImage("gh");
 
@@ -155,9 +160,7 @@ const EnterLobbyView: React.FC<{ L: LobbyRendererProps; walletAddress: string }>
             }
           }}
         />
-        <Button onClick={handleEnterLobby}>
-          Enter
-        </Button>
+        <Button onClick={handleEnterLobby}>Enter</Button>
       </div>
       <div>
         <a
@@ -173,12 +176,12 @@ const EnterLobbyView: React.FC<{ L: LobbyRendererProps; walletAddress: string }>
 
 const ListGamesView: React.FC<{ L: LobbyRendererProps }> = ({ L }) => {
   const [numPlayers, setNumPlayers] = useState(2);
-  const matches = []
-  const seen = new Set<string>()
+  const matches = [];
+  const seen = new Set<string>();
   for (const m of L.matches) {
     if (!seen.has(m.matchID)) {
-      matches.push(m)
-      seen.add(m.matchID)
+      matches.push(m);
+      seen.add(m.matchID);
     }
   }
 
@@ -244,14 +247,14 @@ const RunningMatchView: React.FC<{ L: LobbyRendererProps }> = ({ L }) => {
       const handleMoveEnd = () => setIsProcessingMove(false);
 
       const gameClient = (L.runningMatch.app as any).client;
-      
+
       if (gameClient) {
-        gameClient.on('move', handleMoveStart);
-        gameClient.on('moveEnd', handleMoveEnd);
+        gameClient.on("move", handleMoveStart);
+        gameClient.on("moveEnd", handleMoveEnd);
 
         return () => {
-          gameClient.off('move', handleMoveStart);
-          gameClient.off('moveEnd', handleMoveEnd);
+          gameClient.off("move", handleMoveStart);
+          gameClient.off("moveEnd", handleMoveEnd);
           setIsProcessingMove(false);
         };
       }
@@ -262,7 +265,7 @@ const RunningMatchView: React.FC<{ L: LobbyRendererProps }> = ({ L }) => {
 
   return (
     <div className="relative">
-      <div className={isProcessingMove ? 'opacity-50' : ''}>
+      <div className={isProcessingMove ? "opacity-50" : ""}>
         <L.runningMatch.app
           matchID={L.runningMatch.matchID}
           playerID={L.runningMatch.playerID}

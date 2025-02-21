@@ -1,27 +1,44 @@
-import { CartesifyTransport } from './cartesify-transport';
+import { CartesifyOpts, CartesifyTransport } from './cartesify-transport';
 import type { Conversation } from '@xmtp/xmtp-js';
 import { Client } from '@xmtp/xmtp-js';
 import { ethers } from 'ethers';
 import type { ChatMessage, PlayerID } from '../../types';
 import type { TransportOpts } from './transport';
 
-// Add CartesifyOpts interface since it's not imported
-interface CartesifyOpts {
-  server?: string;
-  dappAddress: string;
-  nodeUrl?: string;
-  signer?: ethers.Signer;
-}
-
 export interface XMTPTransportConfig {
   chainId: string;
   dappAddress: string;
   env?: 'production' | 'dev';
+  matchData?: Array<{
+    id: number;
+    name: string;
+    isConnected: boolean;
+    data: {
+      playerEvmAddress: string;
+    };
+  }>;
 }
 
 export type XMTPTransportOpts = TransportOpts &
   CartesifyOpts &
-  XMTPTransportConfig;
+  XMTPTransportConfig & {
+    matchData?: Array<{
+      id: number;
+      name: string;
+      isConnected: boolean;
+      data: {
+        playerEvmAddress: string;
+      };
+    }>;
+  };
+
+interface MatchPlayer {
+  id: string;
+  name: string;
+  data?: {
+    playerEvmAddress: string;
+  };
+}
 
 export class XMTPTransport extends CartesifyTransport {
   private xmtp: Client | null = null;
@@ -30,6 +47,14 @@ export class XMTPTransport extends CartesifyTransport {
   private conversations: Map<string, Conversation> = new Map();
   private readonly config: XMTPTransportConfig;
   private signer?: ethers.Signer;
+  private matchData: Array<{
+    id: number;
+    name: string;
+    isConnected: boolean;
+    data: {
+      playerEvmAddress: string;
+    };
+  }> = [];
 
   constructor(opts: XMTPTransportOpts) {
     super(opts);
@@ -37,8 +62,10 @@ export class XMTPTransport extends CartesifyTransport {
       chainId: opts.chainId,
       dappAddress: opts.dappAddress,
       env: opts.env || 'production',
+      matchData: opts.matchData || [],
     };
     this.signer = opts.signer;
+    this.matchData = opts.matchData || [];
   }
 
   // Method to generate unique conversation IDs
@@ -125,33 +152,49 @@ export class XMTPTransport extends CartesifyTransport {
 
     const conversationId = this.getConversationId(matchId);
 
+    // Obtener la dirección del otro jugador
+    const otherPlayerAddress = this.getOtherPlayerAddress();
+    if (!otherPlayerAddress) {
+      throw new Error('No se pudo encontrar la dirección del otro jugador');
+    }
+
     const conversations = await this.xmtp.conversations.list();
-    const existing = conversations.find(
+    let conversation = conversations.find(
       (c) => c.context?.conversationId === conversationId
     );
 
-    if (existing) {
-      this.conversations.set(matchId, existing);
-      await this.setupConversationListeners(existing, matchId);
-      return existing;
+    if (!conversation) {
+      conversation = await this.xmtp.conversations.newConversation(
+        otherPlayerAddress, // Usar la dirección del otro jugador en lugar de dappAddress
+        {
+          conversationId,
+          metadata: {
+            chainId: this.config.chainId,
+            dappAddress: this.config.dappAddress,
+            gameId: matchId,
+            playerIds: `${this.playerID},${otherPlayerAddress}`,
+          },
+        }
+      );
     }
-
-    const conversation = await this.xmtp.conversations.newConversation(
-      matchId,
-      {
-        conversationId,
-        metadata: {
-          chainId: this.config.chainId,
-          dappAddress: this.config.dappAddress,
-          gameId: matchId,
-          playerIds: '', // Initialize with empty string to satisfy type
-        },
-      }
-    );
 
     this.conversations.set(matchId, conversation);
     await this.setupConversationListeners(conversation, matchId);
     return conversation;
+  }
+
+  // Método auxiliar para obtener la dirección del otro jugador
+  private getOtherPlayerAddress(): string | null {
+    console.log('matchData:', this.matchData);
+    console.log('playerID:', this.playerID);
+
+    if (!this.matchData || !this.playerID) return null;
+
+    const otherPlayer = this.matchData.find(
+      (player) => String(player.id) !== this.playerID
+    );
+
+    return otherPlayer?.data?.playerEvmAddress || null;
   }
 
   // Override base transport methods
@@ -203,4 +246,14 @@ export class XMTPTransport extends CartesifyTransport {
     this.playerID = id;
     super.updatePlayerID(id);
   }
+}
+
+export function CartesiMultiplayer(
+  XMTPandcartesifyOpts: CartesifyOpts & XMTPTransportConfig
+) {
+  return (transportOpts: TransportOpts) =>
+    new XMTPTransport({
+      ...XMTPandcartesifyOpts,
+      ...transportOpts,
+    });
 }

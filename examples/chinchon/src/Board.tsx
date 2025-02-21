@@ -16,14 +16,26 @@ import OpponentHand from "./OpponentHand";
 import { isAndroid } from "./utils";
 import EndGameInfo from "./EndGameInfo";
 import EndRoundInfo from "./EndRoundInfo";
+import Chat from "./Chat";
+import { ethers } from "ethers";
 
-interface ChinchonBoardProps extends BoardProps<ChinchonGameState> {}
+interface ChinchonBoardProps extends BoardProps<ChinchonGameState> {
+  matchData?: Array<{
+    id: number;
+    name: string;
+    isConnected: boolean;
+    data: any;
+    playerEvmAddress: string;
+  }>;
+}
 
 const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
   G,
   ctx,
   moves,
   playerID,
+  matchID,
+  matchData,
   undo, // TODO undo
 }) => {
   // TODO Spectators don't have a playerID
@@ -39,7 +51,25 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
   const shouldReview = activePlayers[playerID] === ChinchonStage.ReviewRound;
   const isGameOver = ctx.gameover as GameEndState;
   const winner = isGameOver && isGameOver.winner;
-  const [isProcessingMove, setIsProcessingMove] = useState(false); // Add this line
+  const [isProcessingMove, setIsProcessingMove] = useState(false);
+
+  const currentPlayerData = matchData?.find(
+    (player) => player.id.toString() === playerID
+  );
+
+  // Obtener la lista de wallets de todos los jugadores
+  const playerWallets =
+    matchData
+      ?.filter((player) => player.data?.playerEvmAddress)
+      .map((player) => player.data.playerEvmAddress) || [];
+
+  console.log("Debug Chat Render:", {
+    currentPlayerData,
+    playerID,
+    matchID,
+    matchData,
+    playerWallets,
+  });
 
   useEffect(() => {
     if (myCardsRef.current) {
@@ -75,12 +105,12 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
       setIsProcessingMove(true);
       await moves.drawCardFromDrawPile();
     } catch (error) {
-      console.error('Error drawing card:', error);
+      console.error("Error drawing card:", error);
     } finally {
       setIsProcessingMove(false);
     }
   };
-  
+
   const handleDiscardCard = (card: ChinchonCard) => {
     if (canDiscard && isMyTurn) {
       try {
@@ -88,7 +118,7 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
         moves.discardCard(card);
         setSelectedCard(undefined);
       } catch (error) {
-        console.error('Error discarding card:', error);
+        console.error("Error discarding card:", error);
       } finally {
         setIsProcessingMove(false);
       }
@@ -138,7 +168,9 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
       <div id="piles" className="flex justify-center gap-6">
         <div
           id="drawPile"
-          className={`flex flex-col text-center relative ${isProcessingMove ? 'opacity-50' : ''}`}
+          className={`flex flex-col text-center relative ${
+            isProcessingMove ? "opacity-50" : ""
+          }`}
           onClick={() => {
             if (!isProcessingMove && isMyTurn) {
               handleDrawCard();
@@ -231,6 +263,27 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
           ))}
         </div>
       </div>
+      {currentPlayerData?.data?.playerEvmAddress &&
+        currentPlayerData.data.playerEvmAddress.startsWith("0x") &&
+        matchID && (
+          <Chat
+            matchId={matchID}
+            wallet={{
+              address: currentPlayerData.data.playerEvmAddress,
+              getAddress: async () => currentPlayerData.data.playerEvmAddress,
+              signMessage: async (message: string) => {
+                if (!window.ethereum) throw new Error("MetaMask no encontrado");
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                const signer = await provider.getSigner();
+                return await signer.signMessage(message);
+              },
+            }}
+            dappAddress="0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e"
+            nodeUrl="http://localhost:8080"
+            isCreator={ctx.currentPlayer === ctx.playOrder[0]}
+            players={playerWallets}
+          />
+        )}
     </div>
   );
 };

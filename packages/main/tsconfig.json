@@ -13,11 +13,7 @@
     "esModuleInterop": true,
     "jsx": "react",
     "skipLibCheck": true,
-    "plugins": [{ "transform": "ts-transformer-imports" }],
+    "plugins": [{ "transform": "ts-transformer-imports" }]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/server/cartesify-worker.ts"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/server/cartesify-worker.ts"]
 }
