@@ -349,13 +349,21 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
           );
         }
 
-        multiplayer = CartesiMultiplayer({
-          server: 'http://127.0.0.1:8000',
-          dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
-          nodeUrl: 'http://127.0.0.1:8080',
-          signer: signer,
-          chainId: '1',
-        });
+        //  Matchdata at the time of game initialization
+        const lobbyMatchData = this.connection._getMatchInstance(
+          matchOpts.matchID
+        );
+
+        multiplayer = CartesiMultiplayer(
+          {
+            server: 'http://127.0.0.1:8000',
+            dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
+            nodeUrl: 'http://127.0.0.1:8080',
+            signer: signer,
+            chainId: '1',
+          },
+          lobbyMatchData
+        );
       } catch (error) {
         this.setState({ errorMsg: error.message });
         return;

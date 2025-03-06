@@ -5,6 +5,7 @@ import { ethers } from "ethers";
 import { Chinchon } from "./Game";
 import ChinchonBoard from "./Board";
 import Lobby from "./Lobby";
+import { LobbyAPI } from "@think-and-dev/cartesi-boardgame";
 
 declare global {
   interface Window {
@@ -22,6 +23,9 @@ const App: React.FC = () => {
     useState<React.ComponentType<any> | null>(null);
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lobbyMatchData, setLobbyMatchData] = useState<LobbyAPI.Match | null>(
+    null
+  );
 
   useEffect(() => {
     const initializeSigner = async () => {
@@ -40,23 +44,18 @@ const App: React.FC = () => {
           board: ChinchonBoard,
           numPlayers: 4,
           debug: isDebug,
-          multiplayer: CartesiMultiplayer({
-            server: `http://127.0.0.1:8000`,
-            dappAddress: "0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e",
-            nodeUrl: "http://127.0.0.1:8080",
-            signer: signer,
-            chainId: "1",
-            matchData: [
-              {
-                id: 0,
-                name: await signer.getAddress(),
-                isConnected: true,
-                data: {
-                  playerEvmAddress: await signer.getAddress(),
+          multiplayer: lobbyMatchData
+            ? CartesiMultiplayer(
+                {
+                  server: `http://127.0.0.1:8000`,
+                  dappAddress: "0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e",
+                  nodeUrl: "http://127.0.0.1:8080",
+                  signer: signer,
+                  chainId: "1",
                 },
-              },
-            ],
-          }),
+                lobbyMatchData
+              )
+            : undefined,
         });
         setGameClientComponent(() => GameComponent as React.ComponentType<any>);
         setIsConnecting(false);
@@ -73,10 +72,11 @@ const App: React.FC = () => {
       // Cleanup
       setGameClientComponent(null);
     };
-  }, []);
+  }, [lobbyMatchData]);
 
-  const handleMatchJoin = (id: string) => {
+  const handleMatchJoin = (id: string, matchData: LobbyAPI.Match) => {
     setMatchId(id);
+    setLobbyMatchData(matchData);
   };
 
   if (error) {

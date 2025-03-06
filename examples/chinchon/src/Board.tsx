@@ -1,4 +1,4 @@
-import { BoardProps } from "@think-and-dev/cartesi-boardgame/react";
+import { BoardProps, Chat } from "@think-and-dev/cartesi-boardgame/react";
 import React, { useEffect, useRef, useState } from "react";
 import Button from "./Button";
 import CardView from "./CardView";
@@ -16,7 +16,6 @@ import OpponentHand from "./OpponentHand";
 import { isAndroid } from "./utils";
 import EndGameInfo from "./EndGameInfo";
 import EndRoundInfo from "./EndRoundInfo";
-import Chat from "./Chat";
 import { ethers } from "ethers";
 
 interface ChinchonBoardProps extends BoardProps<ChinchonGameState> {
@@ -37,6 +36,8 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
   matchID,
   matchData,
   undo, // TODO undo
+  sendChatMessage,
+  chatMessages,
 }) => {
   // TODO Spectators don't have a playerID
   playerID = playerID!;
@@ -57,7 +58,7 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
     (player) => player.id.toString() === playerID
   );
 
-  // Obtener la lista de wallets de todos los jugadores
+  // Get the wallet list of all players
   const playerWallets =
     matchData
       ?.filter((player) => player.data?.playerEvmAddress)
@@ -70,6 +71,8 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
     matchData,
     playerWallets,
   });
+
+  console.log("Chat Messages:", chatMessages);
 
   useEffect(() => {
     if (myCardsRef.current) {
@@ -126,7 +129,7 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
   };
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 left-0 bg-green-900 flex flex-col justify-between items-center p-4">
+    <div className="absolute top-0 right-0 bottom-0 left-0 bg-green-900 flex flex-col justify-between items-center p-4 relative">
       {winner && (
         <EndGameInfo G={G} didIWin={winner === playerID} winner={winner} />
       )}
@@ -266,23 +269,12 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
       {currentPlayerData?.data?.playerEvmAddress &&
         currentPlayerData.data.playerEvmAddress.startsWith("0x") &&
         matchID && (
-          <Chat
-            matchId={matchID}
-            wallet={{
-              address: currentPlayerData.data.playerEvmAddress,
-              getAddress: async () => currentPlayerData.data.playerEvmAddress,
-              signMessage: async (message: string) => {
-                if (!window.ethereum) throw new Error("MetaMask no encontrado");
-                const provider = new ethers.BrowserProvider(window.ethereum);
-                const signer = await provider.getSigner();
-                return await signer.signMessage(message);
-              },
-            }}
-            dappAddress="0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e"
-            nodeUrl="http://localhost:8080"
-            isCreator={ctx.currentPlayer === ctx.playOrder[0]}
-            players={playerWallets}
-          />
+          <div className="absolute top-4 right-4 w-64">
+            <Chat
+              sendChatMessage={sendChatMessage}
+              chatMessages={chatMessages}
+            />
+          </div>
         )}
     </div>
   );

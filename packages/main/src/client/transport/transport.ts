@@ -15,6 +15,7 @@ import type {
   State,
   SyncInfo,
   ChatMessage,
+  FilteredMetadata,
 } from '../../types';
 
 export type MetadataCallback = (metadata: SyncInfo['filteredMetadata']) => void;
@@ -84,7 +85,10 @@ export abstract class Transport {
   /** Called by the client to dispatch an action via the transport. */
   abstract sendAction(state: State, action: CredentialedActionShape.Any): void;
   /** Called by the client to dispatch a chat message via the transport. */
-  abstract sendChatMessage(matchID: string, chatMessage: ChatMessage): void;
+  abstract sendChatMessage(
+    matchID: FilteredMetadata,
+    chatMessage: ChatMessage
+  ): void;
   /** Called by the client to request a sync action from the transport. */
   abstract requestSync(): void;
   /** Called by the client to update the matchID it wants to connect to. */

@@ -2,43 +2,24 @@ import { CartesifyOpts, CartesifyTransport } from './cartesify-transport';
 import type { Conversation } from '@xmtp/xmtp-js';
 import { Client } from '@xmtp/xmtp-js';
 import { ethers } from 'ethers';
-import type { ChatMessage, PlayerID } from '../../types';
+import type {
+  ChatMessage,
+  FilteredMetadata,
+  LobbyAPI,
+  PlayerID,
+} from '../../types';
 import type { TransportOpts } from './transport';
 
 export interface XMTPTransportConfig {
   chainId: string;
   dappAddress: string;
   env?: 'production' | 'dev';
-  matchData?: Array<{
-    id: number;
-    name: string;
-    isConnected: boolean;
-    data: {
-      playerEvmAddress: string;
-    };
-  }>;
+  matchData?: LobbyAPI.Match;
 }
 
 export type XMTPTransportOpts = TransportOpts &
   CartesifyOpts &
-  XMTPTransportConfig & {
-    matchData?: Array<{
-      id: number;
-      name: string;
-      isConnected: boolean;
-      data: {
-        playerEvmAddress: string;
-      };
-    }>;
-  };
-
-interface MatchPlayer {
-  id: string;
-  name: string;
-  data?: {
-    playerEvmAddress: string;
-  };
-}
+  XMTPTransportConfig;
 
 export class XMTPTransport extends CartesifyTransport {
   private xmtp: Client | null = null;
@@ -47,14 +28,7 @@ export class XMTPTransport extends CartesifyTransport {
   private conversations: Map<string, Conversation> = new Map();
   private readonly config: XMTPTransportConfig;
   private signer?: ethers.Signer;
-  private matchData: Array<{
-    id: number;
-    name: string;
-    isConnected: boolean;
-    data: {
-      playerEvmAddress: string;
-    };
-  }> = [];
+  matchData?: LobbyAPI.Match;
 
   constructor(opts: XMTPTransportOpts) {
     super(opts);
@@ -62,10 +36,9 @@ export class XMTPTransport extends CartesifyTransport {
       chainId: opts.chainId,
       dappAddress: opts.dappAddress,
       env: opts.env || 'production',
-      matchData: opts.matchData || [],
+      matchData: opts.matchData,
     };
     this.signer = opts.signer;
-    this.matchData = opts.matchData || [];
   }
 
   // Method to generate unique conversation IDs
@@ -141,7 +114,8 @@ export class XMTPTransport extends CartesifyTransport {
   }
 
   private async getOrCreateConversation(
-    matchId: string
+    matchId: string,
+    otherPlayerAddress: string
   ): Promise<Conversation> {
     if (!this.xmtp) throw new Error('XMTP not initialized');
 
@@ -152,12 +126,6 @@ export class XMTPTransport extends CartesifyTransport {
 
     const conversationId = this.getConversationId(matchId);
 
-    // Obtener la dirección del otro jugador
-    const otherPlayerAddress = this.getOtherPlayerAddress();
-    if (!otherPlayerAddress) {
-      throw new Error('No se pudo encontrar la dirección del otro jugador');
-    }
-
     const conversations = await this.xmtp.conversations.list();
     let conversation = conversations.find(
       (c) => c.context?.conversationId === conversationId
@@ -165,7 +133,7 @@ export class XMTPTransport extends CartesifyTransport {
 
     if (!conversation) {
       conversation = await this.xmtp.conversations.newConversation(
-        otherPlayerAddress, // Usar la dirección del otro jugador en lugar de dappAddress
+        otherPlayerAddress,
         {
           conversationId,
           metadata: {
@@ -183,18 +151,12 @@ export class XMTPTransport extends CartesifyTransport {
     return conversation;
   }
 
-  // Método auxiliar para obtener la dirección del otro jugador
+  // Auxiliary method to obtain the other player's address
   private getOtherPlayerAddress(): string | null {
     console.log('matchData:', this.matchData);
     console.log('playerID:', this.playerID);
 
     if (!this.matchData || !this.playerID) return null;
-
-    const otherPlayer = this.matchData.find(
-      (player) => String(player.id) !== this.playerID
-    );
-
-    return otherPlayer?.data?.playerEvmAddress || null;
   }
 
   // Override base transport methods
@@ -216,18 +178,44 @@ export class XMTPTransport extends CartesifyTransport {
     await super.disconnect();
   }
 
-  async sendChatMessage(matchId: string, message: ChatMessage): Promise<void> {
+  async sendChatMessage(
+    lobbyMatchData: FilteredMetadata,
+    message: ChatMessage
+  ): Promise<void> {
     if (!this.isInitialized) {
       await this.initializeXMTP(this.signer);
     }
 
     try {
-      // First send via XMTP
-      const conversation = await this.getOrCreateConversation(matchId);
-      await conversation.send(message.payload);
+      // Get the other player's address
+      console.log('Mensaje enviado:', message);
+      console.log('Lobby Match Data:', lobbyMatchData);
 
-      // Then maintain Cartesi functionality
-      await super.sendChatMessage(matchId, message);
+      const recipientEvmAddress = this.config.matchData.players.find((item) => {
+        console.log('Comparing:', item.id, 'with:', message.sender);
+        return item.id.toString() !== message.sender;
+      })?.data.playerEvmAddress;
+
+      console.log('EVM address found:', recipientEvmAddress);
+
+      if (!recipientEvmAddress) {
+        throw new Error(`No EVM address found for player: ${message.sender}`);
+      }
+
+      // TODO Replace matchId with the id of lobbyMatchData
+      const matchId = lobbyMatchData[0]?.id;
+      if (matchId === undefined) {
+        throw new Error('matchId not defined in lobbyMatchData');
+      }
+
+      // Call getOrCreateConversation with the other player's address
+      const conversation = await this.getOrCreateConversation(
+        matchId.toString(),
+        recipientEvmAddress
+      );
+
+      console.log('Message sender', message.sender);
+      await conversation.send(message.payload);
     } catch (error) {
       console.error('Error sending chat message:', error);
       throw error;
@@ -238,7 +226,9 @@ export class XMTPTransport extends CartesifyTransport {
   updateMatchID(id: string): void {
     this.matchID = id;
     // Reconnect XMTP conversation for the new match
-    this.getOrCreateConversation(id).catch(console.error);
+    this.getOrCreateConversation(id, this.getOtherPlayerAddress() || '').catch(
+      console.error
+    );
     super.updateMatchID(id);
   }
 
@@ -249,11 +239,13 @@ export class XMTPTransport extends CartesifyTransport {
 }
 
 export function CartesiMultiplayer(
-  XMTPandcartesifyOpts: CartesifyOpts & XMTPTransportConfig
+  XMTPandcartesifyOpts: CartesifyOpts & XMTPTransportConfig,
+  lobbyMatchData: LobbyAPI.Match
 ) {
   return (transportOpts: TransportOpts) =>
     new XMTPTransport({
       ...XMTPandcartesifyOpts,
       ...transportOpts,
+      matchData: lobbyMatchData,
     });
 }

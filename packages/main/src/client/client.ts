@@ -349,7 +349,7 @@ export class _ClientImpl<
 
     this.chatMessages = [];
     this.sendChatMessage = (payload) => {
-      this.transport.sendChatMessage(this.matchID, {
+      this.transport.sendChatMessage(this.matchData, {
         id: nanoid(7),
         sender: this.playerID,
         payload: payload,

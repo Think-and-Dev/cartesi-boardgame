@@ -5,6 +5,7 @@ import type {
   State,
   ChatMessage,
   PlayerID,
+  FilteredMetadata,
 } from '../../types';
 import { Cartesify } from '@calindra/cartesify';
 import type { ethers } from 'ethers';
@@ -168,7 +169,7 @@ export class CartesifyTransport extends Transport {
   }
 
   async sendChatMessage(
-    matchID: string,
+    matchID: FilteredMetadata, //cambiar nombre (chequear si es id o name)
     chatMessage: ChatMessage
   ): Promise<void> {
     try {
@@ -186,7 +187,10 @@ export class CartesifyTransport extends Transport {
       });
 
       if (response.ok) {
-        this.notifyClient({ type: 'chat', args: [matchID, chatMessage] });
+        this.notifyClient({
+          type: 'chat',
+          args: [matchID[0].id.toString(), chatMessage],
+        });
       } else {
         throw new Error('Failed to send chat message');
       }
