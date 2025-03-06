@@ -120,18 +120,18 @@ export class ChinchonModel {
     }
   }
 
-  // Método para iniciar el juego
+  // Method to start the game
   start() {
     this.client.start();
     this.client.moves.initializeHashedDeck();
   }
 
-  // Método para pedir hashear el mazo
+  // Method to request deck hashing
   requestHashDeck() {
     this.client.moves.requestHashDeck();
   }
 
-  // También tipamos el callback en el método subscribe
+  // We also type the callback in the subscribe method
   subscribe<T = ChinchonGameState>(callback: (state: ClientState<T>) => void) {
     this.client.subscribe(callback);
   }

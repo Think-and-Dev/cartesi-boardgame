@@ -166,26 +166,31 @@ export const Chinchon: Game<ChinchonGameState> = {
     endReview,
     initializeHashedDeck: {
       move: ({ G, ctx }) => {
-        fetch(
-          `http://localhost:4001/hash/get-deck/${G.matchID}`
-        ).then(/* ... */);
+        fetch(`http://localhost:4001/hash/get-deck/${G.matchID}`)
+          .then((response) => response.json())
+          .then(({ hashes }) => {
+            // Configure the deck and deal cards
+            G.drawPile = hashes;
+            // ... more configuration
+          });
       },
-      client: false,
+      client: false, // Executed on the server
     },
     requestHashDeck: ({ G }) => {
       if (G.deckStatus !== "initial") return INVALID_MOVE;
       return {
         ...G,
-        deckStatus: "hashing", // 🔄 Clear state transition
-        deck: makeDeck(),
+        deckStatus: "hashing", // 👈 Changes state to "hashing"
+        deck: makeDeck(), // Creates a new deck
       };
     },
     receiveHashedDeck: ({ G }, hashedDeck) => {
       if (G.deckStatus !== "hashing") return INVALID_MOVE;
       return {
         ...G,
-        deckStatus: "ready",
-        hashedDeck,
+        hashedDeck, // Stores the hashed deck
+        deckStatus: "ready", // 👈 Changes state to "ready"
+        deck: [], // Clears the original deck
       };
     },
   },
@@ -206,23 +211,19 @@ export const Chinchon: Game<ChinchonGameState> = {
    * 2. No nested loops with variable sizes
    * 3. Memory usage is constant
    */
-  setup: ({
-    ctx,
-    random,
-    setupData = { matchID: `match_${Date.now()}` },
-  }: {
-    ctx: ChinchonCtx;
-    random: RandomAPI;
-    setupData?: { matchID: string };
-  }) => {
-    const deck = makeDeck();
-    console.log("[Game] Setup - matchID:", setupData.matchID);
+  setup: ({ ctx, setupData }) => {
+    // Type assertion for setupData
+    const typedSetupData = (setupData as { matchID: string }) || {
+      matchID: `match_${Date.now()}`,
+    };
 
+    const deck = makeDeck();
+
+    // Send deck to secret-provider
     fetch("http://localhost:4001/hash", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        matchID: setupData.matchID,
+        matchID: typedSetupData.matchID,
         deck: deck.map((card, index) => ({
           key: `card${index}`,
           value: card,
@@ -232,9 +233,9 @@ export const Chinchon: Game<ChinchonGameState> = {
 
     return {
       gameState: "waiting",
-      matchID: setupData.matchID,
+      matchID: typedSetupData.matchID,
       hashedDeck: [],
-      deckStatus: "initial",
+      deckStatus: "initial", // 👈 Initial deck state
       drawPile: [],
       drawPileLen: 0,
       discardPile: [],

@@ -117,6 +117,17 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
         </div>
       )}
 
+      {G.deckStatus === "hashing" && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-4 rounded text-black">
+            <p>Shuffling and encrypting deck...</p>
+            <div className="w-full bg-gray-200 h-2 mt-2">
+              <div className="bg-blue-600 h-2 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div id="opponentCards" className="flex justify-evenly">
         {ctx.playOrder
           .filter((pID) => pID !== playerID)
