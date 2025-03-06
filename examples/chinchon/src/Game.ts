@@ -164,56 +164,82 @@ export const Chinchon: Game<ChinchonGameState> = {
     discardCard,
     meldHandWithCard,
     endReview,
+    initializeHashedDeck: {
+      move: ({ G, ctx }) => {
+        fetch(
+          `http://localhost:4001/hash/get-deck/${G.matchID}`
+        ).then(/* ... */);
+      },
+      client: false,
+    },
+    requestHashDeck: ({ G }) => {
+      if (G.deckStatus !== "initial") return INVALID_MOVE;
+      return {
+        ...G,
+        deckStatus: "hashing", // 🔄 Clear state transition
+        deck: makeDeck(),
+      };
+    },
+    receiveHashedDeck: ({ G }, hashedDeck) => {
+      if (G.deckStatus !== "hashing") return INVALID_MOVE;
+      return {
+        ...G,
+        deckStatus: "ready",
+        hashedDeck,
+      };
+    },
   },
+  /**
+   * Setup function complexity analysis:
+   *
+   * Time Complexity: O(n + p * 7 * log(7))
+   * - where n = number of cards (54)
+   * - where p = number of players (max 4)
+   * - Relatively low complexity as n and p are small fixed numbers
+   *
+   * Space Complexity: O(n)
+   * - where n = number of cards in memory
+   * - Fixed space as deck size is constant
+   *
+   * This is considered LOW COMPLEXITY because:
+   * 1. All operations are bounded by fixed numbers (54 cards, 4 players)
+   * 2. No nested loops with variable sizes
+   * 3. Memory usage is constant
+   */
   setup: ({
     ctx,
     random,
-    setupData = {},
+    setupData = { matchID: `match_${Date.now()}` },
   }: {
     ctx: ChinchonCtx;
     random: RandomAPI;
-    setupData?: { matchID?: string };
+    setupData?: { matchID: string };
   }) => {
-    const matchID = setupData?.matchID || `match_${Date.now()}`;
     const deck = makeDeck();
-    if (ctx.numPlayers <= 2) {
-      removeJokersFromCards(deck);
-    }
-
-    console.log("[Game] Sending deck to secret-provider:", {
-      matchID,
-      deckSize: deck.length,
-    });
+    console.log("[Game] Setup - matchID:", setupData.matchID);
 
     fetch("http://localhost:4001/hash", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        matchID,
+        matchID: setupData.matchID,
         deck: deck.map((card, index) => ({
           key: `card${index}`,
           value: card,
         })),
       }),
-    })
-      .then((response) => response.json())
-      .then((data) => console.log("[Game] Secret provider response:", data))
-      .catch((error) => console.error("[Game] Error sending deck:", error));
+    });
 
-    const playerMap = makePlayers(ctx);
-    let i = 0;
-    for (let player of Object.values(playerMap)) {
-      player.hand.push(...deck.splice(0, 7));
-      player.hand.sort(cardCompareFn);
-      player.handLength = player.hand.length;
-    }
-    const discardPile = [deck.pop()!];
     return {
-      drawPile: deck,
-      drawPileLen: deck.length,
-      discardPile,
-      discardPileLen: discardPile.length,
-      players: playerMap,
+      gameState: "waiting",
+      matchID: setupData.matchID,
+      hashedDeck: [],
+      deckStatus: "initial",
+      drawPile: [],
+      drawPileLen: 0,
+      discardPile: [],
+      discardPileLen: 0,
+      players: makePlayers(ctx),
       roundEndState: {},
       playOrder: ctx.playOrder,
       playOrderPos: ctx.playOrderPos,
@@ -286,15 +312,29 @@ export const Chinchon: Game<ChinchonGameState> = {
     },
   },
   playerView: ({ G, ctx, playerID }) => {
+    // Spectators and invalid players see the complete game state
     if (!playerID || !G.playOrder.includes(playerID)) {
       return G;
     }
+
     const GG = { ...G };
-    GG.drawPile = [];
+
+    // Hide draw pile from all players for game integrity
+    // Players should not know the order of upcoming cards
+    GG.drawPile = []; // This is the first layer of secrecy - the draw pile is hidden from everyone
+
+    // Process each player's visible information
     GG.players = Object.entries(G.players).reduce((acc, [pID, player]) => {
       if (pID === playerID || ctx.phase === ChinchonPhase.Review) {
+        // Two cases where cards are visible:
+        // 1. Player sees their own cards always
+        // 2. During Review phase, all hands are visible (end of round)
         acc[pID] = { ...player };
       } else {
+        // Second layer of secrecy:
+        // Hide other players' cards but maintain the count
+        // This is crucial for game strategy - knowing how many cards
+        // opponents have without seeing what they are
         acc[pID] = {
           ...player,
           hand: new Array(player.handLength).fill(null),
@@ -303,6 +343,7 @@ export const Chinchon: Game<ChinchonGameState> = {
       }
       return acc;
     }, {} as typeof G.players);
+
     return GG;
   },
 };

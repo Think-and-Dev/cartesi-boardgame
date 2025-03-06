@@ -1,4 +1,11 @@
-import type { Ctx, PlayerID } from "@think-and-dev/cartesi-boardgame";
+import type {
+  Ctx,
+  PlayerID,
+  State as ClientState,
+} from "@think-and-dev/cartesi-boardgame";
+import { Client } from "@think-and-dev/cartesi-boardgame/client";
+import { Chinchon } from "./Game";
+import { SecretCartesifyTransport } from "../../../packages/secret-provider/src/secret-transport/secret-cartesify-transport";
 
 export enum ChinchonStage {
   Draw = "draw",
@@ -45,6 +52,11 @@ export interface RoundEndState {
 }
 
 export interface ChinchonGameState {
+  gameState: "waiting" | "ready";
+  matchID: string;
+  hashedDeck: any[] | null;
+  deckStatus: "initial" | "hashing" | "ready";
+  deck?: ChinchonCard[];
   drawPile: ChinchonCard[];
   drawPileLen: number;
   discardPile: ChinchonCard[];
@@ -64,4 +76,63 @@ export interface ChinchonCtx extends Ctx {
   setupData?: {
     matchID: string;
   };
+}
+
+export class ChinchonModel {
+  protected client: ReturnType<typeof Client>;
+  private secretProvider: SecretCartesifyTransport;
+
+  constructor() {
+    this.client = Client({
+      game: Chinchon,
+      debug: false,
+    });
+
+    this.secretProvider = new SecretCartesifyTransport({
+      matchID: "default",
+      dappAddress: "your-dapp-address",
+      server: "http://localhost:4001",
+    });
+
+    // 👀 State Observer Setup
+    this.client.subscribe((state: ClientState<unknown>) => {
+      if (!state || !("G" in state)) return;
+
+      const gameState = state.G as ChinchonGameState;
+      if (gameState.deckStatus !== "hashing") return;
+
+      this.handleDeckHashing(gameState.deck).catch((error) =>
+        console.error("Hashing failed:", error)
+      );
+    });
+  }
+
+  // ✅ Safe Point 4: Async Control
+  private async handleDeckHashing(deck: ChinchonCard[]) {
+    try {
+      const hashedDeck = await this.secretProvider.hashDeck(deck);
+      if (!hashedDeck) throw new Error("No hashed deck received");
+
+      this.client.moves.receiveHashedDeck(hashedDeck);
+    } catch (error) {
+      // 🔄 Could transition to error state here
+      throw error;
+    }
+  }
+
+  // Método para iniciar el juego
+  start() {
+    this.client.start();
+    this.client.moves.initializeHashedDeck();
+  }
+
+  // Método para pedir hashear el mazo
+  requestHashDeck() {
+    this.client.moves.requestHashDeck();
+  }
+
+  // También tipamos el callback en el método subscribe
+  subscribe<T = ChinchonGameState>(callback: (state: ClientState<T>) => void) {
+    this.client.subscribe(callback);
+  }
 }
