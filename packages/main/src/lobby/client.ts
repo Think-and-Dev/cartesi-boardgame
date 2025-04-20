@@ -1,6 +1,7 @@
 import type { LobbyAPI } from '../types';
-import { Cartesify } from '@calindra/cartesify';
 import type { ethers } from 'ethers';
+import { Semaphore } from '../utils/semaphore';
+import { CartesifyFetch } from '../utils/cartesifyFetch';
 
 const assertString = (str: unknown, label: string) => {
   if (!str || typeof str !== 'string') {
@@ -70,7 +71,11 @@ export class LobbyClientError extends Error {
 export class LobbyClient {
   private nodeUrl: string;
   private server: string;
-  private readonly cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
+  private cartesifyFetch: CartesifyFetch;
+  private fetchSemaphore: Semaphore;
+  private postsSemaphore: Semaphore;
+  private isPostInProgress = false;
+  private pendingFetches: (() => Promise<void>)[] = [];
 
   /**
    * Creates a new LobbyClient instance.
@@ -94,18 +99,10 @@ export class LobbyClient {
     this.nodeUrl = nodeUrl || 'http://127.0.0.1:8080';
     this.server = server || 'http://127.0.0.1:8000';
 
-    if (this.nodeUrl.slice(-1) !== '/') {
-      this.nodeUrl += '/';
-    }
-
     // Initialize Cartesify for authenticated requests
-    this.cartesifyFetch = Cartesify.createFetch({
+    this.cartesifyFetch = new CartesifyFetch({
       dappAddress,
-      endpoints: {
-        graphQL: new URL(`${this.nodeUrl}graphql`),
-        inspect: new URL(`${this.nodeUrl}inspect`),
-      },
-      provider: signer?.provider,
+      nodeUrl: this.nodeUrl,
       signer: signer,
     });
   }
@@ -126,8 +123,9 @@ export class LobbyClient {
     };
 
     try {
+      console.log('request', route, config);
       const fullUrl = this.server + route;
-      const response = await this.cartesifyFetch(fullUrl, config);
+      const response = await this.cartesifyFetch.doFetch(fullUrl, config);
       const responseText = await response.text();
 
       if (!response.ok) {
