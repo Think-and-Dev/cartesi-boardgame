@@ -222,6 +222,7 @@ const ListGamesView: React.FC<{ L: LobbyRendererProps }> = ({ L }) => {
           </div>
 
           <div className="text-lg">Join a Match</div>
+          <Button onClick={L.handleRefreshMatches}>Refresh</Button>
           {matches.map((m) => (
             <div
               className="flex gap-3 justify-between items-center border-b-2 border-black"

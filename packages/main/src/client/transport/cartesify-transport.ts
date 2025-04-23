@@ -9,8 +9,8 @@ import type {
 } from '../../types';
 import { Cartesify } from '@calindra/cartesify';
 import type { ethers } from 'ethers';
-
-export interface CartesifyOpts {
+import { CartesifyFetch } from '../../utils/cartesifyFetch';
+interface CartesifyOpts {
   server?: string;
   dappAddress: string;
   nodeUrl?: string;
@@ -22,10 +22,10 @@ type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
 
 export class CartesifyTransport extends Transport {
   protected url: string;
-  protected cartesifyFetch: ReturnType<typeof Cartesify.createFetch>;
   protected pollingInterval = 1000; // 5 seconds
   protected pollingEnabled: boolean;
   nextDataIndex: number;
+  private cartesifyFetch: CartesifyFetch;
 
   constructor(opts: CartesifyTransportOpts) {
     super(opts);
@@ -42,14 +42,9 @@ export class CartesifyTransport extends Transport {
     this.credentials = opts.credentials;
     this.pollingEnabled = false;
     this.nextDataIndex = 0;
-
-    this.cartesifyFetch = Cartesify.createFetch({
+    this.cartesifyFetch = new CartesifyFetch({
       dappAddress: opts.dappAddress,
-      endpoints: {
-        graphQL: new URL(`${opts.nodeUrl}/graphql`),
-        inspect: new URL(`${opts.nodeUrl}/inspect`),
-      },
-      provider: opts.signer?.provider,
+      nodeUrl: opts.nodeUrl,
       signer: opts.signer,
     });
   }
@@ -66,7 +61,7 @@ export class CartesifyTransport extends Transport {
 
   async disconnect(): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/disconnect`, {
+      const response = await this.cartesifyFetch.doFetch(`${this.url}/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,13 +86,13 @@ export class CartesifyTransport extends Transport {
 
   async doPoll() {
     try {
-      const response = await this.cartesifyFetch(
+      const response = await this.cartesifyFetch.doFetch(
         `${this.url}/data?` +
-          new URLSearchParams({
-            matchID: this.matchID,
-            playerID: this.playerID,
-            index: this.nextDataIndex.toString(),
-          }).toString(),
+        new URLSearchParams({
+          matchID: this.matchID,
+          playerID: this.playerID,
+          index: this.nextDataIndex.toString(),
+        }).toString(),
         {
           method: 'GET',
           headers: {
@@ -141,7 +136,7 @@ export class CartesifyTransport extends Transport {
     action: CredentialedActionShape.Any
   ): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/update`, {
+      const response = await this.cartesifyFetch.doFetch(`${this.url}/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +168,7 @@ export class CartesifyTransport extends Transport {
     chatMessage: ChatMessage
   ): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/chat`, {
+      const response = await this.cartesifyFetch.doFetch(`${this.url}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -201,7 +196,7 @@ export class CartesifyTransport extends Transport {
 
   async requestSync(): Promise<void> {
     try {
-      const response = await this.cartesifyFetch(`${this.url}/sync`, {
+      const response = await this.cartesifyFetch.doFetch(`${this.url}/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

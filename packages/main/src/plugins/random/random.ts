@@ -58,21 +58,6 @@ export class Random {
       text: () => res.getBody('utf8')
     };
   }
-  private sleep(ms: number) {
-    let execSync: any = undefined;
-    if (typeof window === 'undefined') {
-      // Importación dinámica solo en el servidor
-      try {
-        execSync = require('child_process').execSync;
-      } catch (error) {
-        console.warn('child_process is not available in this environment');
-      }
-    }
-    if (!execSync) {
-      throw new Error('This function is not available in the browser');
-    }
-    execSync(`sleep ${ms / 1000}`);
-  }
 
   /**
    * Generates a new seed from the current date / time.
@@ -111,7 +96,7 @@ export class Random {
     const R = this.state;
     const fullSeed = seed + (R.prngstate ? '' : R.seed);
 
-    const rand = alea(fullSeed);
+    const rand = alea(fullSeed, R.prngstate);
 
     const number = rand();
 
@@ -146,6 +131,7 @@ export class Random {
 
         // as this is running as an atomic operation inside the cartesi machine,
         // we can have it as a sync request
+        // We expect that the middleware gets the call and only returns a response once was able to get the randomness
         response = this.fetchSync(url.toString());
 
         if (!response.ok) {
@@ -157,17 +143,7 @@ export class Random {
           catch (error) {
             errorJson = JSON.parse(JSON.parse(error.body.toString()));
           }
-          if (response.status === 400) {
-            console.log("it was a 400");
-            if (["Stored input to consume later", "Bypassing, inspect", "Already inspecting"].includes(errorJson.error)) {
-              console.log("we need to wait for the randomness to be ready");
-              // No valid randomeness available, try again with next input
-              // we call finish to keep the rollup flow running, and the inspect calls being responded
-              // this.fetchSync("http://127.0.0.1:3000/finish", "POST", JSON.stringify({ status: "accept" }));
-              this.sleep(2000);
-              continue;
-            }
-          }
+
           console.log("errorJson: ", errorJson);
           throw new Error(`Server Error: ${errorJson?.error || errorJson?.message || errorJson || "Unknown error"}`);
         }

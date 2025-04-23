@@ -4,7 +4,7 @@ FROM ubuntu:22.04 as middleware-builder
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.78.0
+    RUST_VERSION=1.81.0
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN <<EOF

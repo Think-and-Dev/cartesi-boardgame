@@ -47,7 +47,14 @@ pub fn get_drand_beacon(payload: &str) -> Result<DrandBeacon, Box<dyn std::error
     let payload = hex::decode(payload)?;
     let payload = std::str::from_utf8(&payload).map(|s| s.to_owned())?;
 
-    let payload = serde_json::from_str::<PayloadWithBeacon>(&payload)?;
+    let payload = serde_json::from_str::<PayloadWithBeacon>(&payload);
+    let payload = match payload {
+        Ok(payload) => payload,
+        Err(e) => {
+            error!(LOGGER, "Error parsing payload as drand beacon, probably not a drand beacon: {}", e);
+            return Err("Not a drand beacon".into());
+        }
+    };
 
     let mut pk = [0u8; 96];
     hex::decode_to_slice(&key, pk.borrow_mut())?;

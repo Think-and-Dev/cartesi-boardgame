@@ -111,7 +111,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
   static defaultProps = {
     debug: false,
     clientFactory: Client,
-    refreshInterval: 10000,
+    refreshInterval: 20000,
   };
 
   // state = {
@@ -480,6 +480,7 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
             />
           </div>
           <p className="phase-title">Join a match:</p>
+          <button onClick={this._updateConnection}>Refresh</button>
           <div id="instances">
             <table>
               <tbody>
