@@ -37,6 +37,7 @@ class _LobbyConnectionImpl {
   playerName: string;
   playerCredentials?: string;
   matches: LobbyAPI.MatchList['matches'];
+  signer: ethers.Signer;
 
   /**
    * Creates a new LobbyConnection instance.
@@ -53,6 +54,7 @@ class _LobbyConnectionImpl {
     playerCredentials,
   }: LobbyConnectionOpts) {
     this.client = new LobbyClient({ server, nodeUrl, dappAddress, signer });
+    this.signer = signer;
     this.gameComponents = gameComponents;
     this.playerName = playerName || 'Visitor';
     this.playerCredentials = playerCredentials;
@@ -116,11 +118,20 @@ class _LobbyConnectionImpl {
       if (!inst) {
         throw new Error('game instance ' + matchID + ' not found');
       }
+
+      const walletAddress = await this.signer.getAddress();
+
       const json = await this.client.joinMatch(gameName, matchID, {
         playerID,
         playerName: this.playerName,
+        playerEvmAddress: walletAddress,
+        data: { playerEvmAddress: walletAddress },
       });
+
       inst.players[Number.parseInt(playerID)].name = this.playerName;
+      inst.players[Number.parseInt(playerID)].data = {
+        playerEvmAddress: walletAddress,
+      };
       this.playerCredentials = json.playerCredentials;
     } catch (error) {
       throw new Error('failed to join match ' + matchID + ' (' + error + ')');

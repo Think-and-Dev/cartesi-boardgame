@@ -8,5 +8,7 @@
 
 import { Client, BoardProps } from '../src/client/react';
 import Lobby from '../src/lobby/react';
+import Chat from '../src/chat/react';
+import ChatProps from '../src/chat/react';
 
-export { Client, BoardProps, Lobby };
+export { Client, BoardProps, Lobby, Chat, ChatProps };

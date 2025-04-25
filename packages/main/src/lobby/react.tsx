@@ -12,7 +12,7 @@ import type { MatchOpts } from './match-instance';
 import LobbyMatchInstance from './match-instance';
 import LobbyCreateMatchForm from './create-match-form';
 import type { LobbyAPI } from '../types';
-import { CartesiMultiplayer } from '../client/transport/cartesify-transport';
+import { CartesiMultiplayer } from '../client/transport/xmtp-transport';
 import { ethers } from 'ethers';
 
 declare global {
@@ -97,7 +97,7 @@ type LobbyState = {
  * Returns:
  *   A React component that provides a UI to create, list, join, leave, play or
  *   spectate matches (game instances).
-*/
+ */
 class Lobby extends React.Component<LobbyProps, LobbyState> {
   static propTypes = {
     gameComponents: PropTypes.array.isRequired,
@@ -278,7 +278,11 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
    */
   _createMatch = async (gameName: string, numPlayers: number) => {
     try {
-      await this.connection.create(gameName, numPlayers);
+      const { matchID } = await this.connection.create(gameName, numPlayers);
+      await this.connection.client.createMatch(gameName, {
+        numPlayers,
+        setupData: { matchID },
+      });
       await this.connection.refresh();
       // rerender
       this.setState({});
@@ -345,12 +349,21 @@ class Lobby extends React.Component<LobbyProps, LobbyState> {
           );
         }
 
-        multiplayer = CartesiMultiplayer({
-          server: 'http://127.0.0.1:8000',
-          dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
-          nodeUrl: 'http://127.0.0.1:8080',
-          signer: signer,
-        });
+        //  Matchdata at the time of game initialization
+        const lobbyMatchData = this.connection._getMatchInstance(
+          matchOpts.matchID
+        );
+
+        multiplayer = CartesiMultiplayer(
+          {
+            server: 'http://127.0.0.1:8000',
+            dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
+            nodeUrl: 'http://127.0.0.1:8080',
+            signer: signer,
+            chainId: '1',
+          },
+          lobbyMatchData
+        );
       } catch (error) {
         this.setState({ errorMsg: error.message });
         return;

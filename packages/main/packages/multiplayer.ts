@@ -7,6 +7,10 @@
  */
 
 import { Local } from '../src/client/transport/local';
-import { CartesiMultiplayer } from '../src/client/transport/cartesify-transport';
+import { CartesiMultiplayer } from '../src/client/transport/xmtp-transport';
+import {
+  XMTPTransport,
+  XMTPTransportOpts,
+} from '../src/client/transport/xmtp-transport';
 
-export { Local, CartesiMultiplayer };
+export { Local, CartesiMultiplayer, XMTPTransport, XMTPTransportOpts };

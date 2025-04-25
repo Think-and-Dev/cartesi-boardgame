@@ -1,4 +1,4 @@
-import { BoardProps } from "@think-and-dev/cartesi-boardgame/react";
+import { BoardProps, Chat } from "@think-and-dev/cartesi-boardgame/react";
 import React, { useEffect, useRef, useState } from "react";
 import Button from "./Button";
 import CardView from "./CardView";
@@ -16,15 +16,28 @@ import OpponentHand from "./OpponentHand";
 import { isAndroid } from "./utils";
 import EndGameInfo from "./EndGameInfo";
 import EndRoundInfo from "./EndRoundInfo";
+import { ethers } from "ethers";
 
-interface ChinchonBoardProps extends BoardProps<ChinchonGameState> {}
+interface ChinchonBoardProps extends BoardProps<ChinchonGameState> {
+  matchData?: Array<{
+    id: number;
+    name: string;
+    isConnected: boolean;
+    data: any;
+    playerEvmAddress: string;
+  }>;
+}
 
 const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
   G,
   ctx,
   moves,
   playerID,
+  matchID,
+  matchData,
   undo, // TODO undo
+  sendChatMessage,
+  chatMessages,
 }) => {
   // TODO Spectators don't have a playerID
   playerID = playerID!;
@@ -39,7 +52,27 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
   const shouldReview = activePlayers[playerID] === ChinchonStage.ReviewRound;
   const isGameOver = ctx.gameover as GameEndState;
   const winner = isGameOver && isGameOver.winner;
-  const [isProcessingMove, setIsProcessingMove] = useState(false); // Add this line
+  const [isProcessingMove, setIsProcessingMove] = useState(false);
+
+  const currentPlayerData = matchData?.find(
+    (player) => player.id.toString() === playerID
+  );
+
+  // Get the wallet list of all players
+  const playerWallets =
+    matchData
+      ?.filter((player) => player.data?.playerEvmAddress)
+      .map((player) => player.data.playerEvmAddress) || [];
+
+  console.log("Debug Chat Render:", {
+    currentPlayerData,
+    playerID,
+    matchID,
+    matchData,
+    playerWallets,
+  });
+
+  console.log("Chat Messages:", chatMessages);
 
   useEffect(() => {
     if (myCardsRef.current) {
@@ -75,12 +108,12 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
       setIsProcessingMove(true);
       await moves.drawCardFromDrawPile();
     } catch (error) {
-      console.error('Error drawing card:', error);
+      console.error("Error drawing card:", error);
     } finally {
       setIsProcessingMove(false);
     }
   };
-  
+
   const handleDiscardCard = (card: ChinchonCard) => {
     if (canDiscard && isMyTurn) {
       try {
@@ -88,7 +121,7 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
         moves.discardCard(card);
         setSelectedCard(undefined);
       } catch (error) {
-        console.error('Error discarding card:', error);
+        console.error("Error discarding card:", error);
       } finally {
         setIsProcessingMove(false);
       }
@@ -96,7 +129,7 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
   };
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 left-0 bg-green-900 flex flex-col justify-between items-center p-4">
+    <div className="absolute top-0 right-0 bottom-0 left-0 bg-green-900 flex flex-col justify-between items-center p-4 relative">
       {winner && (
         <EndGameInfo G={G} didIWin={winner === playerID} winner={winner} />
       )}
@@ -138,7 +171,9 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
       <div id="piles" className="flex justify-center gap-6">
         <div
           id="drawPile"
-          className={`flex flex-col text-center relative ${isProcessingMove ? 'opacity-50' : ''}`}
+          className={`flex flex-col text-center relative ${
+            isProcessingMove ? "opacity-50" : ""
+          }`}
           onClick={() => {
             if (!isProcessingMove && isMyTurn) {
               handleDrawCard();
@@ -231,6 +266,16 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
           ))}
         </div>
       </div>
+      {currentPlayerData?.data?.playerEvmAddress &&
+        currentPlayerData.data.playerEvmAddress.startsWith("0x") &&
+        matchID && (
+          <div className="absolute wrap-break-word wrap-anywhere text-black bottom-4 right-4 w-96">
+            <Chat
+              sendChatMessage={sendChatMessage}
+              chatMessages={chatMessages}
+            />
+          </div>
+        )}
     </div>
   );
 };

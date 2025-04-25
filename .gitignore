@@ -17,3 +17,6 @@ debug/*
 .turbo
 .parcel-cache
 .cartesi
+coverage
+drand-middleware/target
+drand-middleware/Cargo.lock

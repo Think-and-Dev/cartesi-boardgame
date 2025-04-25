@@ -230,11 +230,16 @@ export const configureRouter = ({
   router.post('/games/:name/:id/join', koaBody(), async (ctx) => {
     let playerID = ctx.request.body.playerID;
     const playerName = ctx.request.body.playerName;
+    const playerEvmAddress = ctx.request.body.playerEvmAddress;
     const data = ctx.request.body.data;
     const matchID = ctx.params.id;
 
     if (!playerName) {
       ctx.throw(403, 'playerName is required');
+    }
+
+    if (!playerEvmAddress) {
+      ctx.throw(403, 'playerEvmAddress is required');
     }
 
     const { metadata } = await (db as StorageAPI.Async).fetch(matchID, {
@@ -266,6 +271,7 @@ export const configureRouter = ({
       metadata.players[playerID].data = data;
     }
     metadata.players[playerID].name = playerName;
+    metadata.players[playerID].playerEvmAddress = playerEvmAddress;
     const playerCredentials = await auth.generateCredentials(ctx);
     metadata.players[playerID].credentials = playerCredentials;
 

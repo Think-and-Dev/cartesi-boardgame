@@ -78,9 +78,9 @@ export class SocketIOTransport extends Transport {
     this.socket.emit('update', ...args);
   }
 
-  sendChatMessage(matchID: string, chatMessage: ChatMessage): void {
+  sendChatMessage(matchID: FilteredMetadata, chatMessage: ChatMessage): void {
     const args: Parameters<Master['onChatMessage']> = [
-      matchID,
+      matchID[0]?.id.toString(),
       chatMessage,
       this.credentials,
     ];
