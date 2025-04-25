@@ -7,10 +7,9 @@ import type {
   PlayerID,
   FilteredMetadata,
 } from '../../types';
-import { Cartesify } from '@calindra/cartesify';
 import type { ethers } from 'ethers';
 import { CartesifyFetch } from '../../utils/cartesifyFetch';
-interface CartesifyOpts {
+export interface CartesifyOpts {
   server?: string;
   dappAddress: string;
   nodeUrl?: string;

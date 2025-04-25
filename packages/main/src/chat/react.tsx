@@ -39,9 +39,9 @@ const Chat = ({ sendChatMessage, chatMessages }: ChatProps): JSX.Element => {
   }, [chatMessages]);
 
   return (
-    <div className="fixed bottom-4 right-4 w-80 bg-white rounded-lg shadow-lg text-black z-50">
+    <div className="fixed wrap-anywhere bottom-4 right-4 w-80 bg-white rounded-lg shadow-lg text-pretty z-50">
       <div className="p-4 border-b flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-black">Game Chat</h3>
+        <h3 className="text-lg font-semibold">Game Chat</h3>
         {/* {isConnecting && (
           <span className="text-sm text-gray-500">Connecting...</span>
         )} */}
@@ -55,8 +55,8 @@ const Chat = ({ sendChatMessage, chatMessages }: ChatProps): JSX.Element => {
         )}
 
         {chatMessages.map((msg) => (
-          <div key={msg.id}>
-            <strong>{msg.sender}</strong>: {msg.payload}
+          <div className="wrap-break-word wrap-anywhere" key={msg.id} style={{ overflowWrap: 'anywhere' }}>
+            <strong className="text-pretty wrap-anywhere">{msg.sender}</strong>: {msg.payload}
           </div>
         ))}
         <div ref={messagesEndRef} />

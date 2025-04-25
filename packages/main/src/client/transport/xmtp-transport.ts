@@ -103,6 +103,8 @@ export class XMTPTransport extends CartesifyTransport {
             payload: message.content,
           };
 
+          console.log('chatMessage from XMTPTransport.setupConversationListeners', chatMessage);
+
           // Notify the client using the existing boardgame.io system
           this.notifyClient({
             type: 'chat',
@@ -203,11 +205,12 @@ export class XMTPTransport extends CartesifyTransport {
       }
 
       // TODO Replace matchId with the id of lobbyMatchData
-      const matchId = lobbyMatchData[0]?.id;
+      const matchId = this.matchID;
       if (matchId === undefined) {
         throw new Error('matchId not defined in lobbyMatchData');
       }
 
+      console.log('matchId on sendChatMessage', matchId);
       // Call getOrCreateConversation with the other player's address
       const conversation = await this.getOrCreateConversation(
         matchId.toString(),

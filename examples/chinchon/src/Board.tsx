@@ -269,7 +269,7 @@ const ChinchonBoard: React.FC<ChinchonBoardProps> = ({
       {currentPlayerData?.data?.playerEvmAddress &&
         currentPlayerData.data.playerEvmAddress.startsWith("0x") &&
         matchID && (
-          <div className="absolute top-4 right-4 w-64">
+          <div className="absolute wrap-break-word wrap-anywhere text-black bottom-4 right-4 w-96">
             <Chat
               sendChatMessage={sendChatMessage}
               chatMessages={chatMessages}
