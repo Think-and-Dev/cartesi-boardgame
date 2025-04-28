@@ -1,0 +1,5 @@
+packages:
+  - "packages/*"
+  - "examples/chinchon" # Chinchon is the only example that is working for the moment
+  - "packages/main/*" # In case we need to add some specific subpackage as a dependency
+strict-peer-dependencies: false

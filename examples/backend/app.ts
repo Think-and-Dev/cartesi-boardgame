@@ -7,7 +7,7 @@ async function main() {
   const server = Server({
     games: [TicTacToe],
     db: database,
-    origins: ['http://localhost:1234', 'http://localhost:3000'],
+    origins: ['http://127.0.0.1:1234', 'http://127.0.0.1:3000'],
   });
 
   console.log('Server running on port 8000');
