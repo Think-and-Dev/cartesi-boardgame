@@ -25,7 +25,7 @@ const validateBody = (
   body: { [key: string]: any } | undefined,
   schema: { [key: string]: JSType | JSType[] }
 ) => {
-  if (!body) throw new Error(`Expected body, got “${body}”.`);
+  if (!body) throw new Error(`Expected body, got "${body}".`);
   for (const key in schema) {
     const propSchema = schema[key];
     const types = Array.isArray(propSchema) ? propSchema : [propSchema];
@@ -33,7 +33,7 @@ const validateBody = (
     if (!types.includes(typeof received)) {
       const union = types.join('|');
       throw new TypeError(
-        `Expected body.${key} to be of type ${union}, got “${received}”.`
+        `Expected body.${key} to be of type ${union}, got "${received}".`
       );
     }
   }
@@ -270,6 +270,7 @@ export class LobbyClient {
     body: {
       playerID?: string;
       playerName: string;
+      playerEvmAddress: string;
       data?: any;
       [key: string]: any;
     },
@@ -280,6 +281,7 @@ export class LobbyClient {
     validateBody(body, {
       playerID: ['string', 'undefined'],
       playerName: 'string',
+      playerEvmAddress: 'string',
     });
     return this.post(`/games/${gameName}/${matchID}/join`, { body, init });
   }

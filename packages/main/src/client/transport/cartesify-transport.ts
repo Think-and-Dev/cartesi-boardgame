@@ -5,15 +5,16 @@ import type {
   State,
   ChatMessage,
   PlayerID,
+  FilteredMetadata,
 } from '../../types';
-import { Cartesify } from '@calindra/cartesify';
 import type { ethers } from 'ethers';
 import { CartesifyFetch } from '../../utils/cartesifyFetch';
-interface CartesifyOpts {
+export interface CartesifyOpts {
   server?: string;
   dappAddress: string;
   nodeUrl?: string;
   signer?: ethers.Signer;
+  chainId: string;
 }
 
 type CartesifyTransportOpts = TransportOpts & CartesifyOpts;
@@ -162,7 +163,7 @@ export class CartesifyTransport extends Transport {
   }
 
   async sendChatMessage(
-    matchID: string,
+    matchID: FilteredMetadata, //cambiar nombre (chequear si es id o name)
     chatMessage: ChatMessage
   ): Promise<void> {
     try {
@@ -180,7 +181,10 @@ export class CartesifyTransport extends Transport {
       });
 
       if (response.ok) {
-        this.notifyClient({ type: 'chat', args: [matchID, chatMessage] });
+        this.notifyClient({
+          type: 'chat',
+          args: [matchID[0].id.toString(), chatMessage],
+        });
       } else {
         throw new Error('Failed to send chat message');
       }
@@ -226,14 +230,6 @@ export class CartesifyTransport extends Transport {
     this.credentials = credentials;
     this.requestSync();
   }
-}
-
-export function CartesiMultiplayer(cartesifyOpts: CartesifyOpts) {
-  return (transportOpts: TransportOpts) =>
-    new CartesifyTransport({
-      ...cartesifyOpts,
-      ...transportOpts,
-    });
 }
 
 export default CartesifyTransport;

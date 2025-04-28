@@ -117,7 +117,7 @@ export const createPluginDispatchers = createDispatchers.bind(null, 'plugin');
 export interface ClientOpts<
   G extends any = any,
   PluginAPIs extends Record<string, unknown> = Record<string, unknown>
-> {
+  > {
   game: Game<G, PluginAPIs>;
   debug?: DebugOpt | boolean;
   numPlayers?: number;
@@ -131,10 +131,10 @@ export interface ClientOpts<
 export type ClientState<G extends any = any> =
   | null
   | (State<G> & {
-      isActive: boolean;
-      isConnected: boolean;
-      log: LogEntry[];
-    });
+    isActive: boolean;
+    isConnected: boolean;
+    log: LogEntry[];
+  });
 
 /**
  * Implementation of Client (see below).
@@ -142,7 +142,7 @@ export type ClientState<G extends any = any> =
 export class _ClientImpl<
   G extends any = any,
   PluginAPIs extends Record<string, unknown> = Record<string, unknown>
-> {
+  > {
   private gameStateOverride?: any;
   private initialState: State<G>;
   readonly multiplayer: (opts: TransportOpts) => Transport;
@@ -349,7 +349,7 @@ export class _ClientImpl<
 
     this.chatMessages = [];
     this.sendChatMessage = (payload) => {
-      this.transport.sendChatMessage(this.matchID, {
+      this.transport.sendChatMessage(this.matchData, {
         id: nanoid(7),
         sender: this.playerID,
         payload: payload,
@@ -366,11 +366,13 @@ export class _ClientImpl<
   /** Handle an incoming chat message from a multiplayer transport. */
   private receiveChatMessage(message: ChatMessage): void {
     this.chatMessages = [...this.chatMessages, message];
+    console.log('chatMessages from client.receiveChatMessage', this.chatMessages);
     this.notifySubscribers();
   }
 
   /** Handle all incoming updates from a multiplayer transport. */
   private receiveTransportData(data: TransportData): void {
+    console.log('receiveTransportData from client.receiveTransportData', data);
     const [matchID] = data.args;
     if (matchID !== this.matchID) return;
     switch (data.type) {
