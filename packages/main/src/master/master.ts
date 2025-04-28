@@ -59,17 +59,17 @@ type CallbackFn = (arg: {
  */
 type CommonTransportData =
   | {
-      type: 'sync';
-      args: [string, SyncInfo];
-    }
+    type: 'sync';
+    args: [string, SyncInfo];
+  }
   | {
-      type: 'matchData';
-      args: [string, FilteredMetadata];
-    }
+    type: 'matchData';
+    args: [string, FilteredMetadata];
+  }
   | {
-      type: 'chat';
-      args: [string, ChatMessage];
-    };
+    type: 'chat';
+    args: [string, ChatMessage];
+  };
 
 /**
  * Final shape of data sent by the transport API
@@ -77,13 +77,13 @@ type CommonTransportData =
  */
 export type TransportData =
   | {
-      type: 'update';
-      args: [string, State, LogEntry[]];
-    }
+    type: 'update';
+    args: [string, State, LogEntry[]];
+  }
   | {
-      type: 'patch';
-      args: [string, number, number, Operation[], LogEntry[]];
-    }
+    type: 'patch';
+    args: [string, number, number, Operation[], LogEntry[]];
+  }
   | CommonTransportData;
 
 /**
@@ -92,13 +92,13 @@ export type TransportData =
  */
 export type IntermediateTransportData =
   | {
-      type: 'update';
-      args: [string, State];
-    }
+    type: 'update';
+    args: [string, State];
+  }
   | {
-      type: 'patch';
-      args: [string, number, State, State];
-    }
+    type: 'patch';
+    args: [string, number, State, State];
+  }
   | CommonTransportData;
 
 /** API used by a master to emit data to any connected clients/client transports. */
@@ -132,7 +132,7 @@ export class Master {
     this.game = ProcessGameConfig(game);
     this.storageAPI = storageAPI;
     this.transportAPI = transportAPI;
-    this.subscribeCallback = () => {};
+    this.subscribeCallback = () => { };
     this.auth = auth;
   }
 
@@ -190,7 +190,7 @@ export class Master {
     if (state.ctx.gameover !== undefined) {
       logging.error(
         `game over - matchID=[${key}] - playerID=[${playerID}]` +
-          ` - action[${action.payload.type}]`
+        ` - action[${action.payload.type}]`
       );
       return;
     }
@@ -225,7 +225,7 @@ export class Master {
     if (!this.game.flow.isPlayerActive(state.G, state.ctx, playerID)) {
       logging.error(
         `player not active - playerID=[${playerID}]` +
-          ` - action[${action.payload.type}]`
+        ` - action[${action.payload.type}]`
       );
       return;
     }
@@ -240,7 +240,7 @@ export class Master {
     if (action.type == MAKE_MOVE && !move) {
       logging.error(
         `move not processed - canPlayerMakeMove=false - playerID=[${playerID}]` +
-          ` - action[${action.payload.type}]`
+        ` - action[${action.payload.type}]`
       );
       return;
     }
@@ -253,7 +253,7 @@ export class Master {
     ) {
       logging.error(
         `invalid stateID, was=[${stateID}], expected=[${state._stateID}]` +
-          ` - playerID=[${playerID}] - action[${action.payload.type}]`
+        ` - playerID=[${playerID}] - action[${action.payload.type}]`
       );
       return;
     }
