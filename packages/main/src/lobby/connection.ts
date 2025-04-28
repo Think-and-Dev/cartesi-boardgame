@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import { LobbyClient } from './client';
 import type { Game, LobbyAPI } from '../types';
-import { ethers } from 'ethers';
+import type { ethers } from 'ethers';
 
 /**
  * Represents a game component, combining the game logic and its React component.
@@ -74,8 +74,15 @@ class _LobbyConnectionImpl {
       for (const game of games) {
         if (!this._getGameComponents(game)) continue;
         const { matches } = await this.client.listMatches(game);
-        this.matches.push(...matches);
+        const existingMatchIDs = new Set(
+          this.matches.map((match) => match.matchID)
+        );
+        const newMatches = matches.filter(
+          (match) => !existingMatchIDs.has(match.matchID)
+        );
+        this.matches.push(...newMatches);
       }
+      console.log('Current matches:', this.matches);
     } catch (error) {
       throw new Error('failed to retrieve list of matches (' + error + ')');
     }
