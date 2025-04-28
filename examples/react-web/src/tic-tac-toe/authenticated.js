@@ -8,18 +8,21 @@
 
 import React from 'react';
 import { Client } from 'boardgame.io/react';
-import { SocketIO } from 'boardgame.io/multiplayer';
+import { CartesiMultiplayer } from '@think-and-dev/cartesi-boardgame/multiplayer';
 import TicTacToe from './game';
 import Board from './board';
 import PropTypes from 'prop-types';
 import request from 'superagent';
 
-const hostname = window.location.hostname;
 const App = Client({
   game: TicTacToe,
   board: Board,
   debug: false,
-  multiplayer: SocketIO({ server: `${hostname}:8000` }),
+  multiplayer: CartesiMultiplayer({
+    server: 'http://localhost:8000',
+    dappAddress: '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e',
+    nodeUrl: 'http://localhost:8080',
+  }),
 });
 
 class AuthenticatedClient extends React.Component {
@@ -27,127 +30,46 @@ class AuthenticatedClient extends React.Component {
     super(props);
     this.state = {
       matchID: 'matchID',
-      players: {
-        0: {
-          credentials: 'credentials',
-        },
-        1: {
-          credentials: 'credentials',
-        },
-      },
+      players: [],
+      credentials: '',
     };
   }
 
   async componentDidMount() {
-    const gameName = 'tic-tac-toe';
-    const PORT = 8000;
+    const { matchID } = this.state;
+    const response = await request
+      .get(`http://${hostname}:8000/matches/tic-tac-toe/${matchID}`)
+      .set('Accept', 'application/json');
 
-    const newGame = await request
-      .post(`http://${hostname}:${PORT}/games/${gameName}/create`)
-      .send({ numPlayers: 2 });
-
-    const matchID = newGame.body.matchID;
-
-    let playerCredentials = [];
-
-    for (let playerID of [0, 1]) {
-      const player = await request
-        .post(`http://${hostname}:${PORT}/games/${gameName}/${matchID}/join`)
-        .send({
-          gameName,
-          playerID,
-          playerName: playerID.toString(),
-        });
-
-      playerCredentials.push(player.body.playerCredentials);
-    }
-
-    this.setState({
-      matchID,
-      players: {
-        0: {
-          credentials: playerCredentials[0],
-        },
-        1: {
-          credentials: playerCredentials[1],
-        },
-      },
-    });
-  }
-
-  onPlayerCredentialsChange(playerID, credentials) {
-    this.setState({
-      matchID: this.state.matchID,
-      players: {
-        ...this.state.players,
-        [playerID]: {
-          credentials,
-        },
-      },
-    });
+    this.setState({ players: response.body.players });
   }
 
   render() {
-    return (
-      <AuthenticatedExample
-        matchID={this.state.matchID}
-        players={this.state.players}
-        onPlayerCredentialsChange={this.onPlayerCredentialsChange.bind(this)}
-      />
-    );
-  }
-}
-
-class AuthenticatedExample extends React.Component {
-  static propTypes = {
-    matchID: PropTypes.string,
-    players: PropTypes.any,
-    onPlayerCredentialsChange: PropTypes.func,
-  };
-
-  render() {
+    const { matchID, players } = this.state;
     return (
       <div>
-        <h1>Authenticated</h1>
-
-        <p>
-          Change the credentials of a player, and you will notice that the
-          server no longer accepts moves from that client.
-        </p>
-
-        <div className="runner">
-          <div className="run">
-            <App
-              matchID={this.props.matchID}
-              playerID="0"
-              credentials={this.props.players['0'].credentials}
-            />
-            <input
-              type="text"
-              value={this.props.players['0'].credentials}
-              onChange={(event) =>
-                this.props.onPlayerCredentialsChange('0', event.target.value)
-              }
-            />
-          </div>
-          <div className="run">
-            <App
-              matchID={this.props.matchID}
-              playerID="1"
-              credentials={this.props.players['1'].credentials}
-            />
-            <input
-              type="text"
-              value={this.props.players['1'].credentials}
-              onChange={(event) =>
-                this.props.onPlayerCredentialsChange('1', event.target.value)
-              }
-            />
-          </div>
+        <App
+          matchID={matchID}
+          playerID="0"
+          credentials="optional-credentials"
+        />
+        <div>
+          <h3>Players:</h3>
+          <ul>
+            {players.map((player) => (
+              <li key={player.id}>{player.name}</li>
+            ))}
+          </ul>
         </div>
       </div>
     );
   }
 }
+
+AuthenticatedClient.propTypes = {
+  matchID: PropTypes.string,
+  playerID: PropTypes.string,
+  credentials: PropTypes.string,
+};
 
 export default AuthenticatedClient;

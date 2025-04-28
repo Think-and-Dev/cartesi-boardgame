@@ -1,0 +1,8 @@
+{
+    "name": "@cartesi-boardgame/drand-middleware",
+    "scripts": {
+        "build": "cargo build --release",
+        "dev": "cargo watch -x run",
+        "test": "cargo test"
+    }
+}

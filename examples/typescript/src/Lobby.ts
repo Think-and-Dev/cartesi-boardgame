@@ -135,12 +135,20 @@ export async function listMatchesForGame(
     // Agregar partidas a la lista
     matches.matches.forEach((match) => {
       const listItem = document.createElement('li');
-      listItem.textContent = `Match ID: ${match.matchID}, Status: ${
-        match.gameover ? 'Finished' : 'In Progress'
-      }, Winner: ${match.gameover?.winner ?? 'N/A'}`;
+      listItem.textContent = `Match ID: ${match.matchID}, Status: ${match.gameover ? 'Finished' : 'In Progress'
+        }, Winner: ${match.gameover?.winner ?? 'N/A'}`;
 
       // Agregar la clase CSS para las partidas
       listItem.classList.add('match-item');
+      const isGameOver = match.gameover ? 'Finished' : 'In Progress';
+
+      const winner = match.gameover?.winner ?? 'N/A';
+
+      listItem.textContent = `Match ID: ${match.matchID
+        }, Created At: ${new Date(
+          match.createdAt
+        ).toLocaleString()}, Status: ${isGameOver}, Winner: ${winner}`;
+
       matchesListElement.appendChild(listItem);
     });
   } catch (error) {

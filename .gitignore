@@ -5,7 +5,6 @@ yarn.lock
 npm-debug.log*
 dist
 node_modules
-coverage
 .coveralls.yml
 .npm
 npm
@@ -14,15 +13,7 @@ npm
 .rpt2_cache/
 .rush/
 .env
-server/*
-client/*
-core/*
 debug/*
-react/*
-react-native/*
-ai/*
-plugins/*
-master/*
-multiplayer/*
-internal/*
-testing/*
+.turbo
+.parcel-cache
+.cartesi

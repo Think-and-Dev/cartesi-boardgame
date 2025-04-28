@@ -7,7 +7,6 @@
  */
 
 import tic_tac_toe from './tic-tac-toe';
-import chess from './chess';
 import secret_state from './secret-state';
 import random from './random';
 import threejs from './threejs';
@@ -18,12 +17,12 @@ import undo from './undo';
 
 const routes = [
   {
-    name: 'Tic-Tac-Toe',
-    routes: tic_tac_toe.routes,
+    name: 'Lobby',
+    routes: lobby.routes,
   },
   {
-    name: 'Chess',
-    routes: chess.routes,
+    name: 'Tic-Tac-Toe',
+    routes: tic_tac_toe.routes,
   },
   {
     name: 'Turn Orders',
@@ -48,10 +47,6 @@ const routes = [
   {
     name: 'Other Frameworks',
     routes: threejs.routes,
-  },
-  {
-    name: 'Lobby',
-    routes: lobby.routes,
   },
 ];
 

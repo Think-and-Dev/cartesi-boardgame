@@ -30,8 +30,8 @@ interface State {
 }
 
 const DAPP_ADDRESS = '0xab7528bb862fB57E8A2BCd567a2e929a0Be56a5e';
-const SERVER = 'http://localhost:8000';
-const NODE_URL = 'http://localhost:8080';
+const SERVER = 'http://127.0.0.1:8000';
+const NODE_URL = 'http://127.0.0.1:8080';
 
 async function main() {
   const importedGames = [TicTacToe];

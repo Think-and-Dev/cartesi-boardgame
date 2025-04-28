@@ -1,0 +1,31 @@
+import { useEffect, useState } from "react";
+
+const useCardImage = (cardId: string) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState();
+  const [image, setImage] = useState<string>();
+
+  useEffect(() => {
+    const fetchImage = async () => {
+      try {
+        const response = await import(`../../images/${cardId}.webp`);
+        setImage(response.default);
+      } catch (err: any) {
+        console.error('Error loading card image:', err, 'Card ID:', cardId);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImage();
+  }, [cardId]);
+
+  return {
+    loading,
+    error,
+    image,
+  };
+};
+
+export default useCardImage;

@@ -15,6 +15,4 @@ const server = Server({
   games: [TicTacToe, Chess],
   origins: [Origins.LOCALHOST],
 });
-server.run(PORT, () => {
-  console.log(`Serving at: http://localhost:${PORT}`);
-});
+server.run(PORT, () => {});
