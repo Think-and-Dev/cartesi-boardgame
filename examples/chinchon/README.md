@@ -30,6 +30,8 @@ pnpm install
 
 > **_NOTE:_**  You might need to add execution permissions to the script on `./examples/chinchon/scripts/build-cartesi-image.sh`
 
+> **_NOTE:_** The `--use-local-library-version` parameter can be added to force usage of the local package instead of the npm one when building the cartesi image.
+
 4. Start the CVM with the image, by running the following command on the chinchon folder: 
 
 ```bash

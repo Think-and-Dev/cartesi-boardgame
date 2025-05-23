@@ -7,13 +7,13 @@ cartesi clean
 cd ../../
 
 if [ "$1" = "" ]; then
-    USE_NPM_LIBRARY_VERSION=false   
-else
-    USE_NPM_LIBRARY_VERSION=$1
+    MAIN_PACKAGE_VERSION=npm_main_package_version  
+elif [ "$1" = "--use-local-library-version" ]; then
+    MAIN_PACKAGE_VERSION=local_main_package_version
 fi
 
 # build docker image
-docker build -f ./examples/chinchon/Dockerfile --build-arg USE_NPM_LIBRARY_VERSION=$USE_NPM_LIBRARY_VERSION -t cartesi/chinchon . 
+docker buildx build -f ./examples/chinchon/Dockerfile --build-arg MAIN_PACKAGE_VERSION="$MAIN_PACKAGE_VERSION" -t cartesi/chinchon . 
 
 rm .dockerignore
 

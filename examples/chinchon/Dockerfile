@@ -1,5 +1,8 @@
 # syntax=docker.io/docker/dockerfile:1
-FROM ubuntu:22.04 as middleware-builder
+# Optional argument to use npm version of the library
+ARG MAIN_PACKAGE_VERSION="local_main_package_version"
+
+FROM ubuntu:22.04 AS middleware-builder
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -48,25 +51,16 @@ RUN mv ./.cargo/config.docker.toml ./.cargo/config.toml && \
     cargo build 
 
 
-# ## This build process is needed here to use a local version of the library, normally it would be installed from npm
-# FROM node:23-alpine as main-library-builder
+FROM --platform=linux/riscv64 cartesi/node:20.16.0-jammy-slim AS build-local_main_package_version
+ONBUILD COPY packages/main /opt/cartesi/dapp/packages/main
+ONBUILD COPY pnpm-workspace.yaml /opt/cartesi/dapp/pnpm-workspace.yaml
+ONBUILD COPY .npmrc /opt/cartesi/dapp/.npmrc
+ONBUILD RUN echo "Starting from base image with local main package"
 
-# WORKDIR /opt/cartesi/dapp
-# COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-# COPY packages/main ./packages/main
+FROM --platform=linux/riscv64 cartesi/node:20.16.0-jammy-slim AS build-npm_main_package_version
+ONBUILD RUN echo "Starting from base image WITHOUT local main package"
 
-# RUN apk add g++ make py3-pip && npm install -g pnpm
-
-# WORKDIR /opt/cartesi/dapp/packages/main
-# RUN <<EOF
-#     pnpm install --frozen-lockfile --filter .
-#     pnpm prepublishOnly
-#     pnpm prepack
-#     pnpm export-bundle /opt/cartesi/output/
-# EOF
-
-
-FROM --platform=linux/riscv64 cartesi/node:20.16.0-jammy-slim AS build-stage
+FROM build-${MAIN_PACKAGE_VERSION} AS build-stage
 
 RUN <<EOF
     set -e
@@ -78,21 +72,16 @@ EOF
 
 WORKDIR /opt/cartesi/dapp
 # get needed files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-# COPY --from=main-library-builder /opt/cartesi/output/ /opt/cartesi/dapp/packages/main
-# TODO: remove this copy if we use the npm version of the library
-COPY packages/main ./packages/main
+COPY package.json pnpm-lock.yaml ./
 COPY examples/chinchon /opt/cartesi/dapp/examples/chinchon
 COPY --from=middleware-builder /opt/cartesi/dapp/target/riscv64gc-unknown-linux-gnu/debug/cartesi-drand /opt/cartesi/dapp/examples/chinchon/
 COPY --from=middleware-builder /opt/cartesi/dapp/drand.config.json /opt/cartesi/dapp/examples/chinchon/
-
-# Optional argument to use npm version of the library
-ARG USE_NPM_LIBRARY_VERSION=false
+ARG MAIN_PACKAGE_VERSION="local_main_package_version"
 
 # This build process is needed here to use a local version of the library, normally it would be installed from npm
 WORKDIR /opt/cartesi/dapp/packages/main
 RUN <<EOF
-    if [ "$USE_NPM_LIBRARY_VERSION" = "false" ]; then \
+    if [ "$MAIN_PACKAGE_VERSION" = "local_main_package_version" ]; then \
         echo "Building main package from workspace"
         pnpm install --ignore-scripts --frozen-lockfile --filter .
         pnpm prepublishOnly
@@ -103,29 +92,28 @@ EOF
 
 WORKDIR /opt/cartesi/dapp/examples/chinchon
 
-# If USE_NPM_LIBRARY_VERSION is true, install from npm; if not, use the workspace
+# If MAIN_PACKAGE_VERSION is npm_main_package_version, install from npm; if not, use the workspace
 # build chinchon server
 RUN <<EOF 
-    if [ "$USE_NPM_LIBRARY_VERSION" = "true" ]; then \
+    if [ "$MAIN_PACKAGE_VERSION" = "npm_main_package_version" ]; then \
         echo "Installing from npm"
-        sed -i '/link-workspace-packages=false/d' /opt/cartesi/dapp/.npmrc
-        echo "link-workspace-packages=false" >> /opt/cartesi/dapp/.npmrc
-        pnpm add @think-and-dev/cartesi-boardgame; \
-        pnpm install --frozen-lockfile --ignore-scripts --filter .; \
+        pnpm install \
+        pnpm add sqlite3 @koa/cors typescript @think-and-dev/cartesi-boardgame --allow-build=sqlite3
+        pnpm build-server
         else \
         echo "Installing from workspace"
         sed -i '/link-workspace-packages=true/d' /opt/cartesi/dapp/.npmrc
         echo "link-workspace-packages=true" >> /opt/cartesi/dapp/.npmrc
         pnpm add @think-and-dev/cartesi-boardgame --workspace; \
         pnpm install --frozen-lockfile --ignore-scripts; \
+        pnpm rebuild sqlite3 # this is needed to use sqlite3 in the server
+        pnpm build-server --filter .
         fi
-    pnpm rebuild sqlite3 # this is needed to use sqlite3 in the server
-    pnpm build-server --filter .
     pnpm store prune
 EOF
 
 
-FROM --platform=linux/riscv64 cartesi/node:20.16.0-jammy-slim as runtime-stage
+FROM --platform=linux/riscv64 cartesi/node:20.16.0-jammy-slim AS runtime-stage
 
 ARG MACHINE_EMULATOR_TOOLS_VERSION=0.14.1
 ARG DEBIAN_FRONTEND=noninteractive

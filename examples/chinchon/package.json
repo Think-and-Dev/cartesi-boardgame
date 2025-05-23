@@ -23,7 +23,7 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.1.1",
     "@testing-library/user-event": "^13.5.0",
-    "@think-and-dev/cartesi-boardgame": "workspace:0.0.36-beta",
+    "@think-and-dev/cartesi-boardgame": "^0.1.0-beta",
     "@types/jest": "^27.4.1",
     "@types/koa-compress": "^4.0.3",
     "@types/node": "^16.11.31",

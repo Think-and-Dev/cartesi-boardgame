@@ -5,7 +5,7 @@ import cors from '@koa/cors';
 // import serve from "koa-static";
 
 const PORT = 8000;
-const database = new Sqlite();
+const database = new Sqlite(); // Ensure the rebuild of sqlite3 is done in the Dockerfile
 
 console.log("ENABLE_TIMESTAMP_OVERRIDE", process.env.ENABLE_TIMESTAMP_OVERRIDE);
 
