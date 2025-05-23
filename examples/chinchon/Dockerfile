@@ -46,7 +46,8 @@ WORKDIR /opt/cartesi/dapp
 
 COPY packages/drand-middleware ./
  
-RUN mv ./.cargo/config.docker.toml ./.cargo/config.toml && \
+RUN mv ./Cargo.lock.docker ./Cargo.lock && \
+    mv ./.cargo/config.docker.toml ./.cargo/config.toml && \
     tail ./.cargo/config.toml && \
     cargo build 
 
