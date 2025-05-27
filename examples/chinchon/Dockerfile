@@ -98,6 +98,8 @@ WORKDIR /opt/cartesi/dapp/examples/chinchon
 RUN <<EOF 
     if [ "$MAIN_PACKAGE_VERSION" = "npm_main_package_version" ]; then \
         echo "Installing from npm"
+        rm -rf ./pnpm-lock.yaml ./node_modules
+        pnpm config set store-dir /opt/cartesi/pnpm-store --global
         pnpm install \
         pnpm add sqlite3 @koa/cors typescript @think-and-dev/cartesi-boardgame --allow-build=sqlite3
         pnpm build-server

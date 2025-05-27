@@ -17,15 +17,7 @@ In order to run the game in the cartesi machine locally, we need to follow the n
 
 1. Ensure pnpm and the cartesi cli are installed
 
-2. Go to the chinchon folder (`./examples/chinchon`) and run 
-
-```bash
-pnpm install
-```
-
-> **_NOTE:_**  The default version of pnpm install will try to install the main package from the workspace, for that to work correctly, before the `pnpm install` on the chinchon folder, you will need to run `pnpm proxydirs & pnpm build` on the `./packages/main` folder
-
-3. In the same folder, build the cartesi image for the chinchon game, by running 
+2. Go to the chinchon folder (`./examples/chinchon`) build the cartesi image for the chinchon game, by running 
 
 ```bash
     pnpm build-cartesi-image
@@ -34,6 +26,14 @@ pnpm install
 > **_NOTE:_**  You might need to add execution permissions to the script on `./examples/chinchon/scripts/build-cartesi-image.sh`
 
 > **_NOTE:_** The `--use-local-library-version` parameter can be added to force usage of the local package instead of the npm one when building the cartesi image.
+
+3. In the same folder run 
+
+```bash
+pnpm install
+```
+
+> **_NOTE:_**  The default version of pnpm install will try to install the main package from the workspace, for that to work correctly, before the `pnpm install` on the chinchon folder, you will need to run `pnpm proxydirs & pnpm build` on the `./packages/main` folder. To avoid installing the local version, you can run the command `pnpm install --ignore-workspace` to install dependencies
 
 4. Start the CVM with the image, by running the following command on the chinchon folder: 
 

@@ -9,6 +9,9 @@
 /examples/chinchon/build
 /examples/chinchon/node_modules
 node_modules
+**/node_modules
+pnpm-store
+**/pnpm-store
 .cartesi
 .git
 .github
