@@ -22,6 +22,9 @@ In order to run the game in the cartesi machine locally, we need to follow the n
 ```bash
 pnpm install
 ```
+
+> **_NOTE:_**  The default version of pnpm install will try to install the main package from the workspace, for that to work correctly, before the `pnpm install` on the chinchon folder, you will need to run `pnpm proxydirs & pnpm build` on the `./packages/main` folder
+
 3. In the same folder, build the cartesi image for the chinchon game, by running 
 
 ```bash

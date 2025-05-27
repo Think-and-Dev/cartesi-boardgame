@@ -13,7 +13,7 @@ elif [ "$1" = "--use-local-library-version" ]; then
 fi
 
 # build docker image
-docker buildx build -f ./examples/chinchon/Dockerfile --build-arg MAIN_PACKAGE_VERSION="$MAIN_PACKAGE_VERSION" -t cartesi/chinchon . 
+docker buildx build -f ./examples/chinchon/Dockerfile --load --build-arg MAIN_PACKAGE_VERSION="$MAIN_PACKAGE_VERSION" -t cartesi/chinchon . 
 
 rm .dockerignore
 
